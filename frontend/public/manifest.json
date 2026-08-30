@@ -1,0 +1,18 @@
+{
+  "name": "Harmonia - Mestre de Harmonia",
+  "short_name": "Harmonia",
+  "description": "Gerenciador de Acervo Musical e Player Ritualístico para Lojas Maçônicas",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070d18",
+  "theme_color": "#0b192c",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icone-harmonia.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
