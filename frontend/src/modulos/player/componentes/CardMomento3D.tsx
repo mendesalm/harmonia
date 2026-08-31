@@ -170,98 +170,81 @@ export const CardMomento3D: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 2. CARROSSEL VERTICAL 3D DE MÚSICAS (DRAGGABLE & SCROLLABLE COM PRESERVE-3D NATIVO) */}
+      {/* 2. LISTA DE MÚSICAS (SCROLL NATIVO) */}
       <div
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        className={`vertical-tracks-container relative flex-1 my-1 flex flex-col items-center justify-center rounded-2xl border border-white/5 touch-none ${
-          isAtivo ? 'cursor-grab active:cursor-grabbing preserve-3d perspective-1000' : 'pointer-events-none'
+        className={`relative flex-1 my-1 rounded-2xl border border-white/5 overflow-hidden ${
+          isAtivo ? 'pointer-events-auto' : 'pointer-events-none'
         }`}
         style={{ backgroundColor: '#050b16' }}
-        title={isAtivo ? "Arraste verticalmente ou role o mouse para escolher faixas" : undefined}
       >
         {musicas.length === 0 ? (
-          <div className="py-3 px-3 rounded-2xl bg-white/[0.02] text-center flex flex-col items-center justify-center h-full gap-2 w-full relative z-50">
-            <p className="text-xs font-mono text-slate-500 italic pointer-events-none">
+          <div className="py-3 px-3 rounded-2xl bg-white/[0.02] text-center flex flex-col items-center justify-center h-full gap-3 w-full">
+            <p className="text-xs font-mono text-slate-500 italic">
               [ SILÊNCIO PROGRAMADO ]
             </p>
+            {isAtivo && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAbrirUpload();
+                }}
+                className="px-4 py-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-bold hover:bg-cyan-500/20 transition-colors pointer-events-auto"
+              >
+                + Catalogar Música
+              </button>
+            )}
           </div>
         ) : (
-          <div className="relative w-full h-[160px] sm:h-[175px] flex items-center justify-center preserve-3d">
+          <div className="w-full h-[160px] sm:h-[175px] overflow-y-auto custom-scrollbar p-2 flex flex-col gap-1.5">
             {musicas.map((musica, idx) => {
               const estaSelecionada = idx === indiceMusicaAtiva;
-              const distancia = idx - indiceMusicaAtiva;
-              
-              const dragOffsetItems = isAtivo ? offsetYDrag / 44 : 0;
-              const deltaCont = distancia - dragOffsetItems;
-
-              // Renderiza as faixas adjacentes no cilindro vertical
-              const visivel = Math.abs(deltaCont) <= 2.2;
-              if (!visivel) return null;
-
-              const anguloRotacaoX = isAtivo ? deltaCont * 22 : 0;
-              const translateY = deltaCont * 44;
-              const translateZ = isAtivo ? 20 - Math.min(Math.abs(deltaCont) * 20, 50) : 0;
-              const opacidade = Math.max(0.3, 1 - Math.abs(deltaCont) * 0.35);
-              const escala = Math.max(0.82, 1 - Math.abs(deltaCont) * 0.08);
-
               return (
                 <div
                   key={musica.id}
                   onClick={(e) => {
-                    if (isAtivo) {
+                    if (isAtivo && musica.id !== musicaSelecionadaId) {
                       e.stopPropagation();
-                      if (Math.abs(offsetYDrag) < 8 && musica.id !== musicaSelecionadaId) {
-                        onSelecionarMusica(musica.id);
-                      }
+                      onSelecionarMusica(musica.id);
                     }
                   }}
-                  className={`absolute w-[96%] px-3 py-2 rounded-2xl transition-transform ease-out border flex items-center justify-between cursor-pointer ${
-                    estaSelecionada && Math.abs(offsetYDrag) < 15
-                      ? 'border-cyan-500/80 shadow-[0_0_15px_rgba(0,229,255,0.25)] text-[#00E5FF] z-20'
-                      : 'border-white/5 hover:border-cyan-500/30 text-slate-300 z-10'
+                  className={`w-full px-3 py-2.5 rounded-xl transition-all ease-out border flex items-center justify-between cursor-pointer ${
+                    estaSelecionada
+                      ? 'border-cyan-500/80 shadow-[0_0_15px_rgba(0,229,255,0.25)] text-[#00E5FF] bg-[#0b1c33]'
+                      : 'border-white/5 hover:border-cyan-500/30 text-slate-300 bg-[#071322] hover:bg-[#091829]'
                   }`}
-                  style={{
-                    backgroundColor: estaSelecionada ? '#0b1c33' : '#071322',
-                    transform: `translateY(${translateY}px) translateZ(${translateZ}px) rotateX(${-anguloRotacaoX}deg) scale(${escala})`,
-                    opacity: opacidade,
-                    transition: estaArrastandoV ? 'none' : 'transform 0.25s ease-out, opacity 0.25s ease-out',
-                  }}
                 >
                   <div className="flex flex-col min-w-0 pr-1.5 flex-1">
-                    <div className="flex items-center gap-1.5 truncate w-full">
+                    <div className="flex items-center gap-2 truncate w-full">
                       <button
-                        onPointerDown={(e) => {
+                        onClick={(e) => {
                           e.stopPropagation();
                           if (onAlternarPreferencia && momento.evento_id) {
                             onAlternarPreferencia(momento.evento_id, musica.id, !!(musica as any).preferida);
                           }
                         }}
                         title={(musica as any).preferida ? "Remover preferência" : "Fixar como preferida"}
-                        className={`shrink-0 p-1 rounded hover:bg-white/10 transition-colors ${
+                        className={`shrink-0 p-1.5 -ml-1.5 rounded-lg hover:bg-white/10 transition-colors ${
                           (musica as any).preferida ? 'text-amber-400' : 'text-slate-600 hover:text-amber-400/50'
                         }`}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={(musica as any).preferida ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={(musica as any).preferida ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                         </svg>
                       </button>
-                      <span className={`text-xs font-mono font-bold truncate ${estaSelecionada ? 'text-[#00E5FF]' : 'text-slate-300'}`}>
+                      <span className={`text-[13px] font-mono font-bold truncate ${estaSelecionada ? 'text-[#00E5FF]' : 'text-slate-300'}`}>
                         {String(idx + 1).padStart(2, '0')} // {musica.titulo.toUpperCase()}
                       </span>
                     </div>
 
-                    <span className="text-[9px] sm:text-[10px] font-mono text-slate-400 truncate ml-7">
+                    <span className="text-[10px] font-mono text-slate-400 truncate ml-8">
                       {musica.autor_artista || 'Compositor Tradicional'}
                     </span>
                   </div>
 
                   {/* Indicador Lateral: Equalizador Animado */}
-                  <div className="shrink-0 flex items-center gap-1">
+                  <div className="shrink-0 flex items-center gap-1 ml-2">
                     {estaSelecionada && isAtivo ? (
-                      <div className="flex items-end gap-0.5 h-3.5 px-1.5 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/40">
+                      <div className="flex items-end gap-[3px] h-4 px-2 py-1 rounded bg-cyan-500/20 border border-cyan-500/40">
                         {[0.6, 1, 0.4, 0.9].map((h, i) => (
                           <span
                             key={i}
@@ -274,7 +257,7 @@ export const CardMomento3D: React.FC<Props> = ({
                         ))}
                       </div>
                     ) : (
-                      <span className="text-[9px] sm:text-[10px] font-mono text-slate-500">
+                      <span className="text-[11px] font-mono text-slate-500">
                         {formatarTempo(musica.duracao_segundos || 180)}
                       </span>
                     )}
