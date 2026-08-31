@@ -419,14 +419,14 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     return `${min}:${seg < 10 ? '0' : ''}${seg}`;
   };
 
-  // Cálculo da porcentagem do anel radial de progresso (SVG circular)
+  // Cálculo preciso da porcentagem do anel radial de progresso (SVG circular)
   const progressoPercentual = duracaoTotal > 0 ? Math.min(1, Math.max(0, tempoAtual / duracaoTotal)) : 0;
   const raioCirculo = 86;
   const circunferencia = 2 * Math.PI * raioCirculo;
   const strokeDashoffset = circunferencia - (progressoPercentual * circunferencia);
 
-  // Ponto exato da cabeça do progresso na circunferência
-  const anguloHeadRad = (progressoPercentual * 360 - 90) * (Math.PI / 180);
+  // Ponto exato da cabeça do progresso (em coordenadas não-rotacionadas do SVG para alinhar perfeitamente com -rotate-90)
+  const anguloHeadRad = (progressoPercentual * 360) * (Math.PI / 180);
   const headX = 100 + raioCirculo * Math.cos(anguloHeadRad);
   const headY = 100 + raioCirculo * Math.sin(anguloHeadRad);
 
@@ -439,10 +439,11 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     const x = e.clientX - centerX;
     const y = e.clientY - centerY;
     
-    let angulo = Math.atan2(y, x) * (180 / Math.PI) + 90;
-    if (angulo < 0) angulo += 360;
+    // Calcula ângulo onde o Topo (12h) é 0 graus e avança em sentido horário
+    let anguloDeg = Math.atan2(y, x) * (180 / Math.PI) + 90;
+    if (anguloDeg < 0) anguloDeg += 360;
 
-    const novaFracao = angulo / 360;
+    const novaFracao = Math.max(0, Math.min(1, anguloDeg / 360));
     const novoTempo = novaFracao * duracaoTotal;
 
     if (musicaAtual?.tipo_midia === 'ARQUIVO_LOCAL' && audioRef.current) {
@@ -459,11 +460,29 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#040811] text-slate-100 flex flex-col items-center justify-start pb-16 pt-2 px-2 selection:bg-cyan-500 selection:text-black overflow-x-hidden">
       
-      {/* Elemento de Áudio HTML5 para Arquivos Locais */}
+      {/* Elemento de Áudio HTML5 para Arquivos Locais com Detecção Rápida de Duração */}
       <audio
         ref={audioRef}
-        onTimeUpdate={() => setTempoAtual(audioRef.current?.currentTime || 0)}
-        onLoadedMetadata={() => setDuracaoTotal(audioRef.current?.duration || 0)}
+        onTimeUpdate={() => {
+          const cur = audioRef.current?.currentTime || 0;
+          setTempoAtual(cur);
+          const dur = audioRef.current?.duration;
+          if (dur && !isNaN(dur) && dur > 0 && dur !== duracaoTotal) {
+            setDuracaoTotal(dur);
+          }
+        }}
+        onLoadedMetadata={() => {
+          const dur = audioRef.current?.duration;
+          if (dur && !isNaN(dur) && dur > 0) {
+            setDuracaoTotal(dur);
+          }
+        }}
+        onDurationChange={() => {
+          const dur = audioRef.current?.duration;
+          if (dur && !isNaN(dur) && dur > 0) {
+            setDuracaoTotal(dur);
+          }
+        }}
         onEnded={aoTerminarMusica}
         className="hidden"
       />
@@ -628,7 +647,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
                 strokeLinecap="round"
                 fill="none"
                 filter="url(#cyanGlow)"
-                className="transition-all duration-150"
+                className="transition-all duration-100"
               />
 
               {/* Knob indicador iluminado na cabeça do progresso */}
@@ -675,22 +694,51 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             </button>
           </div>
 
-          {/* Leitura de Tempo & Status Maçônico */}
-          <div className="flex flex-col items-center gap-1 mt-1 font-mono text-center">
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-[#00E5FF] font-bold tracking-widest">{formatarTempo(tempoAtual)}</span>
-              <span className="text-slate-600">//</span>
-              <span className="text-slate-400">{formatarTempo(duracaoTotal)}</span>
+          {/* BARRA HORIZONTAL COMPLEMENTAR DE PRECISÃO & LEITURA DE TEMPO */}
+          <div className="w-full max-w-xs mt-1 flex flex-col gap-1.5 px-2">
+            <div
+              role="progressbar"
+              aria-valuenow={tempoAtual}
+              aria-valuemin={0}
+              aria-valuemax={duracaoTotal}
+              className="relative w-full h-1.5 bg-slate-800/90 hover:bg-slate-700 rounded-full overflow-hidden cursor-pointer transition-all group"
+              onClick={(e) => {
+                if (duracaoTotal <= 0) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const cliqueFracao = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                const novoTempo = cliqueFracao * duracaoTotal;
+                if (musicaAtual?.tipo_midia === 'ARQUIVO_LOCAL' && audioRef.current) {
+                  audioRef.current.currentTime = novoTempo;
+                  setTempoAtual(novoTempo);
+                } else if (musicaAtual?.tipo_midia === 'YOUTUBE' && ytPlayerRef.current) {
+                  try {
+                    ytPlayerRef.current.seekTo(novoTempo, true);
+                    setTempoAtual(novoTempo);
+                  } catch {}
+                }
+              }}
+              title="Clique para avançar ou retroceder"
+            >
+              <div
+                className="h-full bg-gradient-to-r from-[#00E5FF] to-cyan-300 rounded-full transition-all duration-100 shadow-[0_0_8px_#00E5FF]"
+                style={{ width: `${duracaoTotal > 0 ? Math.min(100, (tempoAtual / duracaoTotal) * 100) : 0}%` }}
+              />
             </div>
 
-            <span className={`text-[10px] font-bold tracking-widest uppercase px-2.5 py-0.5 rounded-full border ${
-              tocando
-                ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 animate-pulse'
-                : 'text-amber-300 bg-amber-500/10 border-amber-500/30'
-            }`}>
-              {tocando ? '● EXECUTANDO EM TEMPLO' : '○ EM PAUSA // AGUARDANDO COMANDO'}
-            </span>
+            <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+              <span className="text-[#00E5FF] font-bold tracking-wider">{formatarTempo(tempoAtual)}</span>
+              <span className="text-slate-600">//</span>
+              <span className="text-slate-400">{duracaoTotal > 0 ? formatarTempo(duracaoTotal) : '--:--'}</span>
+            </div>
           </div>
+
+          <span className={`text-[10px] font-mono font-bold tracking-widest uppercase px-2.5 py-0.5 mt-2 rounded-full border ${
+            tocando
+              ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 animate-pulse'
+              : 'text-amber-300 bg-amber-500/10 border-amber-500/30'
+          }`}>
+            {tocando ? '● EXECUTANDO EM TEMPLO' : '○ EM PAUSA // AGUARDANDO COMANDO'}
+          </span>
         </div>
 
         {/* 4. DOCK DE CONTROLES DO MESTRE & ESTEIRA RITUALÍSTICA */}
