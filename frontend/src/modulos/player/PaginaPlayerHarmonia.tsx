@@ -620,14 +620,24 @@ export const PaginaPlayerHarmonia: React.FC = () => {
                   + CATALOGAR FAIXA PARA ESTE MOMENTO
                 </button>
               ) : (
-                <>
-                  <span className={`text-[11px] sm:text-xs font-bold uppercase truncate max-w-full px-2 text-center ${tocando ? 'text-emerald-300 animate-pulse' : 'text-slate-300'}`}>
-                    {musicaAtual.titulo}
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] text-slate-500 truncate max-w-[70%] text-center">
-                    {musicaAtual.autor_artista || 'Compositor Tradicional'}
-                  </span>
-                </>
+                  <>
+                    <div className="flex items-center gap-2 max-w-full px-2">
+                      {tocando && (
+                        <div className="flex gap-0.5 items-center shrink-0 h-4">
+                          <div className="w-1 h-3 bg-emerald-400 rounded-sm animate-[bounce_1s_infinite_100ms]" />
+                          <div className="w-1 h-4 bg-emerald-400 rounded-sm animate-[bounce_1s_infinite_300ms]" />
+                          <div className="w-1 h-2 bg-emerald-400 rounded-sm animate-[bounce_1s_infinite_500ms]" />
+                          <div className="w-1 h-3.5 bg-emerald-400 rounded-sm animate-[bounce_1s_infinite_200ms]" />
+                        </div>
+                      )}
+                      <span className={`text-[11px] sm:text-xs font-bold uppercase truncate text-center ${tocando ? 'text-emerald-300' : 'text-slate-300'}`}>
+                        {musicaAtual.titulo}
+                      </span>
+                    </div>
+                    <span className="text-[9px] sm:text-[10px] text-slate-500 truncate max-w-[70%] text-center">
+                      {musicaAtual.autor_artista || 'Compositor Tradicional'}
+                    </span>
+                  </>
               )}
             </div>
 
