@@ -226,6 +226,8 @@ export const CardMomento3D: React.FC<Props> = ({
                             return;
                           }
                           
+                          console.log(`[FRONTEND] onAlternarPreferencia existe? ${!!onAlternarPreferencia}. evento_id existe? ${!!momento.evento_id} (Valor: ${momento.evento_id})`);
+                          
                           if (onAlternarPreferencia && momento.evento_id) {
                             console.log(`[FRONTEND] Chamando onAlternarPreferencia(evento: ${momento.evento_id}, musica: ${musica.id}, false)`);
                             onAlternarPreferencia(momento.evento_id, musica.id, false); 
