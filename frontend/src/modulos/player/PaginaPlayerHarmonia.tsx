@@ -11,6 +11,7 @@ import { ModalUploadMusica } from '../musicas/ModalUploadMusica';
 import { ModalConfiguracoesPlayer } from './componentes/ModalConfiguracoesPlayer';
 import { extrairIdYoutube } from '../../compartilhado/formatadores/midia';
 import { Carrossel3DMomentos } from './componentes/Carrossel3DMomentos';
+import { CarrosselMiniaturas3D } from './componentes/CarrosselMiniaturas3D';
 
 declare global {
   interface Window {
@@ -570,31 +571,14 @@ export const PaginaPlayerHarmonia: React.FC = () => {
               onAbrirUpload={() => setModalUploadAberto(true)}
             />
 
-            {/* NAVEGAÇÃO DE MINIATURAS (THUMBNAILS) PARA O MESTRE */}
-            <div className="w-full max-w-full overflow-x-auto flex items-center gap-2 px-2 py-2 snap-x hide-scrollbar mt-1 border-t border-white/5">
-              {dadosSessao.esteira_ritualistica.map((momento, idx) => (
-                <button
-                  key={momento.evento_id}
-                  onClick={() => {
-                     setIndiceAtual(idx);
-                     setTocando(false);
-                  }}
-                  className={`shrink-0 w-28 p-1.5 rounded-lg border flex flex-col items-center justify-center snap-center transition-all cursor-pointer ${
-                    idx === indiceAtual
-                      ? 'bg-[#0b1c33] border-cyan-500/80 shadow-[0_0_10px_rgba(0,229,255,0.2)]'
-                      : 'bg-white/[0.02] border-white/10 hover:border-cyan-500/30 hover:bg-white/[0.05]'
-                  }`}
-                  title={momento.evento_nome}
-                >
-                  <span className={`text-[9px] font-mono font-bold truncate w-full text-center ${idx === indiceAtual ? 'text-[#00E5FF]' : 'text-slate-400'}`}>
-                     {String(idx + 1).padStart(2, '0')} //
-                  </span>
-                  <span className={`text-[8px] font-mono truncate w-full text-center ${idx === indiceAtual ? 'text-white' : 'text-slate-500'}`}>
-                     {momento.evento_nome}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <CarrosselMiniaturas3D 
+              momentos={dadosSessao.esteira_ritualistica}
+              indiceAtual={indiceAtual}
+              onMudarMomento={(idx) => {
+                setIndiceAtual(idx);
+                setTocando(false);
+              }}
+            />
           </div>
         )}
 
