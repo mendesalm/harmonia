@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import {
   Play, Pause, SkipBack, Shuffle, Volume2, VolumeX,
   Sparkles, Music, Disc, ListMusic, Layers, ChevronRight, CheckCircle2,
-  PlusCircle, UploadCloud, Youtube, Clock, SlidersHorizontal, Radio, ExternalLink
+  PlusCircle, UploadCloud, Youtube, Clock, SlidersHorizontal, Radio, ExternalLink,
+  Bluetooth, BatteryCharging, Wifi, ChevronDown
 } from 'lucide-react';
 import { Sessao, SessaoPlayerExecucao, MomentoExecucao, MusicaSorteada, Musica } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
@@ -42,6 +43,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
 
   // Modal de Upload Direto do Player
   const [modalUploadAberto, setModalUploadAberto] = useState(false);
+  const [seletorSessaoAberto, setSeletorSessaoAberto] = useState(false);
 
   // Estados de Reprodução de Áudio (Inicialmente SEMPRE em PAUSA)
   const [tocando, setTocando] = useState(false);
@@ -187,7 +189,6 @@ export const PaginaPlayerHarmonia: React.FC = () => {
       setTempoAtual(0);
       setDuracaoTotal(0);
     } else {
-      // Chegou ao último momento da sessão
       setTocando(false);
     }
   };
@@ -260,7 +261,6 @@ export const PaginaPlayerHarmonia: React.FC = () => {
               if (d && d > 0) setDuracaoTotal(d);
             },
             onStateChange: (event: any) => {
-              // 0 = YT.PlayerState.ENDED -> avança automaticamente para o próximo momento!
               if (event.data === 0) {
                 aoTerminarMusica();
               } else if (event.data === 1) {
@@ -289,7 +289,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     return () => clearTimeout(timer);
   }, [indiceAtual, youtubeVideoId]);
 
-  // RASTREAMENTO CONTÍNUO DO ANDAMENTO DO YOUTUBE (Tempo atual e duração total)
+  // Rastreamento contínuo do andamento do YouTube
   useEffect(() => {
     if (musicaAtual?.tipo_midia !== 'YOUTUBE' || !tocando) return;
 
@@ -312,37 +312,6 @@ export const PaginaPlayerHarmonia: React.FC = () => {
 
     return () => clearInterval(intervalo);
   }, [musicaAtual?.tipo_midia, tocando, indiceAtual]);
-
-  // Auto-scroll do Carrossel para centralizar o momento ativo
-  useEffect(() => {
-    if (carrosselRef.current && carrosselRef.current.children[indiceAtual]) {
-      const cardAtivo = carrosselRef.current.children[indiceAtual] as HTMLElement;
-      cardAtivo.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',
-      });
-    }
-  }, [indiceAtual, dadosSessao]);
-
-  // Manipulador de Clique na Barra de Progresso (busca tempo em áudio local e YouTube)
-  const manipularCliqueProgresso = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clique = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const novoTempo = clique * duracaoTotal;
-
-    if (musicaAtual?.tipo_midia === 'ARQUIVO_LOCAL' && audioRef.current && duracaoTotal > 0) {
-      audioRef.current.currentTime = novoTempo;
-      setTempoAtual(novoTempo);
-    } else if (musicaAtual?.tipo_midia === 'YOUTUBE' && ytPlayerRef.current && duracaoTotal > 0) {
-      try {
-        ytPlayerRef.current.seekTo(novoTempo, true);
-        setTempoAtual(novoTempo);
-      } catch (err) {
-        console.warn('Erro ao buscar tempo no YouTube:', err);
-      }
-    }
-  };
 
   // Funções de Controle de Play / Pause
   const alternarPlayPause = () => {
@@ -438,7 +407,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         const novaEsteira = [...dadosSessao.esteira_ritualistica];
         novaEsteira[indiceAtual].musica_sorteada = resp.data;
         setDadosSessao({ ...dadosSessao, esteira_ritualistica: novaEsteira });
-        setTocando(false); // Mantém em pausa após sortear outra
+        setTocando(false);
         setTempoAtual(0);
         setDuracaoTotal(resp.data.duracao_segundos || 0);
       }
@@ -454,8 +423,50 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     return `${min}:${seg < 10 ? '0' : ''}${seg}`;
   };
 
+  // Cálculo da porcentagem do anel radial de progresso (SVG circular)
+  const progressoPercentual = duracaoTotal > 0 ? Math.min(1, Math.max(0, tempoAtual / duracaoTotal)) : 0;
+  const raioCirculo = 88;
+  const circunferencia = 2 * Math.PI * raioCirculo;
+  const strokeDashoffset = circunferencia - (progressoPercentual * circunferencia);
+
+  // Manipulador de clique no anel circular
+  const manipularCliqueRadial = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (duracaoTotal <= 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const x = e.clientX - centerX;
+    const y = e.clientY - centerY;
+    
+    // Calcula ângulo a partir do topo (-90 graus)
+    let angulo = Math.atan2(y, x) * (180 / Math.PI) + 90;
+    if (angulo < 0) angulo += 360;
+
+    const novaFracao = angulo / 360;
+    const novoTempo = novaFracao * duracaoTotal;
+
+    if (musicaAtual?.tipo_midia === 'ARQUIVO_LOCAL' && audioRef.current) {
+      audioRef.current.currentTime = novoTempo;
+      setTempoAtual(novoTempo);
+    } else if (musicaAtual?.tipo_midia === 'YOUTUBE' && ytPlayerRef.current) {
+      try {
+        ytPlayerRef.current.seekTo(novoTempo, true);
+        setTempoAtual(novoTempo);
+      } catch {}
+    }
+  };
+
+  // Duração total estimada da playlist do momento
+  const tempoTotalMomentoFormatado = React.useMemo(() => {
+    const totalSeg = musicasDoMomento.reduce((acc, m) => acc + (m.duracao_segundos || 180), 0);
+    const min = Math.floor(totalSeg / 60);
+    const seg = Math.floor(totalSeg % 60);
+    return `${min < 10 ? '0' : ''}${min}:${seg < 10 ? '0' : ''}${seg}`;
+  }, [musicasDoMomento]);
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
+    <div className="min-h-screen bg-[#040811] text-slate-100 flex flex-col items-center justify-start pb-16 pt-2 px-3 selection:bg-cyan-500 selection:text-black">
+      
       {/* Elemento de Áudio HTML5 para Arquivos Locais */}
       <audio
         ref={audioRef}
@@ -465,7 +476,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         className="hidden"
       />
 
-      {/* Container Oculto do YouTube Player (executa áudio de fundo sem mostrar vídeo) */}
+      {/* Container Oculto do YouTube Player */}
       <div
         id="youtube-player-harmonia"
         style={{
@@ -479,398 +490,372 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         }}
       />
 
-      {/* Barra Superior de Seleção do Ritual */}
-      <div className="vidro-escuro rounded-3xl p-5 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border border-white/10 shadow-xl">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-macaonico-cianoSigma/30 to-primaria-700/50 border border-macaonico-cianoSigma/40 flex items-center justify-center text-macaonico-cianoSigma shadow-lg shadow-cyan-500/10">
-            <Layers className="w-6 h-6" />
+      {/* Container Principal Mobile/Deck (HUD Cyber-Maçônico) */}
+      <div className="w-full max-w-md sm:max-w-lg flex flex-col gap-4">
+
+        {/* 1. BARRA SUPERIOR HUD // STATUS DO SISTEMA */}
+        <div className="flex items-center justify-between px-2 pt-1 text-[11px] font-mono tracking-widest text-[#00E5FF]">
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-2.5 h-2.5 bg-[#00E5FF] rotate-45 shadow-[0_0_8px_#00E5FF]" />
+            <span className="font-bold">SYS.ONLINE // HARMONIA</span>
           </div>
-          <div>
-            <span className="text-[11px] font-bold text-macaonico-cianoSigma uppercase tracking-wider">
-              Ritual Maçônico em Execução
-            </span>
-            <h1 className="text-xl font-bold text-white fonte-ritual">
-              {dadosSessao?.sessao_nome || 'Selecione uma Sessão'}
-            </h1>
+
+          <div className="flex items-center gap-3 text-slate-400">
+            <span className="text-[10px] text-slate-500 hidden sm:inline">RITO {dadosSessao?.sessao_nome?.split('-')[1] || 'REAA'}</span>
+            <Bluetooth className="w-3.5 h-3.5 text-cyan-400/80" />
+            <BatteryCharging className="w-4 h-4 text-[#00E5FF]" />
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <select
-            value={sessaoSelecionadaId}
-            onChange={(e) => {
-              setSessaoSelecionadaId(e.target.value);
-              setSearchParams({ sessao: e.target.value });
-            }}
-            aria-label="Selecionar Ritual do Dia"
-            className="w-full md:w-80 bg-primaria-800 border border-white/15 rounded-2xl px-4 py-2.5 text-sm font-semibold text-white focus:border-macaonico-cianoSigma outline-none cursor-pointer"
+        {/* Seletor Rápido de Sessão / Ritual (Menu Suspenso Compacto) */}
+        <div className="relative">
+          <button
+            onClick={() => setSeletorSessaoAberto(!seletorSessaoAberto)}
+            className="w-full bg-[#091424]/90 hover:bg-[#0d1d33] border border-cyan-500/20 hover:border-cyan-500/40 rounded-2xl px-4 py-2.5 flex items-center justify-between transition-all shadow-[0_0_15px_rgba(0,229,255,0.06)]"
           >
-            <option value="">-- Selecione o Ritual do Dia --</option>
-            {sessoes.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nome} ({s.rito} - Grau {s.grau})
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Carrossel Ritualístico (Esteira de Momentos) */}
-      <div className="mb-6 relative">
-        <div className="flex items-center justify-between mb-2 px-1">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-            <ListMusic className="w-3.5 h-3.5 text-macaonico-cianoSigma" /> Esteira Ritualística
-          </span>
-          <span className="text-xs text-slate-400 font-medium">
-            Momento {indiceAtual + 1} de {dadosSessao?.esteira_ritualistica.length || 0}
-          </span>
-        </div>
-
-        <div
-          ref={carrosselRef}
-          className="flex gap-3 overflow-x-auto pb-3 pt-1 scroll-smooth scrollbar-none"
-        >
-          {carregandoSessao ? (
-            <div className="py-8 text-center text-slate-400 w-full">Carregando esteira ritualística...</div>
-          ) : !dadosSessao || dadosSessao.esteira_ritualistica.length === 0 ? (
-            <div className="py-8 text-center text-slate-400 w-full vidro-escuro rounded-2xl">
-              Nenhum momento configurado para esta sessão.
+            <div className="flex items-center gap-2.5 truncate">
+              <Layers className="w-4 h-4 text-[#00E5FF] shrink-0" />
+              <span className="text-xs font-bold text-white font-mono uppercase truncate">
+                {dadosSessao?.sessao_nome || 'Selecione uma Sessão'}
+              </span>
             </div>
-          ) : (
-            dadosSessao.esteira_ritualistica.map((momento, idx) => {
-              const ativo = idx === indiceAtual;
-              const concluido = idx < indiceAtual;
+            <ChevronDown className={`w-4 h-4 text-cyan-400 transition-transform ${seletorSessaoAberto ? 'rotate-180' : ''}`} />
+          </button>
 
-              return (
-                <div
-                  key={`${momento.evento_id}-${idx}`}
+          {seletorSessaoAberto && (
+            <div className="absolute top-full left-0 right-0 mt-1.5 z-40 bg-[#07111f] border border-cyan-500/30 rounded-2xl shadow-2xl p-2 max-h-56 overflow-y-auto backdrop-blur-xl">
+              {sessoes.map((s) => (
+                <button
+                  key={s.id}
                   onClick={() => {
-                    setIndiceAtual(idx);
-                    setTocando(false); // Ao clicar em qualquer momento, acessa em PAUSA
+                    setSessaoSelecionadaId(s.id);
+                    setSearchParams({ sessao: s.id });
+                    setSeletorSessaoAberto(false);
                   }}
-                  className={`shrink-0 w-64 p-4 rounded-2xl cursor-pointer transition-all border ${
-                    ativo
-                      ? 'bg-gradient-to-b from-primaria-800 to-primaria-900 border-macaonico-cianoSigma shadow-lg shadow-cyan-500/20 scale-[1.02]'
-                      : concluido
-                      ? 'bg-white/5 border-white/5 opacity-70 hover:opacity-90'
-                      : 'bg-primaria-800/40 border-white/5 hover:border-white/20'
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-mono transition-colors flex items-center justify-between ${
+                    s.id === sessaoSelecionadaId
+                      ? 'bg-cyan-500/20 text-[#00E5FF] font-bold border border-cyan-500/30'
+                      : 'text-slate-300 hover:bg-white/5'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                        ativo
-                          ? 'bg-macaonico-cianoSigma text-black'
-                          : concluido
-                          ? 'bg-emerald-500/20 text-emerald-300'
-                          : 'bg-white/10 text-slate-400'
-                      }`}
-                    >
-                      {idx + 1}º Momento
-                    </span>
-
-                    {concluido && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-                    {ativo && <Disc className={`w-3.5 h-3.5 text-macaonico-cianoSigma ${tocando ? 'animate-spin' : ''}`} />}
-                  </div>
-
-                  <h4 className="text-sm font-bold text-white truncate mb-1">
-                    {momento.evento_nome}
-                  </h4>
-
-                  <p className="text-xs text-slate-400 truncate flex items-center gap-1">
-                    <Music className="w-3 h-3 text-macaonico-cianoSigma shrink-0" />
-                    {momento.musica_sorteada?.titulo || '(Silêncio Programado)'}
-                  </p>
-                </div>
-              );
-            })
+                  <span className="truncate">{s.nome}</span>
+                  <span className="text-[10px] text-slate-400 shrink-0 ml-2">{s.rito} - G{s.grau}</span>
+                </button>
+              ))}
+            </div>
           )}
         </div>
-      </div>
 
-      {/* Palco Central do Now Playing (Interface de Áudio Pura e Minimalista) */}
-      {momentoAtual && (
-        <div className="vidro-destaque rounded-3xl p-6 lg:p-10 border border-white/15 relative overflow-hidden shadow-2xl">
-          
-          {/* Fundo Decorativo */}
-          <div className="absolute -right-16 -bottom-16 w-80 h-80 bg-macaonico-cianoSigma/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -left-16 -top-16 w-80 h-80 bg-macaonico-dourado/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center text-center">
+        {/* 2. CARD LITÚRGICO CYBER-MAÇÔNICO (HERO + TRACKLIST INTEGRADA) */}
+        {momentoAtual && (
+          <div className="rounded-[28px] bg-[#070e1b] border border-cyan-500/35 p-3 sm:p-4 shadow-[0_0_35px_rgba(0,229,255,0.14)] flex flex-col gap-3 relative overflow-hidden backdrop-blur-md">
             
-            {/* Tag do Momento Litúrgico & Status de Reprodução */}
-            <div className="flex items-center gap-2 mb-4 flex-wrap justify-center">
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs font-bold text-macaonico-cianoSigma">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{momentoAtual.posicao}º MOMENTO RITUALÍSTICO</span>
-              </span>
+            {/* Linha de reflexo decorativa no topo do card */}
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#00E5FF] to-transparent opacity-50" />
 
-              <span
-                className={`text-[11px] font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 ${
-                  tocando
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 animate-pulse'
-                    : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                }`}
-              >
-                <Clock className="w-3 h-3" />
-                {tocando ? 'Executando em Templo' : 'Em Pausa • Aguardando Comando'}
-              </span>
-            </div>
+            {/* HERO BANNER: ARTE LÍQUIDA / TEXTURA CYBER COM TÍTULO DO MOMENTO */}
+            <div className="relative w-full h-32 sm:h-36 rounded-2xl overflow-hidden p-4 flex flex-col justify-end border border-cyan-500/20 shadow-inner">
+              
+              {/* Fundo com Gradiente Líquido & Ondas de Energia */}
+              <div 
+                className="absolute inset-0 bg-gradient-to-br from-[#02182b] via-[#04324f] to-[#011424] opacity-95"
+              />
+              
+              {/* Efeito de Ondas Fluídicas / SVG Mesh */}
+              <svg className="absolute inset-0 w-full h-full opacity-40 mix-blend-screen pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="cyberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#00E5FF" stopOpacity="0.8" />
+                    <stop offset="50%" stopColor="#005b82" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#00E5FF" stopOpacity="0.9" />
+                  </linearGradient>
+                </defs>
+                <path d="M-100,50 Q100,120 300,40 T700,70 L700,200 L-100,200 Z" fill="url(#cyberGrad)" />
+                <path d="M-50,80 Q150,20 350,90 T750,40 L750,200 L-50,200 Z" fill="#00E5FF" opacity="0.15" />
+              </svg>
 
-            {/* Nome do Evento */}
-            <h2 className="text-3xl lg:text-4xl font-black text-white fonte-ritual tracking-wide mb-3">
-              {momentoAtual.evento_nome}
-            </h2>
+              {/* Conteúdo Tipográfico Superior (Display Font) */}
+              <div className="relative z-10">
+                <span className="text-[10px] font-mono tracking-widest text-cyan-300/90 uppercase font-semibold mb-1 block">
+                  {String(momentoAtual.posicao).padStart(2, '0')} // MOMENTO RITUALÍSTICO
+                </span>
 
-            {/* BARRA DE SELEÇÃO MANUAL DE MÚSICA DO MOMENTO */}
-            <div className="w-full max-w-lg mb-6 bg-primaria-800/90 border border-white/15 rounded-2xl p-3 shadow-lg flex flex-col gap-1.5 text-left">
-              <div className="flex items-center justify-between px-1">
-                <label
-                  htmlFor="seletor-musica-manual"
-                  className="text-[11px] font-bold text-macaonico-cianoSigma uppercase tracking-wider flex items-center gap-1.5"
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                  Escolha Manual da Música ({musicasDoMomento.length} {musicasDoMomento.length === 1 ? 'faixa disponível' : 'faixas disponíveis'})
-                </label>
-                {musicaAtual && (
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    {musicasDoMomento.some(m => m.id === musicaAtual.id) ? 'Trilha Selecionada' : 'Trilha do Acervo'}
-                  </span>
-                )}
-              </div>
+                <h2 className="text-lg sm:text-xl font-black text-white font-mono uppercase tracking-wider leading-tight drop-shadow-md truncate">
+                  {momentoAtual.evento_nome}
+                </h2>
 
-              <select
-                id="seletor-musica-manual"
-                value={musicaAtual?.id || ''}
-                disabled={carregandoMusicasMomento}
-                onChange={(e) => selecionarMusicaManualmente(e.target.value)}
-                className="w-full bg-primaria-900/90 border border-white/15 rounded-xl px-3 py-2 text-xs font-semibold text-white focus:border-macaonico-cianoSigma outline-none cursor-pointer disabled:opacity-50"
-              >
-                {musicasDoMomento.length === 0 ? (
-                  <option value="">(Nenhuma música cadastrada para este momento)</option>
-                ) : (
-                  <>
-                    <option value="">-- Selecione uma música específica da playlist --</option>
-                    {musicasDoMomento.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.titulo} {m.autor_artista ? `• ${m.autor_artista}` : ''} ({m.tipo_midia === 'ARQUIVO_LOCAL' ? 'MP3 Local' : m.tipo_midia})
-                      </option>
-                    ))}
-                  </>
-                )}
-              </select>
-            </div>
-
-            {/* Reprodutor Compacto Oficial do Spotify (quando Spotify é selecionado) */}
-            {musicaAtual?.tipo_midia === 'SPOTIFY' && spotifyEmbedUrl && (
-              <div className="w-full max-w-lg mb-6 rounded-2xl overflow-hidden border border-white/15 shadow-xl bg-black/60 p-2">
-                <iframe
-                  title={musicaAtual.titulo}
-                  src={spotifyEmbedUrl}
-                  width="100%"
-                  height="80"
-                  frameBorder="0"
-                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                  loading="lazy"
-                  className="rounded-xl"
-                />
-                <div className="flex items-center justify-between px-3 pt-2 text-[11px] text-slate-400">
-                  <span className="flex items-center gap-1 text-green-400 font-semibold">
-                    <Radio className="w-3 h-3" /> Spotify Web Player
-                  </span>
-                  <a
-                    href={musicaAtual.link_externo}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-slate-300 hover:text-green-400 transition-colors flex items-center gap-1"
-                  >
-                    Abrir no Spotify App <ExternalLink className="w-3 h-3" />
-                  </a>
+                <div className="flex items-center gap-2 mt-2 font-mono text-[11px] font-bold text-[#00E5FF] tracking-wider">
+                  <span>{musicasDoMomento.length} {musicasDoMomento.length === 1 ? 'TRACK' : 'TRACKS'}</span>
+                  <span className="text-cyan-500/60">//</span>
+                  <span>{tempoTotalMomentoFormatado}</span>
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Título, Artista e Badge do Formato de Áudio */}
-            <div className="mb-4">
-              {musicaAtual ? (
-                <>
-                  <div className="flex items-center justify-center gap-2 mb-1 flex-wrap">
-                    <p className="text-xl lg:text-2xl font-bold text-macaonico-cianoSigma">
-                      {musicaAtual.titulo}
-                    </p>
-
-                    {musicaAtual.tipo_midia === 'YOUTUBE' && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-red-500/15 text-red-300 border border-red-500/30">
-                        <Youtube className="w-3 h-3 text-red-400" /> Áudio YouTube
-                      </span>
-                    )}
-
-                    {musicaAtual.tipo_midia === 'ARQUIVO_LOCAL' && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                        <Disc className="w-3 h-3 text-emerald-400" /> MP3 Local
-                      </span>
-                    )}
-
-                    {musicaAtual.tipo_midia === 'SPOTIFY' && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-green-500/15 text-green-300 border border-green-500/30">
-                        <Radio className="w-3 h-3 text-green-400" /> Spotify Áudio
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-sm text-slate-300">
-                    {musicaAtual.autor_artista || 'Compositor Tradicional Maçônico'}
-                  </p>
-                </>
-              ) : (
-                <div className="flex flex-col items-center gap-2">
-                  <p className="text-lg text-slate-400 italic">
-                    (Silêncio Programado / Nenhuma música selecionada para este momento)
+            {/* TRACKLIST: LISTA DE FAIXAS LITÚRGICAS DISPONÍVEIS */}
+            <div className="flex flex-col gap-1.5 max-h-52 overflow-y-auto pr-1">
+              {musicasDoMomento.length === 0 ? (
+                <div className="py-5 px-3 rounded-2xl bg-white/[0.03] border border-white/5 text-center flex flex-col items-center gap-2">
+                  <p className="text-xs font-mono text-slate-400 italic">
+                    [ SILÊNCIO PROGRAMADO / NENHUMA FAIXA CATALOGADA ]
                   </p>
                   <button
                     onClick={() => setModalUploadAberto(true)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-macaonico-cianoSigma/15 hover:bg-macaonico-cianoSigma/25 text-macaonico-cianoSigma border border-macaonico-cianoSigma/30 text-xs font-bold transition-all cursor-pointer mt-2"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-[#00E5FF] border border-cyan-500/30 text-[11px] font-mono font-bold transition-all cursor-pointer"
                   >
-                    <PlusCircle className="w-4 h-4" />
-                    <span>Catalogar Música para {momentoAtual.evento_nome}</span>
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>+ CATALOGAR FAIXA</span>
                   </button>
                 </div>
+              ) : (
+                musicasDoMomento.map((musica, index) => {
+                  const estaAtiva = musicaAtual?.id === musica.id;
+                  const numeroFaixa = String(index + 1).padStart(2, '0');
+
+                  return (
+                    <div
+                      key={musica.id}
+                      onClick={() => selecionarMusicaManualmente(musica.id)}
+                      className={`p-2.5 sm:p-3 rounded-2xl cursor-pointer transition-all flex items-center justify-between border ${
+                        estaAtiva
+                          ? 'bg-cyan-500/15 border-cyan-500/50 shadow-[0_0_15px_rgba(0,229,255,0.1)] text-[#00E5FF]'
+                          : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.06] text-slate-300'
+                      }`}
+                    >
+                      <div className="flex flex-col min-w-0 pr-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs font-mono font-black ${estaAtiva ? 'text-[#00E5FF]' : 'text-slate-400'}`}>
+                            {numeroFaixa} // {musica.titulo.toUpperCase()}
+                          </span>
+                        </div>
+
+                        <span className="text-[11px] font-mono text-slate-400 truncate mt-0.5">
+                          {musica.autor_artista || 'Compositor Tradicional'}
+                        </span>
+                      </div>
+
+                      <div className="shrink-0 flex items-center gap-2">
+                        {estaAtiva ? (
+                          /* Equalizador Visual Animado na Faixa Ativa */
+                          <div className="flex items-end gap-0.5 h-4 px-2 py-0.5 rounded-lg bg-cyan-500/20 border border-cyan-500/30">
+                            {[0.6, 1, 0.4, 0.9].map((alt, i) => (
+                              <span
+                                key={i}
+                                className={`w-1 rounded-full bg-[#00E5FF] ${tocando ? 'animate-pulse' : 'h-1.5'}`}
+                                style={{
+                                  height: tocando ? `${alt * 100}%` : '40%',
+                                  animationDuration: `${0.3 + (i % 3) * 0.2}s`
+                                }}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[11px] font-mono text-slate-500">
+                            {formatarTempo(musica.duracao_segundos || 180)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
 
-            {/* Equalizador Visual do Templo (Animação Suave durante a Execução) */}
-            {tocando && (
-              <div className="flex items-end justify-center gap-1.5 h-6 mb-4">
-                {[0.6, 1, 0.4, 0.8, 0.5, 0.9, 0.3, 0.7, 1, 0.5, 0.8, 0.4].map((h, i) => (
-                  <span
-                    key={i}
-                    className="w-1 bg-gradient-to-t from-macaonico-cianoSigma to-macaonico-dourado rounded-full animate-pulse"
-                    style={{
-                      height: `${h * 100}%`,
-                      animationDuration: `${0.4 + (i % 4) * 0.2}s`,
-                    }}
-                  />
-                ))}
-              </div>
-            )}
+          </div>
+        )}
 
-            {/* BARRA DE ANDAMENTO E PROGRESSO DA MÚSICA (Nativo MP3 + YouTube) */}
-            {musicaAtual && (musicaAtual.tipo_midia === 'ARQUIVO_LOCAL' || musicaAtual.tipo_midia === 'YOUTUBE') && (
-              <div className="w-full max-w-xl mb-6">
-                <div
-                  role="progressbar"
-                  aria-valuenow={tempoAtual}
-                  aria-valuemin={0}
-                  aria-valuemax={duracaoTotal}
-                  className="relative w-full h-2.5 bg-white/10 hover:bg-white/15 rounded-full overflow-hidden mb-2 cursor-pointer transition-colors group"
-                  onClick={manipularCliqueProgresso}
-                  title="Clique para avançar ou retroceder a música"
-                >
-                  <div
-                    className="h-full bg-gradient-to-r from-macaonico-cianoSigma via-cyan-400 to-macaonico-dourado transition-all duration-100 rounded-full"
-                    style={{ width: `${duracaoTotal > 0 ? Math.min(100, (tempoAtual / duracaoTotal) * 100) : 0}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between text-xs text-slate-400 font-mono px-1">
-                  <span className="text-macaonico-cianoSigma font-semibold">{formatarTempo(tempoAtual)}</span>
-                  <span>{duracaoTotal > 0 ? formatarTempo(duracaoTotal) : '--:--'}</span>
-                </div>
-              </div>
-            )}
+        {/* 3. RADIAL DIAL PLAYER (DISCO CENTRAL COM ANEL DE PROGRESSO NEON) */}
+        <div className="flex flex-col items-center justify-center py-4 relative">
+          
+          {/* Luz difusa de fundo */}
+          <div className="absolute w-44 h-44 bg-[#00E5FF]/10 rounded-full blur-3xl pointer-events-none" />
 
-            {/* Controles Principais do Mestre de Harmonia */}
-            <div className="flex items-center justify-center gap-4 sm:gap-6 flex-wrap mb-8">
+          <div className="relative w-56 h-56 flex items-center justify-center">
+            
+            {/* SVG Circular Radial Progress Ring */}
+            <svg
+              className="w-full h-full -rotate-90 cursor-pointer drop-shadow-[0_0_12px_rgba(0,229,255,0.4)]"
+              viewBox="0 0 200 200"
+              onClick={manipularCliqueRadial}
+            >
+              {/* Trilho base escuro */}
+              <circle
+                cx="100"
+                cy="100"
+                r={raioCirculo}
+                className="stroke-slate-800/80"
+                strokeWidth="6"
+                fill="transparent"
+              />
+
+              {/* Arco de Progresso Ativo em Neon Cyan */}
+              <circle
+                cx="100"
+                cy="100"
+                r={raioCirculo}
+                className="stroke-[#00E5FF] transition-all duration-150"
+                strokeWidth="6"
+                strokeDasharray={circunferencia}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+                fill="transparent"
+              />
+            </svg>
+
+            {/* Botão Central de Play / Pause (Disco Cyber) */}
+            <button
+              onClick={alternarPlayPause}
+              disabled={!musicaAtual}
+              className={`absolute w-28 h-28 rounded-full flex items-center justify-center transition-all cursor-pointer disabled:opacity-40 border ${
+                tocando
+                  ? 'bg-gradient-to-b from-[#08182b] to-[#040e1c] border-[#00E5FF] shadow-[0_0_30px_rgba(0,229,255,0.5)] text-[#00E5FF]'
+                  : 'bg-gradient-to-b from-[#091523] to-[#030914] border-cyan-500/40 hover:border-[#00E5FF] shadow-[0_0_20px_rgba(0,229,255,0.2)] text-white hover:text-[#00E5FF]'
+              }`}
+              title={tocando ? "Pausar Execução" : "Iniciar Reprodução"}
+            >
+              {/* Efeito de anel interno */}
+              <div className="absolute inset-2 rounded-full border border-cyan-500/20" />
               
-              {/* Voltar Momento */}
-              <button
-                onClick={voltarAnterior}
-                disabled={indiceAtual === 0}
-                className="p-3.5 rounded-2xl bg-white/5 hover:bg-white/15 text-white disabled:opacity-30 transition-all cursor-pointer border border-white/10"
-                title="Momento Anterior (Pausado)"
-              >
-                <SkipBack className="w-5 h-5" />
-              </button>
+              {tocando ? (
+                <Pause className="w-10 h-10 fill-current drop-shadow-[0_0_8px_#00E5FF]" />
+              ) : (
+                <Play className="w-10 h-10 fill-current ml-1 drop-shadow-[0_0_8px_#00E5FF]" />
+              )}
+            </button>
+          </div>
 
-              {/* Botão Play / Pause */}
-              <button
-                onClick={alternarPlayPause}
-                disabled={!musicaAtual}
-                className={`w-16 h-16 rounded-3xl flex items-center justify-center shadow-xl transition-all cursor-pointer disabled:opacity-40 ${
-                  tocando
-                    ? 'bg-macaonico-cianoSigma text-black shadow-cyan-500/30 hover:scale-105'
-                    : 'bg-white hover:bg-slate-200 text-black shadow-white/20 hover:scale-105'
-                }`}
-              >
-                {tocando ? <Pause className="w-7 h-7 fill-current" /> : <Play className="w-7 h-7 fill-current ml-1" />}
-              </button>
-
-              {/* Avançar / Fade Out */}
-              <button
-                onClick={aplicarFadeOutEAvançar}
-                disabled={!dadosSessao || indiceAtual >= dadosSessao.esteira_ritualistica.length - 1}
-                className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold px-5 py-3.5 rounded-2xl shadow-lg shadow-amber-500/20 transition-all cursor-pointer disabled:opacity-30"
-                title="Suavizar áudio e avançar para o próximo momento litúrgico (em pausa)"
-              >
-                <span>{fadeAtivo ? 'Suavizando...' : 'Próximo Momento'}</span>
-                <ChevronRight className="w-5 h-5" />
-              </button>
-
-              {/* Botão Re-sortear Música */}
-              <button
-                onClick={resortearMusicaAtual}
-                disabled={momentoAtual.total_musicas_disponiveis <= 1}
-                className="flex items-center gap-2 p-3.5 rounded-2xl bg-white/5 hover:bg-white/15 text-white border border-white/10 disabled:opacity-30 transition-all cursor-pointer"
-                title="Sortear outra música aleatória desta playlist (inicia pausada)"
-              >
-                <Shuffle className="w-5 h-5 text-macaonico-cianoSigma" />
-                <span className="text-xs font-semibold hidden sm:inline">Sortear Outra</span>
-              </button>
-
-              {/* Botão Catalogar Nova Música */}
-              <button
-                onClick={() => setModalUploadAberto(true)}
-                className="flex items-center gap-2 p-3.5 rounded-2xl bg-white/5 hover:bg-white/15 text-white border border-white/10 transition-all cursor-pointer"
-                title="Fazer Upload ou Vincular Streaming neste momento"
-              >
-                <UploadCloud className="w-5 h-5 text-macaonico-cianoSigma" />
-                <span className="text-xs font-semibold hidden sm:inline">+ Adicionar Música</span>
-              </button>
+          {/* Leitura de Tempo & Status Maçônico */}
+          <div className="flex flex-col items-center gap-1 mt-1 font-mono text-center">
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-[#00E5FF] font-bold tracking-widest">{formatarTempo(tempoAtual)}</span>
+              <span className="text-slate-600">//</span>
+              <span className="text-slate-400">{formatarTempo(duracaoTotal)}</span>
             </div>
 
-            {/* Controle de Volume (para áudios locais) */}
-            {musicaAtual?.tipo_midia === 'ARQUIVO_LOCAL' && (
-              <div className="flex items-center gap-3 w-full max-w-xs bg-primaria-800/80 border border-white/10 rounded-2xl px-4 py-2">
-                <button
-                  onClick={() => setMudo(!mudo)}
-                  className="text-slate-400 hover:text-white"
-                >
-                  {mudo || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-macaonico-cianoSigma" />}
-                </button>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={mudo ? 0 : volume}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    setVolume(val);
-                    setMudo(false);
-                    if (audioRef.current) audioRef.current.volume = val;
-                  }}
-                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-macaonico-cianoSigma"
-                />
-                <span className="text-xs font-mono text-slate-400 w-8">
-                  {Math.round((mudo ? 0 : volume) * 100)}%
-                </span>
-              </div>
-            )}
-
+            <span className={`text-[10px] font-bold tracking-widest uppercase px-2.5 py-0.5 rounded-full border ${
+              tocando
+                ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 animate-pulse'
+                : 'text-amber-300 bg-amber-500/10 border-amber-500/30'
+            }`}>
+              {tocando ? '● EXECUTANDO EM TEMPLO' : '○ EM PAUSA // AGUARDANDO COMANDO'}
+            </span>
           </div>
         </div>
-      )}
 
-      {/* Modal de Upload de Música aberto diretamente no Momento Atual */}
+        {/* 4. DOCK DE CONTROLES DO MESTRE & ESTEIRA RITUALÍSTICA */}
+        <div className="rounded-3xl bg-[#070e1b] border border-cyan-500/20 p-4 shadow-xl flex flex-col gap-3">
+          
+          {/* Botões de Ação Ritualística */}
+          <div className="flex items-center justify-between gap-2">
+            
+            {/* Voltar Momento */}
+            <button
+              onClick={voltarAnterior}
+              disabled={indiceAtual === 0}
+              className="p-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white disabled:opacity-30 border border-white/5 transition-all cursor-pointer font-mono text-xs flex items-center gap-1.5"
+              title="Momento Anterior"
+            >
+              <SkipBack className="w-4 h-4 text-cyan-400" />
+              <span className="hidden sm:inline">ANTERIOR</span>
+            </button>
+
+            {/* Suavizar e Avançar (Fade Out) */}
+            <button
+              onClick={aplicarFadeOutEAvançar}
+              disabled={!dadosSessao || indiceAtual >= dadosSessao.esteira_ritualistica.length - 1}
+              className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500/90 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-mono font-black text-xs transition-all shadow-[0_0_20px_rgba(245,158,11,0.25)] cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-30"
+              title="Fade out e avanço para o próximo momento litúrgico"
+            >
+              <span>{fadeAtivo ? 'FADE OUT...' : 'PRÓXIMO MOMENTO'}</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+
+            {/* Sortear Outra Faixa */}
+            <button
+              onClick={resortearMusicaAtual}
+              disabled={(momentoAtual?.total_musicas_disponiveis ?? 0) <= 1}
+              className="p-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white disabled:opacity-30 border border-white/5 transition-all cursor-pointer font-mono text-xs flex items-center gap-1.5"
+              title="Sortear outra faixa aleatória"
+            >
+              <Shuffle className="w-4 h-4 text-[#00E5FF]" />
+              <span className="hidden sm:inline">SORTEAR</span>
+            </button>
+
+            {/* Adicionar Faixa */}
+            <button
+              onClick={() => setModalUploadAberto(true)}
+              className="p-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] text-[#00E5FF] border border-cyan-500/20 transition-all cursor-pointer font-mono text-xs flex items-center gap-1.5"
+              title="Upload / Converter YouTube 320k"
+            >
+              <UploadCloud className="w-4 h-4" />
+              <span className="hidden sm:inline">+ ADD</span>
+            </button>
+          </div>
+
+          {/* Esteira de Navegação por Momentos (Tags Horizontais) */}
+          {dadosSessao && (
+            <div className="flex gap-2 overflow-x-auto pb-1 pt-1 scrollbar-none">
+              {dadosSessao.esteira_ritualistica.map((m, idx) => {
+                const ativo = idx === indiceAtual;
+                const concluido = idx < indiceAtual;
+                return (
+                  <button
+                    key={`${m.evento_id}-${idx}`}
+                    onClick={() => {
+                      setIndiceAtual(idx);
+                      setTocando(false);
+                    }}
+                    className={`shrink-0 px-3 py-1.5 rounded-xl font-mono text-[10px] font-bold border transition-all ${
+                      ativo
+                        ? 'bg-[#00E5FF] text-black border-[#00E5FF] shadow-[0_0_12px_rgba(0,229,255,0.4)]'
+                        : concluido
+                        ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
+                        : 'bg-white/[0.03] text-slate-400 border-white/5 hover:bg-white/[0.08]'
+                    }`}
+                  >
+                    {String(idx + 1).padStart(2, '0')} // {m.evento_nome.split(' ')[0].toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Controle de Volume */}
+          <div className="flex items-center justify-between gap-3 pt-2 border-t border-white/5">
+            <button
+              onClick={() => setMudo(!mudo)}
+              className="text-slate-400 hover:text-[#00E5FF] transition-colors"
+            >
+              {mudo || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-[#00E5FF]" />}
+            </button>
+
+            <div className="relative flex-1 flex items-center">
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={mudo ? 0 : volume}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  setVolume(val);
+                  setMudo(false);
+                  if (audioRef.current) audioRef.current.volume = val;
+                }}
+                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#00E5FF]"
+              />
+            </div>
+
+            <span className="text-[10px] font-mono text-slate-400 w-9 text-right">
+              {Math.round((mudo ? 0 : volume) * 100)}%
+            </span>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* Modal de Upload / Conversor YouTube para MP3 320k */}
       {modalUploadAberto && momentoAtual && (
         <ModalUploadMusica
           eventoIdPreSelecionado={momentoAtual.evento_id}
