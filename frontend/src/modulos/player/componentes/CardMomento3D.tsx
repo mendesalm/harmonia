@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { PlusCircle, Sparkles } from 'lucide-react';
+import { PlusCircle, Sparkles, Disc3 } from 'lucide-react';
 import { MomentoExecucao, Musica } from '../../../compartilhado/tipos';
 
 interface Props {
@@ -34,6 +34,7 @@ export const CardMomento3D: React.FC<Props> = ({
   const [estaArrastandoV, setEstaArrastandoV] = useState(false);
   const startYRef = useRef(0);
   const currentDragYRef = useRef(0);
+  const ultimoWheelRef = useRef(0);
 
   // Duração total estimada da playlist
   const tempoTotalFormatado = React.useMemo(() => {
@@ -71,6 +72,26 @@ export const CardMomento3D: React.FC<Props> = ({
     if (passos !== 0) {
       const novoIndice = Math.max(0, Math.min(musicas.length - 1, indiceMusicaAtiva + passos));
       if (musicas[novoIndice] && musicas[novoIndice].id !== musicaSelecionadaId) {
+        onSelecionarMusica(musicas[novoIndice].id);
+      }
+    }
+  };
+
+  // Suporte a Mouse Wheel Scroll Vertical para navegar nas músicas na versão Web
+  const handleWheel = (e: React.WheelEvent) => {
+    if (!isAtivo || musicas.length <= 1) return;
+
+    const agora = Date.now();
+    // Cooldown para garantir transições suaves e deliberadas de faixa
+    if (agora - ultimoWheelRef.current < 160) {
+      return;
+    }
+
+    if (Math.abs(e.deltaY) > 15) {
+      ultimoWheelRef.current = agora;
+      const direcao = e.deltaY > 0 ? 1 : -1;
+      const novoIndice = Math.max(0, Math.min(musicas.length - 1, indiceMusicaAtiva + direcao));
+      if (novoIndice !== indiceMusicaAtiva && musicas[novoIndice]) {
         onSelecionarMusica(musicas[novoIndice].id);
       }
     }
@@ -135,16 +156,18 @@ export const CardMomento3D: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 2. CARROSSEL VERTICAL 3D DE MÚSICAS (DRAGGABLE APENAS SE ATIVO) */}
+      {/* 2. CARROSSEL VERTICAL 3D DE MÚSICAS (DRAGGABLE & SCROLL COM RODA DO MOUSE) */}
       <div
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
+        onWheel={handleWheel}
         className={`relative flex-1 my-2 overflow-hidden flex flex-col items-center justify-center rounded-2xl border border-white/5 ${
           isAtivo ? 'cursor-grab active:cursor-grabbing touch-none preserve-3d perspective-1000' : 'pointer-events-none'
         }`}
         style={{ backgroundColor: '#050b16' }}
+        title={isAtivo ? "Role a roda do mouse ou arraste verticalmente para navegar nas músicas" : undefined}
       >
         {musicas.length === 0 ? (
           <div className="py-4 px-3 rounded-2xl bg-white/[0.02] text-center flex flex-col items-center gap-2 w-full">
@@ -247,11 +270,11 @@ export const CardMomento3D: React.FC<Props> = ({
         )}
       </div>
 
-      {/* 3. RODAPÉ DO CARD */}
+      {/* 3. RODAPÉ DO CARD: DICA DE NAVEGAÇÃO WEB / TOUCH */}
       <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-slate-500">
-        <span className="flex items-center gap-1 text-cyan-400/80">
-          <Sparkles className="w-3 h-3" />
-          <span>{isAtivo ? 'Arraste verticalmente para navegar' : 'Clique para selecionar'}</span>
+        <span className="flex items-center gap-1.5 text-cyan-400/90 truncate">
+          <Disc3 className={`w-3.5 h-3.5 text-[#00E5FF] ${tocando ? 'animate-spin' : ''}`} />
+          <span className="truncate">{isAtivo ? 'Mouse Scroll / Arraste para faixas' : 'Clique para selecionar'}</span>
         </span>
         {isAtivo && (
           <button
@@ -259,7 +282,7 @@ export const CardMomento3D: React.FC<Props> = ({
               e.stopPropagation();
               onAbrirUpload();
             }}
-            className="text-cyan-400 hover:underline font-bold pointer-events-auto"
+            className="text-cyan-400 hover:underline font-bold pointer-events-auto shrink-0 ml-2"
           >
             + Faixa
           </button>

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MoveHorizontal } from 'lucide-react';
 import { MomentoExecucao, Musica } from '../../../compartilhado/tipos';
 import { CardMomento3D } from './CardMomento3D';
 
@@ -29,10 +29,12 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
   const startXRef = useRef(0);
   const currentDragXRef = useRef(0);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const ultimoWheelHRef = useRef(0);
 
-  // Handlers do Arraste Horizontal 3D (Pointer Events)
+  // Handlers do Clique & Arraste Horizontal 3D (Desktop Web & Mobile Touch)
   const handlePointerDown = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest('button')) return;
+    // Não inicia arraste se o clique foi em um botão ou link
+    if ((e.target as HTMLElement).closest('button, a')) return;
 
     setEstaArrastandoH(true);
     startXRef.current = e.clientX;
@@ -55,9 +57,29 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
     const deltaX = currentDragXRef.current;
     setOffsetXDrag(0);
 
-    const passos = Math.round(-deltaX / 80);
+    // Sensibilidade de transição: ~70px de arraste do mouse muda 1 momento
+    const passos = Math.round(-deltaX / 70);
     if (passos !== 0) {
       const novoIndice = Math.max(0, Math.min(momentos.length - 1, indiceAtual + passos));
+      if (novoIndice !== indiceAtual) {
+        onMudarMomento(novoIndice);
+      }
+    }
+  };
+
+  // Suporte a Mouse Wheel Horizontal / Shift+Wheel para momentos no Desktop
+  const handleWheelStage = (e: React.WheelEvent) => {
+    // Se o evento veio de dentro da lista de faixas do card, o card já cuidou
+    if ((e.target as HTMLElement).closest('.preserve-3d.perspective-1000')) return;
+
+    const deltaH = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : (e.shiftKey ? e.deltaY : 0);
+    if (Math.abs(deltaH) > 20) {
+      const agora = Date.now();
+      if (agora - ultimoWheelHRef.current < 200) return;
+      ultimoWheelHRef.current = agora;
+
+      const direcao = deltaH > 0 ? 1 : -1;
+      const novoIndice = Math.max(0, Math.min(momentos.length - 1, indiceAtual + direcao));
       if (novoIndice !== indiceAtual) {
         onMudarMomento(novoIndice);
       }
@@ -74,7 +96,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
 
   const deltaDragItems = offsetXDrag / 220;
 
-  // Prepara e ordena os cards para que os secundários fiquem atrás no DOM e o ativo fique SEMPRE por último (no topo absoluto)
+  // Prepara e ordena os cards para que os secundários fiquem atrás no DOM e o ativo fique SEMPRE no topo absoluto
   const listaCardsProcessada = momentos
     .map((momento, idx) => {
       const distancia = idx - indiceAtual;
@@ -83,11 +105,13 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
     })
     .filter((item) => Math.abs(item.deltaCont) <= 2.5);
 
-  // Ordena por distância absoluta decrescente: o mais distante renderiza primeiro, o mais próximo (ativo) por último
   listaCardsProcessada.sort((a, b) => Math.abs(b.deltaCont) - Math.abs(a.deltaCont));
 
   return (
-    <div className="relative w-full flex flex-col items-center select-none my-1">
+    <div 
+      className="relative w-full flex flex-col items-center select-none my-1"
+      onWheel={handleWheelStage}
+    >
       
       {/* Botões Laterais Sutis de Navegação 3D */}
       <button
@@ -108,14 +132,17 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
         <ChevronRight className="w-5 h-5" />
       </button>
 
-      {/* PALCO 3D COM PERSPECTIVA ESPACIAL */}
+      {/* PALCO 3D COM PERSPECTIVA ESPACIAL & SUPORTE A CLICK-AND-DRAG */}
       <div
         ref={containerRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className="relative w-full h-[430px] sm:h-[450px] flex items-center justify-center preserve-3d perspective-1200 cursor-grab active:cursor-grabbing overflow-visible touch-none"
+        className={`relative w-full h-[430px] sm:h-[450px] flex items-center justify-center preserve-3d perspective-1200 overflow-visible touch-none ${
+          estaArrastandoH ? 'cursor-grabbing' : 'cursor-grab'
+        }`}
+        title="Clique e arraste horizontalmente para girar os momentos"
       >
         {listaCardsProcessada.map(({ momento, idx, deltaCont }) => {
           const isAtivo = Math.abs(deltaCont) < 0.4;
