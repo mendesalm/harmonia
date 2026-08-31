@@ -252,21 +252,12 @@ export const CardMomento3D: React.FC<Props> = ({
                     </span>
                   </div>
 
-                  {/* Indicador Lateral: Equalizador Animado */}
+                  {/* Indicador Lateral: Tempo */}
                   <div className="shrink-0 flex items-center gap-1 ml-2">
-                    {estaSelecionada && isAtivo ? (
-                      <div className="flex items-end gap-[3px] h-4 px-2 py-1 rounded bg-cyan-500/20 border border-cyan-500/40">
-                        {[0.6, 1, 0.4, 0.9].map((h, i) => (
-                          <span
-                            key={i}
-                            className={`w-0.5 rounded-full bg-[#00E5FF] ${tocando ? 'animate-pulse' : 'h-1'}`}
-                            style={{
-                              height: tocando ? `${h * 100}%` : '30%',
-                              animationDuration: `${0.3 + (i % 3) * 0.15}s`,
-                            }}
-                          />
-                        ))}
-                      </div>
+                    {estaSelecionada && isAtivo && tocando ? (
+                      <span className="text-[11px] font-mono font-bold text-cyan-400">
+                        {formatarTempo(musica.duracao_segundos || 180)}
+                      </span>
                     ) : (
                       <span className="text-[11px] font-mono text-slate-500">
                         {formatarTempo(musica.duracao_segundos || 180)}
