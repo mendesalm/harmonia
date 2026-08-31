@@ -90,11 +90,15 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     }
 
     try {
-      setCarregandoSessao(true);
-      const resp = await clienteHttp.get<SessaoPlayerExecucao>(`/player/sessao/${sessaoSelecionadaId}`);
+      if (!dadosSessao) setCarregandoSessao(true);
+      const ts = new Date().getTime();
+      const resp = await clienteHttp.get<SessaoPlayerExecucao>(`/player/sessao/${sessaoSelecionadaId}?t=${ts}`);
       setDadosSessao(resp.data);
-      setIndiceAtual(0);
-      setTocando(false);
+      // Não reseta o indice e nem o tocando se já havia uma sessão carregada
+      if (!dadosSessao) {
+        setIndiceAtual(0);
+        setTocando(false);
+      }
     } catch (err) {
       console.error('Erro ao carregar esteira do player:', err);
     } finally {
