@@ -146,16 +146,21 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     buscarMusicasMomento();
   }, [momentoAtual?.evento_id, lojaAtiva]);
 
-  // Função para fixar uma música (selo de preferência)
   const alternarPreferencia = async (eventoId: string, musicaId: string, preferidaAtual: boolean) => {
     try {
       const novoStatus = !preferidaAtual;
-      await clienteHttp.patch(`/player/momento/${eventoId}/musica/${musicaId}/preferencia`, null, {
+      console.log(`Enviando PATCH para /player/momento/${eventoId}/musica/${musicaId}/preferencia?preferida=${novoStatus}`);
+      const r = await clienteHttp.patch(`/player/momento/${eventoId}/musica/${musicaId}/preferencia`, null, {
         params: { preferida: novoStatus }
       });
+      console.log('Resposta PATCH:', r.data);
+      if (r.data.linhas_afetadas === 0) {
+        alert("Erro fatal: Nenhuma linha atualizada no banco!");
+      }
       // Recarrega a esteira para refletir a nova configuração
       carregarEsteira();
-    } catch (err) {
+    } catch (err: any) {
+      alert(`Erro na API PATCH: ${err.message || 'Erro desconhecido'}`);
       console.error('Erro ao alternar preferência:', err);
     }
   };

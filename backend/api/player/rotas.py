@@ -74,6 +74,7 @@ async def alternar_preferencia_musica(
         .where(MusicaEvento.evento_id == evento_id, MusicaEvento.musica_id == musica_id)
         .values(preferida=preferida)
     )
-    await db.execute(stmt)
+    res = await db.execute(stmt)
+    linhas_afetadas = res.rowcount
     await db.commit()
-    return {"status": "ok", "preferida": preferida}
+    return {"status": "ok", "preferida": preferida, "linhas_afetadas": linhas_afetadas}
