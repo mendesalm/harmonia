@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Music, PlusCircle, Disc, Youtube, Sparkles } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { PlusCircle, Sparkles } from 'lucide-react';
 import { MomentoExecucao, Musica } from '../../../compartilhado/tipos';
 
 interface Props {
@@ -67,7 +67,6 @@ export const CardMomento3D: React.FC<Props> = ({
     const deltaY = currentDragYRef.current;
     setOffsetYDrag(0);
 
-    // Cada item tem cerca de 56px de altura
     const passos = Math.round(-deltaY / 54);
     if (passos !== 0) {
       const novoIndice = Math.max(0, Math.min(musicas.length - 1, indiceMusicaAtiva + passos));
@@ -86,21 +85,17 @@ export const CardMomento3D: React.FC<Props> = ({
 
   return (
     <div
-      className={`w-[320px] sm:w-[360px] md:w-[380px] h-[400px] sm:h-[420px] rounded-[30px] p-3.5 flex flex-col justify-between transition-all duration-300 select-none ${
+      className={`w-[320px] sm:w-[360px] md:w-[380px] h-[400px] sm:h-[420px] rounded-[30px] p-3.5 flex flex-col justify-between select-none transition-all duration-200 ${
         isAtivo
-          ? 'bg-[#060e1d]/95 border-2 border-[#00E5FF] shadow-[0_0_35px_rgba(0,229,255,0.25)]'
-          : 'bg-[#050b16]/85 border border-cyan-500/20 hover:border-cyan-500/40 opacity-70 hover:opacity-90'
+          ? 'bg-[#060e1d] border-2 border-[#00E5FF] shadow-[0_15px_50px_rgba(0,0,0,0.95),0_0_35px_rgba(0,229,255,0.3)]'
+          : 'bg-[#040914] border border-cyan-500/20 opacity-60 hover:opacity-85 shadow-2xl'
       }`}
-      style={{
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-      }}
     >
       {/* 1. HERO BANNER DO MOMENTO LITÚRGICO */}
-      <div className="relative w-full h-32 sm:h-34 rounded-2xl overflow-hidden p-3.5 flex flex-col justify-end border border-cyan-500/20 shadow-inner shrink-0">
+      <div className="relative w-full h-32 sm:h-34 rounded-2xl overflow-hidden p-3.5 flex flex-col justify-end border border-cyan-500/20 shadow-inner shrink-0 bg-[#021424]">
         
         {/* Fundo com Textura Fluídica / Cyber Waves */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#02182b] via-[#04324f] to-[#011424] opacity-95" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#02182b] via-[#04324f] to-[#011424] opacity-100" />
         
         <svg className="absolute inset-0 w-full h-full opacity-40 mix-blend-screen pointer-events-none" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -140,10 +135,10 @@ export const CardMomento3D: React.FC<Props> = ({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className="relative flex-1 my-2 overflow-hidden flex flex-col items-center justify-center cursor-grab active:cursor-grabbing preserve-3d perspective-1000 touch-none"
+        className="relative flex-1 my-2 overflow-hidden flex flex-col items-center justify-center cursor-grab active:cursor-grabbing preserve-3d perspective-1000 touch-none bg-[#050b16] rounded-2xl border border-white/5"
       >
         {musicas.length === 0 ? (
-          <div className="py-4 px-3 rounded-2xl bg-white/[0.03] border border-white/5 text-center flex flex-col items-center gap-2 w-full">
+          <div className="py-4 px-3 rounded-2xl bg-white/[0.02] text-center flex flex-col items-center gap-2 w-full">
             <p className="text-[11px] font-mono text-slate-400 italic">
               [ SILÊNCIO PROGRAMADO ]
             </p>
@@ -164,19 +159,16 @@ export const CardMomento3D: React.FC<Props> = ({
               const estaSelecionada = idx === indiceMusicaAtiva;
               const distancia = idx - indiceMusicaAtiva;
               
-              // Ajuste contínuo durante o arraste
               const dragOffsetItems = offsetYDrag / 54;
               const deltaCont = distancia - dragOffsetItems;
 
-              // Visibilidade em 3D: renderiza até 2 faixas acima e abaixo
               const visivel = Math.abs(deltaCont) <= 2.5;
               if (!visivel) return null;
 
-              // Transformações 3D no cilindro vertical
-              const anguloRotacaoX = deltaCont * 26; // inclinação vertical 3D
-              const translateY = deltaCont * 54;     // espaçamento vertical
-              const translateZ = 30 - Math.min(Math.abs(deltaCont) * 25, 60); // profundidade
-              const opacidade = Math.max(0.15, 1 - Math.abs(deltaCont) * 0.35);
+              const anguloRotacaoX = deltaCont * 26;
+              const translateY = deltaCont * 54;
+              const translateZ = 30 - Math.min(Math.abs(deltaCont) * 25, 60);
+              const opacidade = Math.max(0.2, 1 - Math.abs(deltaCont) * 0.35);
               const escala = Math.max(0.78, 1 - Math.abs(deltaCont) * 0.1);
 
               return (
@@ -188,10 +180,10 @@ export const CardMomento3D: React.FC<Props> = ({
                       onSelecionarMusica(musica.id);
                     }
                   }}
-                  className={`absolute w-full px-3 py-2.5 rounded-2xl transition-transform ease-out border flex items-center justify-between pointer-events-auto ${
+                  className={`absolute w-[95%] px-3 py-2.5 rounded-2xl transition-transform ease-out border flex items-center justify-between pointer-events-auto ${
                     estaSelecionada && Math.abs(offsetYDrag) < 15
-                      ? 'bg-cyan-500/15 border-cyan-500/60 shadow-[0_0_15px_rgba(0,229,255,0.2)] text-[#00E5FF] z-20'
-                      : 'bg-[#081527]/70 border-white/5 hover:border-cyan-500/30 text-slate-300 z-10'
+                      ? 'bg-[#0b1c33] border-cyan-500/80 shadow-[0_0_20px_rgba(0,229,255,0.25)] text-[#00E5FF] z-20'
+                      : 'bg-[#071322] border-white/5 hover:border-cyan-500/30 text-slate-300 z-10'
                   }`}
                   style={{
                     transform: `translateY(${translateY}px) translateZ(${translateZ}px) rotateX(${-anguloRotacaoX}deg) scale(${escala})`,

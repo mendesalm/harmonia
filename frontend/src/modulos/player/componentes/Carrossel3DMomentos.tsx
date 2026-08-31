@@ -32,7 +32,6 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
 
   // Handlers do Arraste Horizontal 3D (Pointer Events)
   const handlePointerDown = (e: React.PointerEvent) => {
-    // Não inicia arraste se o alvo for botão ou controle interno
     if ((e.target as HTMLElement).closest('button')) return;
 
     setEstaArrastandoH(true);
@@ -56,7 +55,6 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
     const deltaX = currentDragXRef.current;
     setOffsetXDrag(0);
 
-    // Sensibilidade de transição: ~80px de arraste muda 1 card
     const passos = Math.round(-deltaX / 80);
     if (passos !== 0) {
       const novoIndice = Math.max(0, Math.min(momentos.length - 1, indiceAtual + passos));
@@ -74,7 +72,6 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
     );
   }
 
-  // Deslocamento contínuo durante o arraste
   const deltaDragItems = offsetXDrag / 220;
 
   return (
@@ -85,7 +82,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
         onClick={() => indiceAtual > 0 && onMudarMomento(indiceAtual - 1)}
         disabled={indiceAtual === 0}
         aria-label="Momento anterior"
-        className="absolute left-1 sm:left-4 top-1/2 -translate-y-1/2 z-30 p-2.5 rounded-full bg-[#050e1c]/80 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/30 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg"
+        className="absolute left-1 sm:left-4 top-1/2 -translate-y-1/2 z-30 p-2.5 rounded-full bg-[#040a17]/90 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/40 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg"
       >
         <ChevronLeft className="w-5 h-5" />
       </button>
@@ -94,7 +91,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
         onClick={() => indiceAtual < momentos.length - 1 && onMudarMomento(indiceAtual + 1)}
         disabled={indiceAtual >= momentos.length - 1}
         aria-label="Próximo momento"
-        className="absolute right-1 sm:right-4 top-1/2 -translate-y-1/2 z-30 p-2.5 rounded-full bg-[#050e1c]/80 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/30 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg"
+        className="absolute right-1 sm:right-4 top-1/2 -translate-y-1/2 z-30 p-2.5 rounded-full bg-[#040a17]/90 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/40 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg"
       >
         <ChevronRight className="w-5 h-5" />
       </button>
@@ -112,20 +109,20 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
           const distancia = idx - indiceAtual;
           const deltaCont = distancia - deltaDragItems;
 
-          // Renderiza até 2 cards para a esquerda e 2 para a direita
           const visivel = Math.abs(deltaCont) <= 2.5;
           if (!visivel) return null;
 
-          const isAtivo = idx === indiceAtual;
+          const isAtivo = Math.abs(deltaCont) < 0.4;
 
           // Geometria 3D: Curva em Semicírculo Cilíndrico
-          const anguloRad = (deltaCont * 34 * Math.PI) / 180;
-          const translateX = Math.sin(anguloRad) * 260;
-          const translateZ = (Math.cos(anguloRad) - 1) * 220;
-          const rotateY = deltaCont * 30; // inclinação angular do card
-          const escala = Math.max(0.72, 1 - Math.abs(deltaCont) * 0.12);
-          const opacidade = Math.max(0.2, 1 - Math.abs(deltaCont) * 0.38);
-          const zIndex = Math.round(100 - Math.abs(deltaCont) * 20);
+          const anguloRad = (deltaCont * 35 * Math.PI) / 180;
+          const translateX = Math.sin(anguloRad) * 270;
+          const translateZ = (Math.cos(anguloRad) - 1) * 260 - (Math.abs(deltaCont) > 0.3 ? 30 : 0);
+          const rotateY = deltaCont * 32;
+          const escala = isAtivo ? 1.0 : Math.max(0.72, 1 - Math.abs(deltaCont) * 0.14);
+          const opacidade = isAtivo ? 1.0 : Math.max(0.15, 0.45 - Math.abs(deltaCont) * 0.2);
+          const zIndex = isAtivo ? 200 : Math.round(100 - Math.abs(deltaCont) * 30);
+          const blurFilter = isAtivo ? 'none' : 'brightness(0.55) blur(1px)';
 
           return (
             <div
@@ -140,14 +137,15 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
                 transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${escala})`,
                 opacity: opacidade,
                 zIndex: zIndex,
-                transition: estaArrastandoH ? 'none' : 'transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s ease-out',
+                filter: blurFilter,
+                transition: estaArrastandoH ? 'none' : 'transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s ease-out, filter 0.35s ease-out',
               }}
             >
               <CardMomento3D
                 momento={momento}
                 indiceMomento={idx}
-                isAtivo={isAtivo}
-                musicas={isAtivo ? musicasDoMomento : (momento.musica_sorteada ? [{
+                isAtivo={idx === indiceAtual}
+                musicas={idx === indiceAtual ? musicasDoMomento : (momento.musica_sorteada ? [{
                   id: momento.musica_sorteada.id,
                   organizacao_id: '',
                   titulo: momento.musica_sorteada.titulo,
@@ -162,8 +160,8 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
                   criado_em: '',
                   atualizado_em: ''
                 }] : [])}
-                musicaSelecionadaId={isAtivo ? musicaAtualId : momento.musica_sorteada?.id}
-                tocando={isAtivo && tocando}
+                musicaSelecionadaId={idx === indiceAtual ? musicaAtualId : momento.musica_sorteada?.id}
+                tocando={idx === indiceAtual && tocando}
                 onSelecionarMusica={onSelecionarMusica}
                 onAbrirUpload={onAbrirUpload}
               />
