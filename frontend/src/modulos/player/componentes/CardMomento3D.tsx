@@ -220,6 +220,15 @@ export const CardMomento3D: React.FC<Props> = ({
                           e.stopPropagation();
                           // Optimistic update local
                           const isPref = !!(musica as any).preferida;
+                          
+                          // Regra de negócio: Apenas UMA música pode ser preferida.
+                          // Se estivermos ATIVANDO esta música, apagamos todas as outras no frontend imediatamente
+                          if (!isPref) {
+                            musicas.forEach(m => {
+                              if (m.id !== musica.id) (m as any).preferida = false;
+                            });
+                          }
+                          
                           (musica as any).preferida = !isPref;
                           // Força re-render caso o react não pegue a mutação
                           e.currentTarget.style.color = !isPref ? '#fbbf24' : '#475569';

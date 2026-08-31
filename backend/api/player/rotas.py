@@ -58,6 +58,17 @@ async def alternar_preferencia_musica(
     from sqlalchemy import update
     from backend.modelos.musica import MusicaEvento
     
+    # Se estivermos marcando uma música como preferida, 
+    # removemos a preferência de TODAS as outras daquele evento.
+    if preferida:
+        stmt_limpar = (
+            update(MusicaEvento)
+            .where(MusicaEvento.evento_id == evento_id)
+            .values(preferida=False)
+        )
+        await db.execute(stmt_limpar)
+    
+    # Atualiza especificamente a música alvo
     stmt = (
         update(MusicaEvento)
         .where(MusicaEvento.evento_id == evento_id, MusicaEvento.musica_id == musica_id)
