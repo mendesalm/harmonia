@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Play, Pause, SkipBack, Shuffle, Volume2, VolumeX,
-  Layers, ChevronRight, UploadCloud, Settings, Sparkles
+  ChevronRight, UploadCloud, Settings, Disc
 } from 'lucide-react';
 import { Sessao, SessaoPlayerExecucao, MomentoExecucao, MusicaSorteada, Musica } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
@@ -422,7 +422,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const progressoPercentual = duracaoTotal > 0 ? Math.min(100, Math.max(0, (tempoAtual / duracaoTotal) * 100)) : 0;
 
   return (
-    <div className="h-screen max-h-screen w-screen overflow-hidden bg-[#040811] text-slate-100 flex flex-col items-center justify-between p-2 sm:p-3 selection:bg-cyan-500 selection:text-black">
+    <div className="h-full w-full overflow-hidden bg-[#040811] text-slate-100 flex flex-col items-center justify-between p-2 sm:p-3 selection:bg-cyan-500 selection:text-black">
       
       {/* Elemento de Áudio HTML5 para Arquivos Locais */}
       <audio
@@ -465,11 +465,11 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         }}
       />
 
-      {/* Container Principal HUD (100vh sem overflow) */}
-      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl h-full flex flex-col justify-between py-1 gap-1">
+      {/* Container Principal HUD (100% da área disponível sem overflow) */}
+      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl h-full flex flex-col justify-between py-0.5 gap-1.5">
 
         {/* 1. BARRA SUPERIOR UNIFICADA // STATUS & CONFIGURAÇÕES */}
-        <div className="flex items-center justify-between px-2 py-1 bg-[#07111f]/90 border border-cyan-500/20 rounded-2xl shrink-0 shadow-lg backdrop-blur-md">
+        <div className="flex items-center justify-between px-3 py-1.5 bg-[#07111f]/90 border border-cyan-500/20 rounded-2xl shrink-0 shadow-lg backdrop-blur-md">
           <div className="flex items-center gap-2 truncate">
             <span className="w-2.5 h-2.5 bg-[#00E5FF] rotate-45 shadow-[0_0_8px_#00E5FF] shrink-0" />
             <div className="flex flex-col min-w-0">
@@ -504,7 +504,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
 
         {/* 2. PALCO 3D COM CARROSSEL HORIZONTAL EM SEMICÍRCULO & CARROSSEL VERTICAL DE MÚSICAS */}
         {dadosSessao && (
-          <div className="flex-1 flex items-center justify-center min-h-0 py-1">
+          <div className="flex-1 flex items-center justify-center min-h-0 py-0.5">
             <Carrossel3DMomentos
               momentos={dadosSessao.esteira_ritualistica}
               indiceAtual={indiceAtual}

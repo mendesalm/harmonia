@@ -56,7 +56,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
     const deltaX = currentDragXRef.current;
     setOffsetXDrag(0);
 
-    const passos = Math.round(-deltaX / 70);
+    const passos = Math.round(-deltaX / 60);
     if (passos !== 0) {
       const novoIndice = Math.max(0, Math.min(momentos.length - 1, indiceAtual + passos));
       if (novoIndice !== indiceAtual) {
@@ -85,13 +85,13 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
 
   if (!momentos || momentos.length === 0) {
     return (
-      <div className="w-full py-10 text-center font-mono text-slate-400 vidro-escuro rounded-2xl">
+      <div className="w-full py-8 text-center font-mono text-slate-400 vidro-escuro rounded-2xl">
         [ NENHUM MOMENTO LITÚRGICO CONFIGURADO ]
       </div>
     );
   }
 
-  const deltaDragItems = offsetXDrag / 200;
+  const deltaDragItems = offsetXDrag / 160;
 
   // Prepara e ordena os cards para que os secundários fiquem atrás no DOM e o ativo fique SEMPRE no topo absoluto
   const listaCardsProcessada = momentos
@@ -100,7 +100,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
       const deltaCont = distancia - deltaDragItems;
       return { momento, idx, distancia, deltaCont };
     })
-    .filter((item) => Math.abs(item.deltaCont) <= 2.5);
+    .filter((item) => Math.abs(item.deltaCont) <= 2.2);
 
   listaCardsProcessada.sort((a, b) => Math.abs(b.deltaCont) - Math.abs(a.deltaCont));
 
@@ -115,7 +115,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
         onClick={() => indiceAtual > 0 && onMudarMomento(indiceAtual - 1)}
         disabled={indiceAtual === 0}
         aria-label="Momento anterior"
-        className="absolute left-1 sm:left-3 top-1/2 -translate-y-1/2 z-40 p-2 rounded-full bg-[#040a17]/95 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/40 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg active:scale-95"
+        className="absolute left-0 sm:left-1 top-1/2 -translate-y-1/2 z-40 p-2 rounded-full bg-[#040a17]/95 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/40 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg active:scale-95"
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
@@ -124,19 +124,19 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
         onClick={() => indiceAtual < momentos.length - 1 && onMudarMomento(indiceAtual + 1)}
         disabled={indiceAtual >= momentos.length - 1}
         aria-label="Próximo momento"
-        className="absolute right-1 sm:right-3 top-1/2 -translate-y-1/2 z-40 p-2 rounded-full bg-[#040a17]/95 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/40 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg active:scale-95"
+        className="absolute right-0 sm:right-1 top-1/2 -translate-y-1/2 z-40 p-2 rounded-full bg-[#040a17]/95 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/40 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg active:scale-95"
       >
         <ChevronRight className="w-4 h-4" />
       </button>
 
-      {/* PALCO 3D COMPACTO COM PERSPECTIVA ESPACIAL */}
+      {/* PALCO 3D COMPACTO COM ESPAÇAMENTO HORIZONTAL ENCAIXADO */}
       <div
         ref={containerRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className={`relative w-full h-[280px] sm:h-[300px] flex items-center justify-center preserve-3d perspective-1200 overflow-visible touch-none ${
+        className={`relative w-full h-[230px] sm:h-[250px] flex items-center justify-center preserve-3d perspective-1200 overflow-visible touch-none ${
           estaArrastandoH ? 'cursor-grabbing' : 'cursor-grab'
         }`}
         title="Clique e arraste horizontalmente para girar os momentos"
@@ -144,12 +144,12 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
         {listaCardsProcessada.map(({ momento, idx, deltaCont }) => {
           const isAtivo = Math.abs(deltaCont) < 0.4;
 
-          // Geometria 3D: Curva em Semicírculo Cilíndrico com separação em Z
-          const anguloRad = (deltaCont * 30 * Math.PI) / 180;
-          const translateX = Math.sin(anguloRad) * 280;
-          const translateZ = isAtivo ? 50 : (Math.cos(anguloRad) - 1) * 220 - 70;
-          const rotateY = deltaCont * 24;
-          const escala = isAtivo ? 1.0 : Math.max(0.80, 1 - Math.abs(deltaCont) * 0.1);
+          // Geometria 3D: Redução drástica do vão horizontal com sobreposição elegante
+          const anguloRad = (deltaCont * 26 * Math.PI) / 180;
+          const translateX = Math.sin(anguloRad) * 160;
+          const translateZ = isAtivo ? 30 : (Math.cos(anguloRad) - 1) * 130 - 40;
+          const rotateY = deltaCont * 18;
+          const escala = isAtivo ? 1.0 : Math.max(0.82, 1 - Math.abs(deltaCont) * 0.1);
           const opacidade = isAtivo ? 1.0 : Math.max(0.65, 0.85 - Math.abs(deltaCont) * 0.12);
           const zIndex = isAtivo ? 300 : Math.round(100 - Math.abs(deltaCont) * 30);
           const visualFilter = isAtivo ? 'none' : 'brightness(0.8)';

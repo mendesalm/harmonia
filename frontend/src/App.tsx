@@ -15,9 +15,9 @@ export const App: React.FC = () => {
     <ProvedorAutenticacao>
       <ProvedorTenant>
         <Router>
-          <div className="min-h-screen flex flex-col bg-primaria-900 text-slate-100 selection:bg-macaonico-cianoSigma selection:text-black">
+          <div className="h-screen max-h-screen w-screen overflow-hidden flex flex-col bg-[#040811] text-slate-100 selection:bg-cyan-500 selection:text-black">
             <Navbar />
-            <main className="flex-1 pb-16">
+            <main className="flex-1 min-h-0 overflow-hidden">
               <Routes>
                 {/* Rota Pública de Login */}
                 <Route path="/login" element={<PaginaLogin />} />
@@ -35,7 +35,9 @@ export const App: React.FC = () => {
                   path="/sessoes"
                   element={
                     <RotaProtegida>
-                      <PaginaSessoes />
+                      <div className="h-full overflow-y-auto pb-16">
+                        <PaginaSessoes />
+                      </div>
                     </RotaProtegida>
                   }
                 />
@@ -43,7 +45,9 @@ export const App: React.FC = () => {
                   path="/eventos"
                   element={
                     <RotaProtegida>
-                      <PaginaEventos />
+                      <div className="h-full overflow-y-auto pb-16">
+                        <PaginaEventos />
+                      </div>
                     </RotaProtegida>
                   }
                 />
@@ -51,7 +55,9 @@ export const App: React.FC = () => {
                   path="/musicas"
                   element={
                     <RotaProtegida>
-                      <PaginaMusicas />
+                      <div className="h-full overflow-y-auto pb-16">
+                        <PaginaMusicas />
+                      </div>
                     </RotaProtegida>
                   }
                 />
@@ -60,9 +66,6 @@ export const App: React.FC = () => {
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </main>
-            <footer className="border-t border-white/5 py-4 text-center text-xs text-slate-500 font-sans">
-              Harmonia v2.0 • Gerenciador de Acervo e Player para Mestres de Harmonia • Desenvolvido em PT-BR
-            </footer>
           </div>
         </Router>
       </ProvedorTenant>
