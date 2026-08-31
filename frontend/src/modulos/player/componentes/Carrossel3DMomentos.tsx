@@ -56,7 +56,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
     const deltaX = currentDragXRef.current;
     setOffsetXDrag(0);
 
-    const passos = Math.round(-deltaX / 70);
+    const passos = Math.round(-deltaX / 80);
     if (passos !== 0) {
       const novoIndice = Math.max(0, Math.min(momentos.length - 1, indiceAtual + passos));
       if (novoIndice !== indiceAtual) {
@@ -91,7 +91,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
     );
   }
 
-  const deltaDragItems = offsetXDrag / 180;
+  const deltaDragItems = offsetXDrag / 200;
 
   // Prepara e ordena os cards para que os secundários fiquem atrás no DOM e o ativo fique SEMPRE no topo absoluto
   const listaCardsProcessada = momentos
@@ -115,7 +115,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
         onClick={() => indiceAtual > 0 && onMudarMomento(indiceAtual - 1)}
         disabled={indiceAtual === 0}
         aria-label="Momento anterior"
-        className="absolute left-0 sm:left-2 top-1/2 -translate-y-1/2 z-40 p-2 sm:p-2.5 rounded-full bg-[#040a17]/95 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/40 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg active:scale-95"
+        className="absolute left-1 sm:left-3 top-1/2 -translate-y-1/2 z-40 p-2 sm:p-2.5 rounded-full bg-[#040a17]/95 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/40 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg active:scale-95"
       >
         <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
       </button>
@@ -124,12 +124,12 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
         onClick={() => indiceAtual < momentos.length - 1 && onMudarMomento(indiceAtual + 1)}
         disabled={indiceAtual >= momentos.length - 1}
         aria-label="Próximo momento"
-        className="absolute right-0 sm:right-2 top-1/2 -translate-y-1/2 z-40 p-2 sm:p-2.5 rounded-full bg-[#040a17]/95 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/40 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg active:scale-95"
+        className="absolute right-1 sm:right-3 top-1/2 -translate-y-1/2 z-40 p-2 sm:p-2.5 rounded-full bg-[#040a17]/95 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/40 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg active:scale-95"
       >
         <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
       </button>
 
-      {/* PALCO 3D AMPLO COM PERSPECTIVA ESPACIAL */}
+      {/* PALCO 3D AMPLO COM MAIOR ESPALHAMENTO HORIZONTAL PANORÂMICO */}
       <div
         ref={containerRef}
         onPointerDown={handlePointerDown}
@@ -144,15 +144,15 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
         {listaCardsProcessada.map(({ momento, idx, deltaCont }) => {
           const isAtivo = Math.abs(deltaCont) < 0.4;
 
-          // Geometria 3D: Curva em Semicírculo Cilíndrico balanceado
-          const anguloRad = (deltaCont * 26 * Math.PI) / 180;
-          const translateX = Math.sin(anguloRad) * 190;
-          const translateZ = isAtivo ? 35 : (Math.cos(anguloRad) - 1) * 140 - 45;
-          const rotateY = deltaCont * 18;
-          const escala = isAtivo ? 1.0 : Math.max(0.82, 1 - Math.abs(deltaCont) * 0.1);
-          const opacidade = isAtivo ? 1.0 : Math.max(0.65, 0.85 - Math.abs(deltaCont) * 0.12);
+          // Geometria 3D: Curva em Semicírculo Cilíndrico com maior abertura panorâmica lateral
+          const anguloRad = (deltaCont * 34 * Math.PI) / 180;
+          const translateX = Math.sin(anguloRad) * 360;
+          const translateZ = isAtivo ? 45 : (Math.cos(anguloRad) - 1) * 180 - 55;
+          const rotateY = deltaCont * 25;
+          const escala = isAtivo ? 1.0 : Math.max(0.83, 1 - Math.abs(deltaCont) * 0.08);
+          const opacidade = isAtivo ? 1.0 : Math.max(0.70, 0.90 - Math.abs(deltaCont) * 0.1);
           const zIndex = isAtivo ? 300 : Math.round(100 - Math.abs(deltaCont) * 30);
-          const visualFilter = isAtivo ? 'none' : 'brightness(0.8)';
+          const visualFilter = isAtivo ? 'none' : 'brightness(0.82)';
 
           return (
             <div

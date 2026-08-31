@@ -465,8 +465,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         }}
       />
 
-      {/* Container Principal HUD (100% da área disponível sem overflow) */}
-      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl h-full flex flex-col justify-between py-0.5 gap-1.5">
+      {/* Container Principal Panorâmico HUD */}
+      <div className="w-full max-w-lg sm:max-w-2xl md:max-w-4xl lg:max-w-5xl h-full flex flex-col justify-between py-0.5 gap-1.5">
 
         {/* 1. BARRA SUPERIOR UNIFICADA // STATUS & CONFIGURAÇÕES */}
         <div className="flex items-center justify-between px-3 py-1.5 bg-[#07111f]/90 border border-cyan-500/20 rounded-2xl shrink-0 shadow-lg backdrop-blur-md">
@@ -502,7 +502,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           </div>
         </div>
 
-        {/* 2. PALCO 3D COM CARROSSEL HORIZONTAL EM SEMICÍRCULO & CARROSSEL VERTICAL DE MÚSICAS */}
+        {/* 2. PALCO 3D COM CARROSSEL HORIZONTAL EM SEMICÍRCULO PANORÂMICO */}
         {dadosSessao && (
           <div className="flex-1 flex items-center justify-center min-h-0 py-0.5">
             <Carrossel3DMomentos
@@ -522,7 +522,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         )}
 
         {/* 3. DOCK UNIFICADO DE CONTROLE // PLAYER HUD COMPACTO */}
-        <div className="rounded-2xl bg-[#060e1d] border border-cyan-500/30 p-2.5 sm:p-3 shadow-2xl flex flex-col gap-2 shrink-0">
+        <div className="max-w-2xl mx-auto w-full rounded-2xl bg-[#060e1d] border border-cyan-500/30 p-2.5 sm:p-3 shadow-2xl flex flex-col gap-2 shrink-0">
           
           {/* Barra de Progresso Linear de Precisão & Timestamps */}
           <div className="flex flex-col gap-1 px-1">
