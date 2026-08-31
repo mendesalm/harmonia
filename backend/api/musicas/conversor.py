@@ -66,7 +66,7 @@ async def converter_youtube_para_mp3_async(
     pasta_destino: str,
     titulo_sugerido: Optional[str] = None,
     bitrate_kbps: int = 320,
-    timeout_segundos: int = 60
+    timeout_segundos: int = 300
 ) -> Dict[str, Any]:
     """Envolve a extração em um threadpool assíncrono com limite estrito de tempo (Timeout)."""
     prefixo = sanitizar_nome_arquivo(titulo_sugerido) if titulo_sugerido else f"yt_{uuid.uuid4().hex[:8]}"
