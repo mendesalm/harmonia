@@ -62,7 +62,8 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
     const deltaX = currentDragXRef.current;
     setOffsetXDrag(0);
 
-    const passos = Math.round(-deltaX / 80);
+    // Invertido: arrastar para a direita (positivo) gera passos positivos (avança)
+    const passos = Math.round(deltaX / 80);
     if (passos !== 0) {
       const novoIndice = Math.max(0, Math.min(momentos.length - 1, indiceAtual + passos));
       if (novoIndice !== indiceAtual) {
@@ -97,7 +98,8 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
     );
   }
 
-  const deltaDragItems = offsetXDrag / 200;
+  // Invertido: movimento visual oposto para casar com o arraste
+  const deltaDragItems = -offsetXDrag / 200;
 
   // Prepara e ordena os cards para que os secundários fiquem atrás no DOM e o ativo fique SEMPRE no topo absoluto
   const listaCardsProcessada = momentos
