@@ -53,7 +53,9 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
   const handlePointerUp = (e: React.PointerEvent) => {
     if (!estaArrastandoH) return;
     setEstaArrastandoH(false);
-    (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
 
     const deltaX = currentDragXRef.current;
     setOffsetXDrag(0);
@@ -69,7 +71,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
 
   // Suporte a Mouse Wheel Horizontal / Shift+Wheel para momentos no Desktop
   const handleWheelStage = (e: React.WheelEvent) => {
-    if ((e.target as HTMLElement).closest('.preserve-3d.perspective-1000')) return;
+    if ((e.target as HTMLElement).closest('.vertical-tracks-container')) return;
 
     const deltaH = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : (e.shiftKey ? e.deltaY : 0);
     if (Math.abs(deltaH) > 20) {
@@ -156,6 +158,41 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
           const zIndex = isAtivo ? 300 : Math.round(100 - Math.abs(deltaCont) * 30);
           const visualFilter = isAtivo ? 'none' : 'brightness(0.82)';
 
+          // Lista completa de faixas candidatas daquele momento
+          const listaMusicasMomento: Musica[] = (idx === indiceAtual && musicasDoMomento.length > 0)
+            ? musicasDoMomento
+            : ((momento.candidatas && momento.candidatas.length > 0)
+                ? momento.candidatas.map(c => ({
+                    id: c.id,
+                    organizacao_id: '',
+                    titulo: c.titulo,
+                    autor_artista: c.autor_artista || undefined,
+                    tipo_midia: c.tipo_midia as 'ARQUIVO_LOCAL' | 'YOUTUBE' | 'SPOTIFY',
+                    caminho_arquivo: c.caminho_arquivo || undefined,
+                    link_externo: c.link_externo || undefined,
+                    duracao_segundos: c.duracao_segundos || undefined,
+                    metadados: {},
+                    ativo: true,
+                    eventos: [],
+                    criado_em: '',
+                    atualizado_em: ''
+                  }))
+                : (momento.musica_sorteada ? [{
+                    id: momento.musica_sorteada.id,
+                    organizacao_id: '',
+                    titulo: momento.musica_sorteada.titulo,
+                    autor_artista: momento.musica_sorteada.autor_artista || undefined,
+                    tipo_midia: momento.musica_sorteada.tipo_midia as 'ARQUIVO_LOCAL' | 'YOUTUBE' | 'SPOTIFY',
+                    caminho_arquivo: momento.musica_sorteada.caminho_arquivo || undefined,
+                    link_externo: momento.musica_sorteada.link_externo || undefined,
+                    duracao_segundos: momento.musica_sorteada.duracao_segundos || undefined,
+                    metadados: {},
+                    ativo: true,
+                    eventos: [],
+                    criado_em: '',
+                    atualizado_em: ''
+                  }] : []));
+
           return (
             <div
               key={`${momento.evento_id}-${idx}`}
@@ -177,21 +214,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
                 momento={momento}
                 indiceMomento={idx}
                 isAtivo={idx === indiceAtual}
-                musicas={idx === indiceAtual ? musicasDoMomento : (momento.musica_sorteada ? [{
-                  id: momento.musica_sorteada.id,
-                  organizacao_id: '',
-                  titulo: momento.musica_sorteada.titulo,
-                  autor_artista: momento.musica_sorteada.autor_artista || undefined,
-                  tipo_midia: momento.musica_sorteada.tipo_midia as 'ARQUIVO_LOCAL' | 'YOUTUBE' | 'SPOTIFY',
-                  caminho_arquivo: momento.musica_sorteada.caminho_arquivo || undefined,
-                  link_externo: momento.musica_sorteada.link_externo || undefined,
-                  duracao_segundos: momento.musica_sorteada.duracao_segundos || undefined,
-                  metadados: {},
-                  ativo: true,
-                  eventos: [],
-                  criado_em: '',
-                  atualizado_em: ''
-                }] : [])}
+                musicas={listaMusicasMomento}
                 musicaSelecionadaId={idx === indiceAtual ? musicaAtualId : momento.musica_sorteada?.id}
                 tocando={idx === indiceAtual && tocando}
                 onSelecionarMusica={onSelecionarMusica}

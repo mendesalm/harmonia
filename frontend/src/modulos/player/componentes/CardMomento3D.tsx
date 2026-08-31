@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { PlusCircle, Sparkles, Disc3 } from 'lucide-react';
+import { PlusCircle, Disc3 } from 'lucide-react';
 import { MomentoExecucao, Musica } from '../../../compartilhado/tipos';
 
 interface Props {
@@ -23,7 +23,7 @@ export const CardMomento3D: React.FC<Props> = ({
   onSelecionarMusica,
   onAbrirUpload,
 }) => {
-  // Índice da música ativa na lista
+  // Localiza o índice da música atualmente selecionada
   const indiceMusicaAtiva = Math.max(
     0,
     musicas.findIndex((m) => m.id === musicaSelecionadaId)
@@ -44,16 +44,16 @@ export const CardMomento3D: React.FC<Props> = ({
     return `${min < 10 ? '0' : ''}${min}:${seg < 10 ? '0' : ''}${seg}`;
   }, [musicas]);
 
-  // Handlers do Arraste Vertical (Isolado e com prioridade no card ativo)
+  // Início do Arraste Vertical (Touch no Mobile ou Mouse no Desktop)
   const handlePointerDown = (e: React.PointerEvent) => {
     if (!isAtivo) return;
     if ((e.target as HTMLElement).closest('button, a')) return;
 
-    e.stopPropagation(); // Impede o carrossel horizontal pai de roubar o gesto
+    e.stopPropagation();
     setEstaArrastandoV(true);
     startYRef.current = e.clientY;
     currentDragYRef.current = 0;
-    
+
     try {
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     } catch {}
@@ -65,10 +65,7 @@ export const CardMomento3D: React.FC<Props> = ({
 
     const deltaY = e.clientY - startYRef.current;
     currentDragYRef.current = deltaY;
-    
-    // Se só tiver 1 música, aplica efeito elástico atenuado
-    const amortecimento = musicas.length <= 1 ? 0.25 : 1.0;
-    setOffsetYDrag(deltaY * amortecimento);
+    setOffsetYDrag(deltaY);
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
@@ -84,7 +81,8 @@ export const CardMomento3D: React.FC<Props> = ({
     setOffsetYDrag(0);
 
     if (musicas.length > 1) {
-      const passos = Math.round(-deltaY / 44);
+      // Sensibilidade de arraste: ~35px muda 1 faixa
+      const passos = Math.round(-deltaY / 38);
       if (passos !== 0) {
         const novoIndice = Math.max(0, Math.min(musicas.length - 1, indiceMusicaAtiva + passos));
         if (musicas[novoIndice] && musicas[novoIndice].id !== musicaSelecionadaId) {
@@ -94,19 +92,19 @@ export const CardMomento3D: React.FC<Props> = ({
     }
   };
 
-  // Suporte a Mouse Wheel Scroll Vertical para navegar nas músicas na versão Web
+  // Suporte a Mouse Wheel Scroll Vertical (Roda do Mouse)
   const handleWheel = (e: React.WheelEvent) => {
     if (!isAtivo) return;
-    e.stopPropagation(); // Impede rolagem da tela
+    e.stopPropagation();
 
     if (musicas.length <= 1) return;
 
     const agora = Date.now();
-    if (agora - ultimoWheelRef.current < 140) {
+    if (agora - ultimoWheelRef.current < 120) {
       return;
     }
 
-    if (Math.abs(e.deltaY) > 8) {
+    if (Math.abs(e.deltaY) > 5) {
       ultimoWheelRef.current = agora;
       const direcao = e.deltaY > 0 ? 1 : -1;
       const novoIndice = Math.max(0, Math.min(musicas.length - 1, indiceMusicaAtiva + direcao));
@@ -125,7 +123,8 @@ export const CardMomento3D: React.FC<Props> = ({
 
   return (
     <div
-      className={`w-[320px] sm:w-[360px] md:w-[380px] lg:w-[400px] h-[310px] sm:h-[335px] md:h-[350px] rounded-[26px] p-3 sm:p-3.5 flex flex-col justify-between select-none overflow-hidden transition-all duration-200 ${
+      onWheel={handleWheel}
+      className={`w-[320px] sm:w-[360px] md:w-[380px] lg:w-[400px] h-[310px] sm:h-[335px] md:h-[350px] rounded-[26px] p-3 sm:p-3.5 flex flex-col justify-between select-none transition-all duration-200 ${
         isAtivo
           ? 'border-2 border-[#00E5FF] shadow-[0_20px_50px_rgba(0,0,0,1),0_0_35px_rgba(0,229,255,0.35)]'
           : 'border border-cyan-500/25 shadow-xl pointer-events-none'
@@ -137,7 +136,7 @@ export const CardMomento3D: React.FC<Props> = ({
     >
       {/* 1. HERO BANNER DO MOMENTO LITÚRGICO */}
       <div 
-        className="relative w-full h-24 sm:h-26 md:h-28 rounded-2xl overflow-hidden p-3 flex flex-col justify-end border border-cyan-500/20 shadow-inner shrink-0"
+        className="relative w-full h-22 sm:h-24 md:h-26 rounded-2xl overflow-hidden p-3 flex flex-col justify-end border border-cyan-500/20 shadow-inner shrink-0"
         style={{ backgroundColor: '#021424' }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-[#02182b] via-[#04324f] to-[#011424] opacity-100" />
@@ -165,7 +164,7 @@ export const CardMomento3D: React.FC<Props> = ({
             {momento.evento_nome}
           </h3>
 
-          <div className="flex items-center gap-2 mt-1 font-mono text-[9px] sm:text-[10px] font-bold text-[#00E5FF] tracking-wider">
+          <div className="flex items-center gap-2 mt-0.5 font-mono text-[9px] sm:text-[10px] font-bold text-[#00E5FF] tracking-wider">
             <span>{musicas.length} {musicas.length === 1 ? 'TRACK' : 'TRACKS'}</span>
             <span className="text-cyan-500/60">//</span>
             <span>{tempoTotalFormatado}</span>
@@ -173,14 +172,13 @@ export const CardMomento3D: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 2. CARROSSEL VERTICAL 3D DE MÚSICAS (TOTALMENTE DRAGGABLE & SCROLLABLE) */}
+      {/* 2. CARROSSEL VERTICAL 3D DE MÚSICAS (DRAGGABLE & SCROLLABLE COM PRESERVE-3D NATIVO) */}
       <div
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        onWheel={handleWheel}
-        className={`vertical-tracks-container relative flex-1 my-1.5 overflow-hidden flex flex-col items-center justify-center rounded-2xl border border-white/5 touch-none ${
+        className={`vertical-tracks-container relative flex-1 my-1 flex flex-col items-center justify-center rounded-2xl border border-white/5 touch-none ${
           isAtivo ? 'cursor-grab active:cursor-grabbing preserve-3d perspective-1000' : 'pointer-events-none'
         }`}
         style={{ backgroundColor: '#050b16' }}
@@ -205,22 +203,23 @@ export const CardMomento3D: React.FC<Props> = ({
             )}
           </div>
         ) : (
-          <div className="relative w-full h-[160px] sm:h-[175px] flex items-center justify-center overflow-hidden pointer-events-none">
+          <div className="relative w-full h-[160px] sm:h-[175px] flex items-center justify-center preserve-3d">
             {musicas.map((musica, idx) => {
               const estaSelecionada = idx === indiceMusicaAtiva;
               const distancia = idx - indiceMusicaAtiva;
               
-              const dragOffsetItems = isAtivo ? offsetYDrag / 48 : 0;
+              const dragOffsetItems = isAtivo ? offsetYDrag / 44 : 0;
               const deltaCont = distancia - dragOffsetItems;
 
+              // Renderiza as faixas adjacentes no cilindro vertical
               const visivel = Math.abs(deltaCont) <= 2.2;
               if (!visivel) return null;
 
-              const anguloRotacaoX = isAtivo ? deltaCont * 24 : 0;
-              const translateY = deltaCont * 48;
-              const translateZ = isAtivo ? 18 - Math.min(Math.abs(deltaCont) * 18, 45) : 0;
+              const anguloRotacaoX = isAtivo ? deltaCont * 22 : 0;
+              const translateY = deltaCont * 44;
+              const translateZ = isAtivo ? 20 - Math.min(Math.abs(deltaCont) * 20, 50) : 0;
               const opacidade = Math.max(0.3, 1 - Math.abs(deltaCont) * 0.35);
-              const escala = Math.max(0.80, 1 - Math.abs(deltaCont) * 0.08);
+              const escala = Math.max(0.82, 1 - Math.abs(deltaCont) * 0.08);
 
               return (
                 <div
@@ -228,12 +227,12 @@ export const CardMomento3D: React.FC<Props> = ({
                   onClick={(e) => {
                     if (isAtivo) {
                       e.stopPropagation();
-                      if (Math.abs(offsetYDrag) < 10 && musica.id !== musicaSelecionadaId) {
+                      if (Math.abs(offsetYDrag) < 8 && musica.id !== musicaSelecionadaId) {
                         onSelecionarMusica(musica.id);
                       }
                     }
                   }}
-                  className={`absolute w-[96%] px-3 py-2 rounded-2xl transition-transform ease-out border flex items-center justify-between pointer-events-auto cursor-pointer ${
+                  className={`absolute w-[96%] px-3 py-2 rounded-2xl transition-transform ease-out border flex items-center justify-between cursor-pointer ${
                     estaSelecionada && Math.abs(offsetYDrag) < 15
                       ? 'border-cyan-500/80 shadow-[0_0_15px_rgba(0,229,255,0.25)] text-[#00E5FF] z-20'
                       : 'border-white/5 hover:border-cyan-500/30 text-slate-300 z-10'
@@ -257,7 +256,7 @@ export const CardMomento3D: React.FC<Props> = ({
                     </span>
                   </div>
 
-                  {/* Indicador Lateral */}
+                  {/* Indicador Lateral: Equalizador Animado */}
                   <div className="shrink-0 flex items-center gap-1">
                     {estaSelecionada && isAtivo ? (
                       <div className="flex items-end gap-0.5 h-3.5 px-1.5 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/40">
