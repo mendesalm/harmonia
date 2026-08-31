@@ -74,6 +74,18 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
 
   const deltaDragItems = offsetXDrag / 220;
 
+  // Prepara e ordena os cards para que os secundários fiquem atrás no DOM e o ativo fique SEMPRE por último (no topo absoluto)
+  const listaCardsProcessada = momentos
+    .map((momento, idx) => {
+      const distancia = idx - indiceAtual;
+      const deltaCont = distancia - deltaDragItems;
+      return { momento, idx, distancia, deltaCont };
+    })
+    .filter((item) => Math.abs(item.deltaCont) <= 2.5);
+
+  // Ordena por distância absoluta decrescente: o mais distante renderiza primeiro, o mais próximo (ativo) por último
+  listaCardsProcessada.sort((a, b) => Math.abs(b.deltaCont) - Math.abs(a.deltaCont));
+
   return (
     <div className="relative w-full flex flex-col items-center select-none my-1">
       
@@ -82,7 +94,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
         onClick={() => indiceAtual > 0 && onMudarMomento(indiceAtual - 1)}
         disabled={indiceAtual === 0}
         aria-label="Momento anterior"
-        className="absolute left-1 sm:left-3 top-1/2 -translate-y-1/2 z-30 p-2.5 rounded-full bg-[#040a17]/90 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/40 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg active:scale-95"
+        className="absolute left-1 sm:left-3 top-1/2 -translate-y-1/2 z-40 p-2.5 rounded-full bg-[#040a17]/95 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/40 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg active:scale-95"
       >
         <ChevronLeft className="w-5 h-5" />
       </button>
@@ -91,7 +103,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
         onClick={() => indiceAtual < momentos.length - 1 && onMudarMomento(indiceAtual + 1)}
         disabled={indiceAtual >= momentos.length - 1}
         aria-label="Próximo momento"
-        className="absolute right-1 sm:right-3 top-1/2 -translate-y-1/2 z-30 p-2.5 rounded-full bg-[#040a17]/90 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/40 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg active:scale-95"
+        className="absolute right-1 sm:right-3 top-1/2 -translate-y-1/2 z-40 p-2.5 rounded-full bg-[#040a17]/95 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-cyan-500/40 backdrop-blur-md disabled:opacity-20 transition-all cursor-pointer shadow-lg active:scale-95"
       >
         <ChevronRight className="w-5 h-5" />
       </button>
@@ -105,23 +117,17 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
         onPointerCancel={handlePointerUp}
         className="relative w-full h-[430px] sm:h-[450px] flex items-center justify-center preserve-3d perspective-1200 cursor-grab active:cursor-grabbing overflow-visible touch-none"
       >
-        {momentos.map((momento, idx) => {
-          const distancia = idx - indiceAtual;
-          const deltaCont = distancia - deltaDragItems;
-
-          const visivel = Math.abs(deltaCont) <= 2.5;
-          if (!visivel) return null;
-
+        {listaCardsProcessada.map(({ momento, idx, deltaCont }) => {
           const isAtivo = Math.abs(deltaCont) < 0.4;
 
-          // Geometria 3D: Curva em Semicírculo Cilíndrico com maior abertura lateral
+          // Geometria 3D: Curva em Semicírculo Cilíndrico com separação em Z
           const anguloRad = (deltaCont * 32 * Math.PI) / 180;
-          const translateX = Math.sin(anguloRad) * 315;
-          const translateZ = (Math.cos(anguloRad) - 1) * 210;
+          const translateX = Math.sin(anguloRad) * 320;
+          const translateZ = isAtivo ? 60 : (Math.cos(anguloRad) - 1) * 260 - 80;
           const rotateY = deltaCont * 26;
-          const escala = isAtivo ? 1.0 : Math.max(0.82, 1 - Math.abs(deltaCont) * 0.1);
-          const opacidade = isAtivo ? 1.0 : Math.max(0.65, 0.88 - Math.abs(deltaCont) * 0.12);
-          const zIndex = isAtivo ? 200 : Math.round(100 - Math.abs(deltaCont) * 30);
+          const escala = isAtivo ? 1.0 : Math.max(0.80, 1 - Math.abs(deltaCont) * 0.1);
+          const opacidade = isAtivo ? 1.0 : Math.max(0.65, 0.85 - Math.abs(deltaCont) * 0.12);
+          const zIndex = isAtivo ? 300 : Math.round(100 - Math.abs(deltaCont) * 30);
           const visualFilter = isAtivo ? 'none' : 'brightness(0.8)';
 
           return (
