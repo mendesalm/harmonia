@@ -10,6 +10,7 @@ interface Props {
   musicaSelecionadaId?: string;
   tocando: boolean;
   onSelecionarMusica: (musicaId: string) => void;
+  onAlternarPreferencia?: (eventoId: string, musicaId: string, atual: boolean) => void;
   onAbrirUpload: () => void;
 }
 
@@ -21,6 +22,7 @@ export const CardMomento3D: React.FC<Props> = ({
   musicaSelecionadaId,
   tocando,
   onSelecionarMusica,
+  onAlternarPreferencia,
   onAbrirUpload,
 }) => {
   // Localiza o índice da música atualmente selecionada
@@ -136,7 +138,7 @@ export const CardMomento3D: React.FC<Props> = ({
     >
       {/* 1. HERO BANNER DO MOMENTO LITÚRGICO */}
       <div 
-        className="relative w-full h-22 sm:h-24 md:h-26 rounded-2xl overflow-hidden p-3 flex flex-col justify-end border border-cyan-500/20 shadow-inner shrink-0"
+        className="relative w-full h-22 sm:h-24 md:h-26 rounded-2xl overflow-hidden p-3 flex flex-col items-center justify-center border border-cyan-500/20 shadow-inner shrink-0 text-center"
         style={{ backgroundColor: '#021424' }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-[#02182b] via-[#04324f] to-[#011424] opacity-100" />
@@ -155,16 +157,12 @@ export const CardMomento3D: React.FC<Props> = ({
 
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#00E5FF] to-transparent opacity-60" />
 
-        <div className="relative z-10">
-          <span className="text-[9px] sm:text-[10px] font-mono tracking-widest text-cyan-300 font-bold uppercase block mb-0.5">
-            {String(indiceMomento + 1).padStart(2, '0')} // MOMENTO RITUALÍSTICO
-          </span>
-
-          <h3 className="text-sm sm:text-base font-black text-white font-mono uppercase tracking-wider leading-tight truncate drop-shadow-md">
+        <div className="relative z-10 flex flex-col items-center justify-center w-full">
+          <h3 className="text-sm sm:text-base font-black text-white font-mono uppercase tracking-wider leading-tight truncate drop-shadow-md w-full px-2">
             {momento.evento_nome}
           </h3>
 
-          <div className="flex items-center gap-2 mt-0.5 font-mono text-[9px] sm:text-[10px] font-bold text-[#00E5FF] tracking-wider">
+          <div className="flex items-center justify-center gap-2 mt-1 font-mono text-[9px] sm:text-[10px] font-bold text-[#00E5FF] tracking-wider">
             <span>{musicas.length} {musicas.length === 1 ? 'TRACK' : 'TRACKS'}</span>
             <span className="text-cyan-500/60">//</span>
             <span>{tempoTotalFormatado}</span>
@@ -185,22 +183,10 @@ export const CardMomento3D: React.FC<Props> = ({
         title={isAtivo ? "Arraste verticalmente ou role o mouse para escolher faixas" : undefined}
       >
         {musicas.length === 0 ? (
-          <div className="py-3 px-3 rounded-2xl bg-white/[0.02] text-center flex flex-col items-center gap-1.5 w-full">
-            <p className="text-[10px] font-mono text-slate-400 italic">
+          <div className="py-3 px-3 rounded-2xl bg-white/[0.02] text-center flex flex-col items-center justify-center h-full gap-2 w-full relative z-50">
+            <p className="text-xs font-mono text-slate-500 italic pointer-events-none">
               [ SILÊNCIO PROGRAMADO ]
             </p>
-            {isAtivo && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAbrirUpload();
-                }}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-[#00E5FF] border border-cyan-500/30 text-[9px] font-mono font-bold transition-all cursor-pointer pointer-events-auto"
-              >
-                <PlusCircle className="w-3 h-3" />
-                <span>+ CATALOGAR FAIXA</span>
-              </button>
-            )}
           </div>
         ) : (
           <div className="relative w-full h-[160px] sm:h-[175px] flex items-center justify-center preserve-3d">
@@ -244,14 +230,31 @@ export const CardMomento3D: React.FC<Props> = ({
                     transition: estaArrastandoV ? 'none' : 'transform 0.25s ease-out, opacity 0.25s ease-out',
                   }}
                 >
-                  <div className="flex flex-col min-w-0 pr-1.5">
-                    <div className="flex items-center gap-1.5 truncate">
+                  <div className="flex flex-col min-w-0 pr-1.5 flex-1">
+                    <div className="flex items-center gap-1.5 truncate w-full">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onAlternarPreferencia && momento.evento_id) {
+                            onAlternarPreferencia(momento.evento_id, musica.id, !!(musica as any).preferida);
+                          }
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        title={(musica as any).preferida ? "Remover preferência" : "Fixar como preferida"}
+                        className={`shrink-0 p-1 rounded hover:bg-white/10 transition-colors ${
+                          (musica as any).preferida ? 'text-amber-400' : 'text-slate-600 hover:text-amber-400/50'
+                        }`}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={(musica as any).preferida ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                      </button>
                       <span className={`text-xs font-mono font-bold truncate ${estaSelecionada ? 'text-[#00E5FF]' : 'text-slate-300'}`}>
                         {String(idx + 1).padStart(2, '0')} // {musica.titulo.toUpperCase()}
                       </span>
                     </div>
 
-                    <span className="text-[9px] sm:text-[10px] font-mono text-slate-400 truncate">
+                    <span className="text-[9px] sm:text-[10px] font-mono text-slate-400 truncate ml-7">
                       {musica.autor_artista || 'Compositor Tradicional'}
                     </span>
                   </div>

@@ -43,3 +43,26 @@ async def sortear_musica(
         organizacao_id=organizacao_id,
         musica_id_atual=musica_atual_id
     )
+
+@roteador_player.patch(
+    "/momento/{evento_id}/musica/{musica_id}/preferencia",
+    summary="Alternar Selo de Preferência",
+    description="Marca ou desmarca uma música como preferida para um momento litúrgico específico."
+)
+async def alternar_preferencia_musica(
+    evento_id: uuid.UUID,
+    musica_id: uuid.UUID,
+    preferida: bool = Query(..., description="True para favoritar, False para desfavoritar"),
+    db: AsyncSession = Depends(obter_banco_de_dados)
+):
+    from sqlalchemy import update
+    from backend.modelos.musica import MusicaEvento
+    
+    stmt = (
+        update(MusicaEvento)
+        .where(MusicaEvento.evento_id == evento_id, MusicaEvento.musica_id == musica_id)
+        .values(preferida=preferida)
+    )
+    await db.execute(stmt)
+    await db.commit()
+    return {"status": "ok", "preferida": preferida}

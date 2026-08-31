@@ -76,6 +76,7 @@ class MusicaEvento(Base):
         UUID(as_uuid=True), ForeignKey("eventos.id", ondelete="CASCADE"), nullable=False, index=True
     )
     observacao: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    preferida: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Relacionamentos
     musica: Mapped["Musica"] = relationship("Musica", back_populates="eventos_associados")

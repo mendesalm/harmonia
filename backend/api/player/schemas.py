@@ -16,6 +16,7 @@ class MusicaSorteadaInfo(BaseModel):
     caminho_arquivo: Optional[str]
     link_externo: Optional[str]
     duracao_segundos: Optional[int]
+    preferida: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 

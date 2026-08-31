@@ -11,6 +11,7 @@ interface Props {
   tocando: boolean;
   onMudarMomento: (novoIndice: number) => void;
   onSelecionarMusica: (musicaId: string) => void;
+  onAlternarPreferencia?: (eventoId: string, musicaId: string, atual: boolean) => void;
   onAbrirUpload: () => void;
 }
 
@@ -22,6 +23,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
   tocando,
   onMudarMomento,
   onSelecionarMusica,
+  onAlternarPreferencia,
   onAbrirUpload,
 }) => {
   const [offsetXDrag, setOffsetXDrag] = useState(0);

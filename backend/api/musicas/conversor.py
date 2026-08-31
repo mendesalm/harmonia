@@ -33,6 +33,7 @@ def _executar_download_yt_dlp(
             'preferredcodec': 'mp3',
             'preferredquality': str(bitrate_kbps),
         }],
+        'postprocessor_args': ['-nostdin'],
         'quiet': True,
         'no_warnings': True,
         'nocheckcertificate': True,

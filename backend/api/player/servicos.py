@@ -50,7 +50,7 @@ class ServicoPlayer:
 
             # Busca todas as músicas ativas associadas a este evento
             stmt_musicas = (
-                select(Musica)
+                select(Musica, MusicaEvento.preferida)
                 .join(MusicaEvento, Musica.id == MusicaEvento.musica_id)
                 .where(
                     MusicaEvento.evento_id == evento.id,
@@ -63,25 +63,30 @@ class ServicoPlayer:
                 )
             )
             res_musicas = await db.execute(stmt_musicas)
-            musicas_candidatas = res_musicas.scalars().all()
+            musicas_candidatas = res_musicas.all()
 
             lista_candidatas_info = [
                 MusicaSorteadaInfo(
-                    id=m.id,
-                    titulo=m.titulo,
-                    autor_artista=m.autor_artista,
-                    tipo_midia=m.tipo_midia,
-                    caminho_arquivo=m.caminho_arquivo,
-                    link_externo=m.link_externo,
-                    duracao_segundos=m.duracao_segundos
+                    id=row[0].id,
+                    titulo=row[0].titulo,
+                    autor_artista=row[0].autor_artista,
+                    tipo_midia=row[0].tipo_midia,
+                    caminho_arquivo=row[0].caminho_arquivo,
+                    link_externo=row[0].link_externo,
+                    duracao_segundos=row[0].duracao_segundos,
+                    preferida=row[1]
                 )
-                for m in musicas_candidatas
+                for row in musicas_candidatas
             ]
 
-            # Sorteia uma música aleatória da lista de candidatas
+            # Sorteia uma música, dando prioridade para as preferidas
             musica_escolhida = None
             if lista_candidatas_info:
-                musica_escolhida = random.choice(lista_candidatas_info)
+                preferidas = [m for m in lista_candidatas_info if m.preferida]
+                if preferidas:
+                    musica_escolhida = random.choice(preferidas)
+                else:
+                    musica_escolhida = random.choice(lista_candidatas_info)
 
             esteira.append(
                 MomentoRitualisticoExecucao(
@@ -116,7 +121,7 @@ class ServicoPlayer:
     ) -> Optional[MusicaSorteadaInfo]:
         """Sorteia uma nova música aleatória para um momento específico (ideal para o botão 'Re-sortear')."""
         stmt = (
-            select(Musica)
+            select(Musica, MusicaEvento.preferida)
             .join(MusicaEvento, Musica.id == MusicaEvento.musica_id)
             .where(
                 MusicaEvento.evento_id == evento_id,
@@ -128,21 +133,32 @@ class ServicoPlayer:
             )
         )
         res = await db.execute(stmt)
-        musicas = res.scalars().all()
+        musicas = res.all()
 
         if not musicas:
             return None
 
-        # Se houver mais de uma música, tenta sortear uma diferente da atual
-        candidatas = [m for m in musicas if m.id != musica_id_atual] if len(musicas) > 1 and musica_id_atual else musicas
-        escolhida = random.choice(candidatas)
+        lista_info = [
+            MusicaSorteadaInfo(
+                id=row[0].id,
+                titulo=row[0].titulo,
+                autor_artista=row[0].autor_artista,
+                tipo_midia=row[0].tipo_midia,
+                caminho_arquivo=row[0].caminho_arquivo,
+                link_externo=row[0].link_externo,
+                duracao_segundos=row[0].duracao_segundos,
+                preferida=row[1]
+            )
+            for row in musicas
+        ]
 
-        return MusicaSorteadaInfo(
-            id=escolhida.id,
-            titulo=escolhida.titulo,
-            autor_artista=escolhida.autor_artista,
-            tipo_midia=escolhida.tipo_midia,
-            caminho_arquivo=escolhida.caminho_arquivo,
-            link_externo=escolhida.link_externo,
-            duracao_segundos=escolhida.duracao_segundos
-        )
+        # Se houver mais de uma música, tenta sortear uma diferente da atual
+        candidatas = [m for m in lista_info if m.id != musica_id_atual] if len(lista_info) > 1 and musica_id_atual else lista_info
+        
+        preferidas = [m for m in candidatas if m.preferida]
+        if preferidas:
+            escolhida = random.choice(preferidas)
+        else:
+            escolhida = random.choice(candidatas)
+
+        return escolhida

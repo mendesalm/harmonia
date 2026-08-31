@@ -63,9 +63,17 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         const resp = await clienteHttp.get<Sessao[]>('/sessoes', {
           params: { organizacao_id: lojaAtiva.id, apenas_ativas: true }
         });
-        setSessoes(resp.data);
-        if (!sessaoSelecionadaId && resp.data.length > 0) {
-          setSessaoSelecionadaId(resp.data[0].id);
+        
+        // Filtra pelo Rito Praticado da Loja
+        const sessoesFiltradas = resp.data.filter(s => s.rito === lojaAtiva.rito_padrao);
+        setSessoes(sessoesFiltradas);
+        
+        if (!sessaoSelecionadaId && sessoesFiltradas.length > 0) {
+          // Busca a default (Ordinária de Aprendiz)
+          const sessaoDefault = sessoesFiltradas.find(s => 
+            s.nome.toLowerCase().includes('ordinária') && s.nome.toLowerCase().includes('aprendiz')
+          );
+          setSessaoSelecionadaId(sessaoDefault ? sessaoDefault.id : sessoesFiltradas[0].id);
         }
       } catch (err) {
         console.error('Erro ao carregar sessões para o player:', err);
@@ -134,6 +142,20 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     buscarMusicasMomento();
   }, [momentoAtual?.evento_id, lojaAtiva]);
 
+  // Função para fixar uma música (selo de preferência)
+  const alternarPreferencia = async (eventoId: string, musicaId: string, preferidaAtual: boolean) => {
+    try {
+      const novoStatus = !preferidaAtual;
+      await clienteHttp.patch(`/player/momento/${eventoId}/musica/${musicaId}/preferencia`, null, {
+        params: { preferida: novoStatus }
+      });
+      // Recarrega a esteira para refletir a nova configuração
+      carregarEsteira();
+    } catch (err) {
+      console.error('Erro ao alternar preferência:', err);
+    }
+  };
+
   // Função para o Mestre selecionar manualmente uma faixa pelo carrossel vertical 3D
   const selecionarMusicaManualmente = (musicaEscolhidaId: string) => {
     if (!dadosSessao || !momentoAtual) return;
@@ -198,7 +220,11 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     setTempoAtual(0);
 
     if (musicaAtual && musicaAtual.tipo_midia === 'ARQUIVO_LOCAL' && musicaAtual.caminho_arquivo) {
-      audio.src = musicaAtual.caminho_arquivo;
+      let caminho = musicaAtual.caminho_arquivo;
+      if (!caminho.startsWith('http') && !caminho.startsWith('/')) {
+        caminho = '/' + caminho; // Garante caminho absoluto na raiz do domínio (proxy)
+      }
+      audio.src = caminho;
       audio.volume = mudo ? 0 : volume;
       audio.currentTime = 0;
       audio.pause();
@@ -473,11 +499,20 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           <div className="flex items-center gap-2 truncate">
             <span className="w-2.5 h-2.5 bg-[#00E5FF] rotate-45 shadow-[0_0_8px_#00E5FF] shrink-0" />
             <div className="flex flex-col min-w-0">
-              <span className="text-xs font-black font-mono tracking-wider text-white truncate uppercase">
-                {dadosSessao?.sessao_nome || 'Harmonia 3D'}
-              </span>
-              <span className="text-[9px] font-mono text-cyan-400 truncate">
-                RITO {dadosSessao?.sessao_nome?.split('-')[1] || 'REAA'} // GRAU 1
+              <select
+                value={sessaoSelecionadaId}
+                onChange={(e) => setSessaoSelecionadaId(e.target.value)}
+                className="bg-transparent border-none outline-none text-xs sm:text-sm font-black font-mono tracking-wider text-white truncate uppercase cursor-pointer hover:text-cyan-300 appearance-none focus:ring-0"
+              >
+                <option value="" disabled className="text-black">SELECIONE UMA SESSÃO</option>
+                {sessoes.map(s => (
+                  <option key={s.id} value={s.id} className="bg-[#07111f] text-white">
+                    {s.nome}
+                  </option>
+                ))}
+              </select>
+              <span className="text-[9px] font-mono text-cyan-400 truncate mt-0.5">
+                RITO {dadosSessao?.rito || lojaAtiva?.rito_padrao || 'REAA'} // GRAU {dadosSessao?.grau || 1}
               </span>
             </div>
           </div>
@@ -504,7 +539,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
 
         {/* 2. PALCO 3D COM CARROSSEL HORIZONTAL EM SEMICÍRCULO PANORÂMICO */}
         {dadosSessao && (
-          <div className="flex-1 flex items-center justify-center min-h-0 py-0.5">
+          <div className="flex-1 flex flex-col items-center justify-center min-h-0 py-0.5">
             <Carrossel3DMomentos
               momentos={dadosSessao.esteira_ritualistica}
               indiceAtual={indiceAtual}
@@ -516,8 +551,35 @@ export const PaginaPlayerHarmonia: React.FC = () => {
                 setTocando(false);
               }}
               onSelecionarMusica={selecionarMusicaManualmente}
+              onAlternarPreferencia={alternarPreferencia}
               onAbrirUpload={() => setModalUploadAberto(true)}
             />
+
+            {/* NAVEGAÇÃO DE MINIATURAS (THUMBNAILS) PARA O MESTRE */}
+            <div className="w-full max-w-full overflow-x-auto flex items-center gap-2 px-2 py-2 snap-x hide-scrollbar mt-1 border-t border-white/5">
+              {dadosSessao.esteira_ritualistica.map((momento, idx) => (
+                <button
+                  key={momento.evento_id}
+                  onClick={() => {
+                     setIndiceAtual(idx);
+                     setTocando(false);
+                  }}
+                  className={`shrink-0 w-28 p-1.5 rounded-lg border flex flex-col items-center justify-center snap-center transition-all cursor-pointer ${
+                    idx === indiceAtual
+                      ? 'bg-[#0b1c33] border-cyan-500/80 shadow-[0_0_10px_rgba(0,229,255,0.2)]'
+                      : 'bg-white/[0.02] border-white/10 hover:border-cyan-500/30 hover:bg-white/[0.05]'
+                  }`}
+                  title={momento.evento_nome}
+                >
+                  <span className={`text-[9px] font-mono font-bold truncate w-full text-center ${idx === indiceAtual ? 'text-[#00E5FF]' : 'text-slate-400'}`}>
+                     {String(idx + 1).padStart(2, '0')} //
+                  </span>
+                  <span className={`text-[8px] font-mono truncate w-full text-center ${idx === indiceAtual ? 'text-white' : 'text-slate-500'}`}>
+                     {momento.evento_nome}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -526,12 +588,34 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           
           {/* Barra de Progresso Linear de Precisão & Timestamps */}
           <div className="flex flex-col gap-1 px-1">
+            {/* Display Dinâmico do Título Acima da Barra (Substituindo a tag Em Execução) */}
+            <div className="flex flex-col items-center justify-center w-full pb-1 h-8">
+              {!musicaAtual ? (
+                <button
+                  onClick={() => setModalUploadAberto(true)}
+                  className="px-3 py-1 bg-cyan-500/20 text-[#00E5FF] border border-cyan-500/40 rounded-lg text-[10px] font-mono font-bold hover:bg-cyan-500/30 transition-all pointer-events-auto cursor-pointer flex items-center gap-1.5 shadow-[0_0_10px_rgba(0,229,255,0.15)]"
+                >
+                  <UploadCloud className="w-3 h-3" />
+                  + CATALOGAR FAIXA PARA ESTE MOMENTO
+                </button>
+              ) : (
+                <>
+                  <span className={`text-[11px] sm:text-xs font-bold uppercase truncate max-w-full px-2 text-center ${tocando ? 'text-emerald-300 animate-pulse' : 'text-slate-300'}`}>
+                    {musicaAtual.titulo}
+                  </span>
+                  <span className="text-[9px] sm:text-[10px] text-slate-500 truncate max-w-[70%] text-center">
+                    {musicaAtual.autor_artista || 'Compositor Tradicional'}
+                  </span>
+                </>
+              )}
+            </div>
+
             <div
               role="progressbar"
               aria-valuenow={tempoAtual}
               aria-valuemin={0}
               aria-valuemax={duracaoTotal}
-              className="relative w-full h-1.5 bg-slate-800 rounded-full overflow-hidden cursor-pointer group transition-all"
+              className="relative w-full h-1.5 bg-slate-800 rounded-full overflow-hidden cursor-pointer group transition-all mt-1"
               onClick={(e) => {
                 if (duracaoTotal <= 0) return;
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -557,13 +641,6 @@ export const PaginaPlayerHarmonia: React.FC = () => {
 
             <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
               <span className="text-[#00E5FF] font-bold">{formatarTempo(tempoAtual)}</span>
-              <span className={`px-2 py-0.5 rounded-full border text-[8px] font-bold uppercase ${
-                tocando
-                  ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 animate-pulse'
-                  : 'text-amber-300 bg-amber-500/10 border-amber-500/30'
-              }`}>
-                {tocando ? '● EM EXECUÇÃO' : '○ EM PAUSA'}
-              </span>
               <span>{duracaoTotal > 0 ? formatarTempo(duracaoTotal) : '--:--'}</span>
             </div>
           </div>
@@ -582,71 +659,74 @@ export const PaginaPlayerHarmonia: React.FC = () => {
               <span className="hidden sm:inline">ANTERIOR</span>
             </button>
 
-            {/* BOTÃO CENTRAL PLAY / PAUSE 3D COMPACTO */}
-            <button
-              onClick={alternarPlayPause}
-              disabled={!musicaAtual}
-              className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer disabled:opacity-40 shrink-0 ${
-                tocando
-                  ? 'bg-gradient-to-b from-[#0e2744] via-[#061527] to-[#020710] border-2 border-[#00E5FF] shadow-[0_0_30px_rgba(0,229,255,0.7),inset_0_0_15px_rgba(0,229,255,0.4)] text-[#00E5FF]'
-                  : 'bg-gradient-to-b from-[#0b1d33] via-[#05111f] to-[#02050b] border border-cyan-500/40 hover:border-[#00E5FF] shadow-[0_10px_25px_rgba(0,0,0,0.9),0_0_15px_rgba(0,229,255,0.25)] text-white hover:text-[#00E5FF] active:scale-95'
-              }`}
-              title={tocando ? "Pausar" : "Executar"}
-            >
-              {tocando ? (
-                <Pause className="w-6 h-6 fill-current drop-shadow-[0_0_8px_#00E5FF]" />
-              ) : (
-                <Play className="w-6 h-6 fill-current ml-0.5 drop-shadow-[0_0_8px_#00E5FF]" />
-              )}
-            </button>
+            {/* AGRUPAMENTO CENTRAL: Sortear, Play/Pause, Volume */}
+            <div className="flex items-center justify-center gap-3 sm:gap-5 flex-1">
+              
+              {/* Sortear Outra Faixa */}
+              <button
+                onClick={resortearMusicaAtual}
+                disabled={(momentoAtual?.total_musicas_disponiveis ?? 0) <= 1}
+                className="p-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] text-slate-300 hover:text-white disabled:opacity-30 transition-all cursor-pointer shadow-sm active:scale-95"
+                title="Sortear outra faixa aleatória"
+              >
+                <Shuffle className="w-4 h-4 text-[#00E5FF]" />
+              </button>
 
-            {/* Suavizar e Avançar (Fade Out) */}
+              {/* BOTÃO CENTRAL PLAY / PAUSE 3D COMPACTO */}
+              <button
+                onClick={alternarPlayPause}
+                disabled={!musicaAtual}
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer disabled:opacity-40 shrink-0 ${
+                  tocando
+                    ? 'bg-gradient-to-b from-[#0e2744] via-[#061527] to-[#020710] border-2 border-[#00E5FF] shadow-[0_0_30px_rgba(0,229,255,0.7),inset_0_0_15px_rgba(0,229,255,0.4)] text-[#00E5FF]'
+                    : 'bg-gradient-to-b from-[#0b1d33] via-[#05111f] to-[#02050b] border border-cyan-500/40 hover:border-[#00E5FF] shadow-[0_10px_25px_rgba(0,0,0,0.9),0_0_15px_rgba(0,229,255,0.25)] text-white hover:text-[#00E5FF] active:scale-95'
+                }`}
+                title={tocando ? "Pausar" : "Executar"}
+              >
+                {tocando ? (
+                  <Pause className="w-6 h-6 fill-current drop-shadow-[0_0_8px_#00E5FF]" />
+                ) : (
+                  <Play className="w-6 h-6 fill-current ml-0.5 drop-shadow-[0_0_8px_#00E5FF]" />
+                )}
+              </button>
+
+              {/* Controle de Volume no Centro */}
+              <div className="flex items-center gap-1.5 shrink-0 bg-[#091526] px-2 py-1.5 rounded-xl border border-white/5">
+                <button
+                  onClick={() => setMudo(!mudo)}
+                  className="text-slate-400 hover:text-[#00E5FF] transition-colors"
+                  title={mudo ? "Desmutar" : "Mutar"}
+                >
+                  {mudo || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-[#00E5FF]" />}
+                </button>
+
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={mudo ? 0 : volume}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setVolume(val);
+                    setMudo(false);
+                    if (audioRef.current) audioRef.current.volume = val;
+                  }}
+                  className="w-12 sm:w-16 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#00E5FF]"
+                />
+              </div>
+            </div>
+
+            {/* Suavizar e Avançar (Próximo Discreto, simétrico ao Anterior) */}
             <button
               onClick={aplicarFadeOutEAvançar}
               disabled={!dadosSessao || indiceAtual >= dadosSessao.esteira_ritualistica.length - 1}
-              className="flex-1 py-2 sm:py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-mono font-black text-xs transition-all shadow-[0_0_20px_rgba(245,158,11,0.35)] cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-30 active:scale-98"
-              title="Fade out e avanço para o próximo momento litúrgico"
-            >
-              <span>{fadeAtivo ? 'FADE OUT...' : 'PRÓXIMO'}</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-
-            {/* Sortear Outra Faixa */}
-            <button
-              onClick={resortearMusicaAtual}
-              disabled={(momentoAtual?.total_musicas_disponiveis ?? 0) <= 1}
               className="p-2 sm:p-2.5 rounded-xl bg-[#091526] hover:bg-[#0f2442] text-slate-300 hover:text-white disabled:opacity-30 border border-white/5 transition-all cursor-pointer font-mono text-[11px] flex items-center gap-1 shadow-md active:scale-95 shrink-0"
-              title="Sortear outra faixa aleatória"
+              title="Próximo Momento"
             >
-              <Shuffle className="w-4 h-4 text-[#00E5FF]" />
+              <span className="hidden sm:inline">{fadeAtivo ? 'FADE OUT...' : 'PRÓXIMO'}</span>
+              <ChevronRight className="w-4 h-4 text-cyan-400" />
             </button>
-
-            {/* Controle de Volume */}
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                onClick={() => setMudo(!mudo)}
-                className="p-1.5 text-slate-400 hover:text-[#00E5FF] transition-colors"
-                title={mudo ? "Desmutar" : "Mutar"}
-              >
-                {mudo || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-[#00E5FF]" />}
-              </button>
-
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={mudo ? 0 : volume}
-                onChange={(e) => {
-                  const val = parseFloat(e.target.value);
-                  setVolume(val);
-                  setMudo(false);
-                  if (audioRef.current) audioRef.current.volume = val;
-                }}
-                className="w-14 sm:w-16 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#00E5FF]"
-              />
-            </div>
-
           </div>
 
         </div>
