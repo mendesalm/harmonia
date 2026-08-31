@@ -38,6 +38,7 @@ def _executar_download_yt_dlp(
         'no_warnings': True,
         'nocheckcertificate': True,
         'ignoreerrors': False,
+        'socket_timeout': 30,  # Adiciona timeout nativo na conexão de rede do ytdlp
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -64,14 +65,17 @@ async def converter_youtube_para_mp3_async(
     url: str,
     pasta_destino: str,
     titulo_sugerido: Optional[str] = None,
-    bitrate_kbps: int = 320
+    bitrate_kbps: int = 320,
+    timeout_segundos: int = 60
 ) -> Dict[str, Any]:
-    """Envolve a extração em um threadpool assíncrono para não bloquear o event loop do FastAPI."""
+    """Envolve a extração em um threadpool assíncrono com limite estrito de tempo (Timeout)."""
     prefixo = sanitizar_nome_arquivo(titulo_sugerido) if titulo_sugerido else f"yt_{uuid.uuid4().hex[:8]}"
     nome_arquivo_base = f"{uuid.uuid4().hex[:6]}_{prefixo}"
 
     loop = asyncio.get_running_loop()
-    resultado = await loop.run_in_executor(
+    
+    # Dispara o download em background
+    futuro = loop.run_in_executor(
         None,
         _executar_download_yt_dlp,
         url,
@@ -79,4 +83,25 @@ async def converter_youtube_para_mp3_async(
         nome_arquivo_base,
         bitrate_kbps
     )
-    return resultado
+    
+    try:
+        # Aguarda a finalização respeitando o disjuntor (timeout_segundos)
+        return await asyncio.wait_for(futuro, timeout=timeout_segundos)
+    except asyncio.TimeoutError:
+        # Cleanup: Remove possíveis arquivos corrompidos que o yt-dlp tenha deixado
+        lixos = [
+            f"{nome_arquivo_base}.mp3",
+            f"{nome_arquivo_base}.mp3.part",
+            f"{nome_arquivo_base}.webm",
+            f"{nome_arquivo_base}.webm.part",
+            f"{nome_arquivo_base}.m4a",
+            f"{nome_arquivo_base}.m4a.part"
+        ]
+        for lixo in lixos:
+            caminho = os.path.join(pasta_destino, lixo)
+            if os.path.exists(caminho):
+                try:
+                    os.remove(caminho)
+                except OSError:
+                    pass
+        raise TimeoutError(f"A conversão excedeu o limite máximo de {timeout_segundos} segundos. O servidor abortou a operação por segurança.")
