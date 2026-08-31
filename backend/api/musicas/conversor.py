@@ -38,6 +38,7 @@ def _executar_download_yt_dlp(
         'no_warnings': True,
         'nocheckcertificate': True,
         'ignoreerrors': False,
+        'noplaylist': True,  # Impede o download de playlists inteiras
         'socket_timeout': 30,  # Adiciona timeout nativo na conexão de rede do ytdlp
     }
 
