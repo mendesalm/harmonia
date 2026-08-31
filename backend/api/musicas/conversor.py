@@ -35,6 +35,7 @@ def _executar_download_yt_dlp(
         }],
         'postprocessor_args': ['-nostdin'],
         'quiet': True,
+        'noprogress': True,
         'no_warnings': True,
         'nocheckcertificate': True,
         'ignoreerrors': False,
