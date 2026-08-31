@@ -2,15 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Play, Pause, SkipBack, Shuffle, Volume2, VolumeX,
-  Sparkles, Music, Disc, ListMusic, Layers, ChevronRight, CheckCircle2,
-  PlusCircle, UploadCloud, Youtube, Clock, SlidersHorizontal, Radio, ExternalLink,
-  Bluetooth, BatteryCharging, Wifi, ChevronDown
+  Layers, ChevronRight, UploadCloud, Bluetooth, BatteryCharging, ChevronDown
 } from 'lucide-react';
 import { Sessao, SessaoPlayerExecucao, MomentoExecucao, MusicaSorteada, Musica } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
 import { ModalUploadMusica } from '../musicas/ModalUploadMusica';
 import { extrairIdYoutube, extrairEmbedSpotify } from '../../compartilhado/formatadores/midia';
+import { Carrossel3DMomentos } from './componentes/Carrossel3DMomentos';
 
 declare global {
   interface Window {
@@ -41,7 +40,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const indiceAtualRef = useRef<number>(0);
   indiceAtualRef.current = indiceAtual;
 
-  // Modal de Upload Direto do Player
+  // Modais e seletores
   const [modalUploadAberto, setModalUploadAberto] = useState(false);
   const [seletorSessaoAberto, setSeletorSessaoAberto] = useState(false);
 
@@ -55,7 +54,6 @@ export const PaginaPlayerHarmonia: React.FC = () => {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ytPlayerRef = useRef<any>(null);
-  const carrosselRef = useRef<HTMLDivElement | null>(null);
 
   // Carrega lista de sessões disponíveis
   useEffect(() => {
@@ -107,9 +105,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const musicaAtual: MusicaSorteada | null | undefined = momentoAtual?.musica_sorteada;
 
   const youtubeVideoId = musicaAtual?.tipo_midia === 'YOUTUBE' ? extrairIdYoutube(musicaAtual.link_externo) : null;
-  const spotifyEmbedUrl = musicaAtual?.tipo_midia === 'SPOTIFY' ? extrairEmbedSpotify(musicaAtual.link_externo) : null;
 
-  // Carrega lista completa de músicas da playlist do momento atual para o seletor manual
+  // Carrega lista completa de músicas da playlist do momento atual para o carrossel vertical 3D
   useEffect(() => {
     const buscarMusicasMomento = async () => {
       if (!momentoAtual || !lojaAtiva) {
@@ -137,12 +134,11 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     buscarMusicasMomento();
   }, [momentoAtual?.evento_id, lojaAtiva]);
 
-  // Função para o Mestre selecionar manualmente uma faixa
+  // Função para o Mestre selecionar manualmente uma faixa pelo carrossel vertical 3D
   const selecionarMusicaManualmente = (musicaEscolhidaId: string) => {
     if (!dadosSessao || !momentoAtual) return;
 
     if (!musicaEscolhidaId) {
-      // Opção de silêncio
       const novaEsteira = [...dadosSessao.esteira_ritualistica];
       novaEsteira[indiceAtual].musica_sorteada = null;
       setDadosSessao({ ...dadosSessao, esteira_ritualistica: novaEsteira });
@@ -167,7 +163,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     };
 
     setDadosSessao({ ...dadosSessao, esteira_ritualistica: novaEsteira });
-    setTocando(false); // Mantém em pausa aguardando o comando
+    setTocando(false); // REGRA: Mantém em pausa aguardando o comando
     setTempoAtual(0);
     setDuracaoTotal(escolhida.duracao_segundos || 0);
   };
@@ -377,7 +373,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     if (!dadosSessao) return;
     if (indiceAtual < dadosSessao.esteira_ritualistica.length - 1) {
       setIndiceAtual(indiceAtual + 1);
-      setTocando(false); // O próximo evento inicia em pausa
+      setTocando(false);
       setTempoAtual(0);
       setDuracaoTotal(0);
     }
@@ -386,7 +382,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const voltarAnterior = () => {
     if (indiceAtual > 0) {
       setIndiceAtual(indiceAtual - 1);
-      setTocando(false); // O evento anterior inicia em pausa
+      setTocando(false);
       setTempoAtual(0);
       setDuracaoTotal(0);
     }
@@ -429,7 +425,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const circunferencia = 2 * Math.PI * raioCirculo;
   const strokeDashoffset = circunferencia - (progressoPercentual * circunferencia);
 
-  // Manipulador de clique no anel circular
+  // Manipulador de clique no anel circular para Seek
   const manipularCliqueRadial = (e: React.MouseEvent<SVGSVGElement>) => {
     if (duracaoTotal <= 0) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -438,7 +434,6 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     const x = e.clientX - centerX;
     const y = e.clientY - centerY;
     
-    // Calcula ângulo a partir do topo (-90 graus)
     let angulo = Math.atan2(y, x) * (180 / Math.PI) + 90;
     if (angulo < 0) angulo += 360;
 
@@ -456,16 +451,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     }
   };
 
-  // Duração total estimada da playlist do momento
-  const tempoTotalMomentoFormatado = React.useMemo(() => {
-    const totalSeg = musicasDoMomento.reduce((acc, m) => acc + (m.duracao_segundos || 180), 0);
-    const min = Math.floor(totalSeg / 60);
-    const seg = Math.floor(totalSeg % 60);
-    return `${min < 10 ? '0' : ''}${min}:${seg < 10 ? '0' : ''}${seg}`;
-  }, [musicasDoMomento]);
-
   return (
-    <div className="min-h-screen bg-[#040811] text-slate-100 flex flex-col items-center justify-start pb-16 pt-2 px-3 selection:bg-cyan-500 selection:text-black">
+    <div className="min-h-screen bg-[#040811] text-slate-100 flex flex-col items-center justify-start pb-16 pt-2 px-2 selection:bg-cyan-500 selection:text-black overflow-x-hidden">
       
       {/* Elemento de Áudio HTML5 para Arquivos Locais */}
       <audio
@@ -490,25 +477,27 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         }}
       />
 
-      {/* Container Principal Mobile/Deck (HUD Cyber-Maçônico) */}
-      <div className="w-full max-w-md sm:max-w-lg flex flex-col gap-4">
+      {/* Container Principal Mobile/Deck (HUD 3D Cyber-Maçônico) */}
+      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl flex flex-col gap-3">
 
         {/* 1. BARRA SUPERIOR HUD // STATUS DO SISTEMA */}
         <div className="flex items-center justify-between px-2 pt-1 text-[11px] font-mono tracking-widest text-[#00E5FF]">
           <div className="flex items-center gap-2">
             <span className="inline-block w-2.5 h-2.5 bg-[#00E5FF] rotate-45 shadow-[0_0_8px_#00E5FF]" />
-            <span className="font-bold">SYS.ONLINE // HARMONIA</span>
+            <span className="font-bold">SYS.ONLINE // HARMONIA 3D</span>
           </div>
 
           <div className="flex items-center gap-3 text-slate-400">
-            <span className="text-[10px] text-slate-500 hidden sm:inline">RITO {dadosSessao?.sessao_nome?.split('-')[1] || 'REAA'}</span>
+            <span className="text-[10px] text-slate-500 hidden sm:inline">
+              RITO {dadosSessao?.sessao_nome?.split('-')[1] || 'REAA'}
+            </span>
             <Bluetooth className="w-3.5 h-3.5 text-cyan-400/80" />
             <BatteryCharging className="w-4 h-4 text-[#00E5FF]" />
           </div>
         </div>
 
         {/* Seletor Rápido de Sessão / Ritual (Menu Suspenso Compacto) */}
-        <div className="relative">
+        <div className="relative z-40">
           <button
             onClick={() => setSeletorSessaoAberto(!seletorSessaoAberto)}
             className="w-full bg-[#091424]/90 hover:bg-[#0d1d33] border border-cyan-500/20 hover:border-cyan-500/40 rounded-2xl px-4 py-2.5 flex items-center justify-between transition-all shadow-[0_0_15px_rgba(0,229,255,0.06)]"
@@ -523,7 +512,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           </button>
 
           {seletorSessaoAberto && (
-            <div className="absolute top-full left-0 right-0 mt-1.5 z-40 bg-[#07111f] border border-cyan-500/30 rounded-2xl shadow-2xl p-2 max-h-56 overflow-y-auto backdrop-blur-xl">
+            <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-[#07111f] border border-cyan-500/30 rounded-2xl shadow-2xl p-2 max-h-56 overflow-y-auto backdrop-blur-xl">
               {sessoes.map((s) => (
                 <button
                   key={s.id}
@@ -546,131 +535,29 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           )}
         </div>
 
-        {/* 2. CARD LITÚRGICO CYBER-MAÇÔNICO (HERO + TRACKLIST INTEGRADA) */}
-        {momentoAtual && (
-          <div className="rounded-[28px] bg-[#070e1b] border border-cyan-500/35 p-3 sm:p-4 shadow-[0_0_35px_rgba(0,229,255,0.14)] flex flex-col gap-3 relative overflow-hidden backdrop-blur-md">
-            
-            {/* Linha de reflexo decorativa no topo do card */}
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#00E5FF] to-transparent opacity-50" />
-
-            {/* HERO BANNER: ARTE LÍQUIDA / TEXTURA CYBER COM TÍTULO DO MOMENTO */}
-            <div className="relative w-full h-32 sm:h-36 rounded-2xl overflow-hidden p-4 flex flex-col justify-end border border-cyan-500/20 shadow-inner">
-              
-              {/* Fundo com Gradiente Líquido & Ondas de Energia */}
-              <div 
-                className="absolute inset-0 bg-gradient-to-br from-[#02182b] via-[#04324f] to-[#011424] opacity-95"
-              />
-              
-              {/* Efeito de Ondas Fluídicas / SVG Mesh */}
-              <svg className="absolute inset-0 w-full h-full opacity-40 mix-blend-screen pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="cyberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#00E5FF" stopOpacity="0.8" />
-                    <stop offset="50%" stopColor="#005b82" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#00E5FF" stopOpacity="0.9" />
-                  </linearGradient>
-                </defs>
-                <path d="M-100,50 Q100,120 300,40 T700,70 L700,200 L-100,200 Z" fill="url(#cyberGrad)" />
-                <path d="M-50,80 Q150,20 350,90 T750,40 L750,200 L-50,200 Z" fill="#00E5FF" opacity="0.15" />
-              </svg>
-
-              {/* Conteúdo Tipográfico Superior (Display Font) */}
-              <div className="relative z-10">
-                <span className="text-[10px] font-mono tracking-widest text-cyan-300/90 uppercase font-semibold mb-1 block">
-                  {String(momentoAtual.posicao).padStart(2, '0')} // MOMENTO RITUALÍSTICO
-                </span>
-
-                <h2 className="text-lg sm:text-xl font-black text-white font-mono uppercase tracking-wider leading-tight drop-shadow-md truncate">
-                  {momentoAtual.evento_nome}
-                </h2>
-
-                <div className="flex items-center gap-2 mt-2 font-mono text-[11px] font-bold text-[#00E5FF] tracking-wider">
-                  <span>{musicasDoMomento.length} {musicasDoMomento.length === 1 ? 'TRACK' : 'TRACKS'}</span>
-                  <span className="text-cyan-500/60">//</span>
-                  <span>{tempoTotalMomentoFormatado}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* TRACKLIST: LISTA DE FAIXAS LITÚRGICAS DISPONÍVEIS */}
-            <div className="flex flex-col gap-1.5 max-h-52 overflow-y-auto pr-1">
-              {musicasDoMomento.length === 0 ? (
-                <div className="py-5 px-3 rounded-2xl bg-white/[0.03] border border-white/5 text-center flex flex-col items-center gap-2">
-                  <p className="text-xs font-mono text-slate-400 italic">
-                    [ SILÊNCIO PROGRAMADO / NENHUMA FAIXA CATALOGADA ]
-                  </p>
-                  <button
-                    onClick={() => setModalUploadAberto(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-[#00E5FF] border border-cyan-500/30 text-[11px] font-mono font-bold transition-all cursor-pointer"
-                  >
-                    <PlusCircle className="w-3.5 h-3.5" />
-                    <span>+ CATALOGAR FAIXA</span>
-                  </button>
-                </div>
-              ) : (
-                musicasDoMomento.map((musica, index) => {
-                  const estaAtiva = musicaAtual?.id === musica.id;
-                  const numeroFaixa = String(index + 1).padStart(2, '0');
-
-                  return (
-                    <div
-                      key={musica.id}
-                      onClick={() => selecionarMusicaManualmente(musica.id)}
-                      className={`p-2.5 sm:p-3 rounded-2xl cursor-pointer transition-all flex items-center justify-between border ${
-                        estaAtiva
-                          ? 'bg-cyan-500/15 border-cyan-500/50 shadow-[0_0_15px_rgba(0,229,255,0.1)] text-[#00E5FF]'
-                          : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.06] text-slate-300'
-                      }`}
-                    >
-                      <div className="flex flex-col min-w-0 pr-2">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs font-mono font-black ${estaAtiva ? 'text-[#00E5FF]' : 'text-slate-400'}`}>
-                            {numeroFaixa} // {musica.titulo.toUpperCase()}
-                          </span>
-                        </div>
-
-                        <span className="text-[11px] font-mono text-slate-400 truncate mt-0.5">
-                          {musica.autor_artista || 'Compositor Tradicional'}
-                        </span>
-                      </div>
-
-                      <div className="shrink-0 flex items-center gap-2">
-                        {estaAtiva ? (
-                          /* Equalizador Visual Animado na Faixa Ativa */
-                          <div className="flex items-end gap-0.5 h-4 px-2 py-0.5 rounded-lg bg-cyan-500/20 border border-cyan-500/30">
-                            {[0.6, 1, 0.4, 0.9].map((alt, i) => (
-                              <span
-                                key={i}
-                                className={`w-1 rounded-full bg-[#00E5FF] ${tocando ? 'animate-pulse' : 'h-1.5'}`}
-                                style={{
-                                  height: tocando ? `${alt * 100}%` : '40%',
-                                  animationDuration: `${0.3 + (i % 3) * 0.2}s`
-                                }}
-                              />
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-[11px] font-mono text-slate-500">
-                            {formatarTempo(musica.duracao_segundos || 180)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-          </div>
+        {/* 2. PALCO 3D COM CARROSSEL HORIZONTAL EM SEMICÍRCULO & CARROSSEL VERTICAL DE MÚSICAS */}
+        {dadosSessao && (
+          <Carrossel3DMomentos
+            momentos={dadosSessao.esteira_ritualistica}
+            indiceAtual={indiceAtual}
+            musicasDoMomento={musicasDoMomento}
+            musicaAtualId={musicaAtual?.id}
+            tocando={tocando}
+            onMudarMomento={(novoIndice) => {
+              setIndiceAtual(novoIndice);
+              setTocando(false); // Mantém em pausa ao trocar de momento
+            }}
+            onSelecionarMusica={selecionarMusicaManualmente}
+            onAbrirUpload={() => setModalUploadAberto(true)}
+          />
         )}
 
         {/* 3. RADIAL DIAL PLAYER (DISCO CENTRAL COM ANEL DE PROGRESSO NEON) */}
-        <div className="flex flex-col items-center justify-center py-4 relative">
+        <div className="flex flex-col items-center justify-center py-2 relative">
           
-          {/* Luz difusa de fundo */}
           <div className="absolute w-44 h-44 bg-[#00E5FF]/10 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative w-56 h-56 flex items-center justify-center">
+          <div className="relative w-52 h-52 flex items-center justify-center">
             
             {/* SVG Circular Radial Progress Ring */}
             <svg
@@ -706,20 +593,19 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             <button
               onClick={alternarPlayPause}
               disabled={!musicaAtual}
-              className={`absolute w-28 h-28 rounded-full flex items-center justify-center transition-all cursor-pointer disabled:opacity-40 border ${
+              className={`absolute w-26 h-26 rounded-full flex items-center justify-center transition-all cursor-pointer disabled:opacity-40 border ${
                 tocando
                   ? 'bg-gradient-to-b from-[#08182b] to-[#040e1c] border-[#00E5FF] shadow-[0_0_30px_rgba(0,229,255,0.5)] text-[#00E5FF]'
                   : 'bg-gradient-to-b from-[#091523] to-[#030914] border-cyan-500/40 hover:border-[#00E5FF] shadow-[0_0_20px_rgba(0,229,255,0.2)] text-white hover:text-[#00E5FF]'
               }`}
               title={tocando ? "Pausar Execução" : "Iniciar Reprodução"}
             >
-              {/* Efeito de anel interno */}
               <div className="absolute inset-2 rounded-full border border-cyan-500/20" />
               
               {tocando ? (
-                <Pause className="w-10 h-10 fill-current drop-shadow-[0_0_8px_#00E5FF]" />
+                <Pause className="w-9 h-9 fill-current drop-shadow-[0_0_8px_#00E5FF]" />
               ) : (
-                <Play className="w-10 h-10 fill-current ml-1 drop-shadow-[0_0_8px_#00E5FF]" />
+                <Play className="w-9 h-9 fill-current ml-1 drop-shadow-[0_0_8px_#00E5FF]" />
               )}
             </button>
           </div>
@@ -743,7 +629,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         </div>
 
         {/* 4. DOCK DE CONTROLES DO MESTRE & ESTEIRA RITUALÍSTICA */}
-        <div className="rounded-3xl bg-[#070e1b] border border-cyan-500/20 p-4 shadow-xl flex flex-col gap-3">
+        <div className="rounded-3xl bg-[#070e1b] border border-cyan-500/20 p-3.5 shadow-xl flex flex-col gap-3">
           
           {/* Botões de Ação Ritualística */}
           <div className="flex items-center justify-between gap-2">
@@ -792,7 +678,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             </button>
           </div>
 
-          {/* Esteira de Navegação por Momentos (Tags Horizontais) */}
+          {/* Esteira de Navegação por Momentos (Pills Horizontais) */}
           {dadosSessao && (
             <div className="flex gap-2 overflow-x-auto pb-1 pt-1 scrollbar-none">
               {dadosSessao.esteira_ritualistica.map((m, idx) => {
