@@ -421,9 +421,14 @@ export const PaginaPlayerHarmonia: React.FC = () => {
 
   // Cálculo da porcentagem do anel radial de progresso (SVG circular)
   const progressoPercentual = duracaoTotal > 0 ? Math.min(1, Math.max(0, tempoAtual / duracaoTotal)) : 0;
-  const raioCirculo = 88;
+  const raioCirculo = 86;
   const circunferencia = 2 * Math.PI * raioCirculo;
   const strokeDashoffset = circunferencia - (progressoPercentual * circunferencia);
+
+  // Ponto exato da cabeça do progresso na circunferência
+  const anguloHeadRad = (progressoPercentual * 360 - 90) * (Math.PI / 180);
+  const headX = 100 + raioCirculo * Math.cos(anguloHeadRad);
+  const headY = 100 + raioCirculo * Math.sin(anguloHeadRad);
 
   // Manipulador de clique no anel circular para Seek
   const manipularCliqueRadial = (e: React.MouseEvent<SVGSVGElement>) => {
@@ -496,7 +501,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           </div>
         </div>
 
-        {/* Seletor Rápido de Sessão / Ritual (Menu Suspenso Compacto) */}
+        {/* Seletor Rápido de Sessão / Ritual */}
         <div className="relative z-40">
           <button
             onClick={() => setSeletorSessaoAberto(!seletorSessaoAberto)}
@@ -545,34 +550,70 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             tocando={tocando}
             onMudarMomento={(novoIndice) => {
               setIndiceAtual(novoIndice);
-              setTocando(false); // Mantém em pausa ao trocar de momento
+              setTocando(false);
             }}
             onSelecionarMusica={selecionarMusicaManualmente}
             onAbrirUpload={() => setModalUploadAberto(true)}
           />
         )}
 
-        {/* 3. RADIAL DIAL PLAYER (DISCO CENTRAL COM ANEL DE PROGRESSO NEON) */}
-        <div className="flex flex-col items-center justify-center py-2 relative">
+        {/* 3. RADIAL DIAL PLAYER 3D (DISCO ESCULPIDO COM ANEL HOLOGRÁFICO NEON) */}
+        <div className="flex flex-col items-center justify-center py-2 relative select-none">
           
-          <div className="absolute w-44 h-44 bg-[#00E5FF]/10 rounded-full blur-3xl pointer-events-none" />
+          {/* Brilho ambiental ciano difuso */}
+          <div className="absolute w-56 h-56 bg-[#00E5FF]/15 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative w-52 h-52 flex items-center justify-center">
+          <div className="relative w-60 h-60 flex items-center justify-center">
             
-            {/* SVG Circular Radial Progress Ring */}
+            {/* SVG Circular Radial Progress Ring com Gradientes e 3D Bevel */}
             <svg
-              className="w-full h-full -rotate-90 cursor-pointer drop-shadow-[0_0_12px_rgba(0,229,255,0.4)]"
+              className="w-full h-full -rotate-90 cursor-pointer drop-shadow-[0_0_16px_rgba(0,229,255,0.45)]"
               viewBox="0 0 200 200"
               onClick={manipularCliqueRadial}
             >
-              {/* Trilho base escuro */}
+              <defs>
+                {/* Gradiente do Trilho 3D de fundo */}
+                <linearGradient id="trilhoGrad3D" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#0a192e" />
+                  <stop offset="50%" stopColor="#030812" />
+                  <stop offset="100%" stopColor="#0e233d" />
+                </linearGradient>
+
+                {/* Gradiente do Arco Ativo em Neon Cyan */}
+                <linearGradient id="neonArcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#00E5FF" />
+                  <stop offset="80%" stopColor="#00c8ff" />
+                  <stop offset="100%" stopColor="#70f3ff" />
+                </linearGradient>
+
+                {/* Filtro de Brilho Holográfico */}
+                <filter id="cyanGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              {/* Trilho 3D Externo com sulco chanfrado */}
               <circle
                 cx="100"
                 cy="100"
                 r={raioCirculo}
-                className="stroke-slate-800/80"
-                strokeWidth="6"
-                fill="transparent"
+                stroke="url(#trilhoGrad3D)"
+                strokeWidth="10"
+                fill="none"
+              />
+
+              {/* Guia interna fina */}
+              <circle
+                cx="100"
+                cy="100"
+                r={raioCirculo}
+                stroke="rgba(0, 229, 255, 0.15)"
+                strokeWidth="1"
+                fill="none"
               />
 
               {/* Arco de Progresso Ativo em Neon Cyan */}
@@ -580,33 +621,57 @@ export const PaginaPlayerHarmonia: React.FC = () => {
                 cx="100"
                 cy="100"
                 r={raioCirculo}
-                className="stroke-[#00E5FF] transition-all duration-150"
-                strokeWidth="6"
+                stroke="url(#neonArcGrad)"
+                strokeWidth="8"
                 strokeDasharray={circunferencia}
                 strokeDashoffset={strokeDashoffset}
                 strokeLinecap="round"
-                fill="transparent"
+                fill="none"
+                filter="url(#cyanGlow)"
+                className="transition-all duration-150"
               />
+
+              {/* Knob indicador iluminado na cabeça do progresso */}
+              {duracaoTotal > 0 && progressoPercentual > 0 && (
+                <circle
+                  cx={headX}
+                  cy={headY}
+                  r="5"
+                  fill="#ffffff"
+                  stroke="#00E5FF"
+                  strokeWidth="2.5"
+                  filter="url(#cyanGlow)"
+                />
+              )}
             </svg>
 
-            {/* Botão Central de Play / Pause (Disco Cyber) */}
+            {/* BOTÃO CENTRAL DE PLAY / PAUSE COM GEOMETRIA 3D NEUMÓRFICA */}
             <button
               onClick={alternarPlayPause}
               disabled={!musicaAtual}
-              className={`absolute w-26 h-26 rounded-full flex items-center justify-center transition-all cursor-pointer disabled:opacity-40 border ${
+              className={`absolute w-32 h-32 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer disabled:opacity-40 group ${
                 tocando
-                  ? 'bg-gradient-to-b from-[#08182b] to-[#040e1c] border-[#00E5FF] shadow-[0_0_30px_rgba(0,229,255,0.5)] text-[#00E5FF]'
-                  : 'bg-gradient-to-b from-[#091523] to-[#030914] border-cyan-500/40 hover:border-[#00E5FF] shadow-[0_0_20px_rgba(0,229,255,0.2)] text-white hover:text-[#00E5FF]'
+                  ? 'bg-gradient-to-b from-[#0e2744] via-[#061527] to-[#020710] border-2 border-[#00E5FF] shadow-[0_0_40px_rgba(0,229,255,0.6),inset_0_0_20px_rgba(0,229,255,0.35),inset_0_2px_4px_rgba(255,255,255,0.25)] text-[#00E5FF] scale-100'
+                  : 'bg-gradient-to-b from-[#0b1d33] via-[#05111f] to-[#02050b] border border-cyan-500/40 hover:border-[#00E5FF] shadow-[0_15px_35px_rgba(0,0,0,0.9),inset_0_2px_4px_rgba(255,255,255,0.15),inset_0_-3px_6px_rgba(0,0,0,0.8),0_0_20px_rgba(0,229,255,0.2)] text-white hover:text-[#00E5FF] hover:scale-105 active:scale-95'
               }`}
               title={tocando ? "Pausar Execução" : "Iniciar Reprodução"}
             >
-              <div className="absolute inset-2 rounded-full border border-cyan-500/20" />
-              
-              {tocando ? (
-                <Pause className="w-9 h-9 fill-current drop-shadow-[0_0_8px_#00E5FF]" />
-              ) : (
-                <Play className="w-9 h-9 fill-current ml-1 drop-shadow-[0_0_8px_#00E5FF]" />
-              )}
+              {/* Anel Chanfrado 3D Interno */}
+              <div className={`absolute inset-2.5 rounded-full border transition-all ${
+                tocando ? 'border-cyan-400/40 bg-[#00E5FF]/5' : 'border-white/10 group-hover:border-cyan-400/30'
+              }`} />
+
+              {/* Anel de Micro-Ranhura Tátil */}
+              <div className="absolute inset-4 rounded-full border border-black/40 shadow-inner" />
+
+              {/* Ícone de Play / Pause com Brilho Neon */}
+              <div className="relative z-10 flex items-center justify-center">
+                {tocando ? (
+                  <Pause className="w-10 h-10 fill-current drop-shadow-[0_0_12px_#00E5FF]" />
+                ) : (
+                  <Play className="w-10 h-10 fill-current ml-1 drop-shadow-[0_0_12px_#00E5FF]" />
+                )}
+              </div>
             </button>
           </div>
 
@@ -629,7 +694,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         </div>
 
         {/* 4. DOCK DE CONTROLES DO MESTRE & ESTEIRA RITUALÍSTICA */}
-        <div className="rounded-3xl bg-[#070e1b] border border-cyan-500/20 p-3.5 shadow-xl flex flex-col gap-3">
+        <div className="rounded-3xl bg-[#060d19] border border-cyan-500/25 p-3.5 shadow-2xl flex flex-col gap-3">
           
           {/* Botões de Ação Ritualística */}
           <div className="flex items-center justify-between gap-2">
@@ -638,7 +703,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             <button
               onClick={voltarAnterior}
               disabled={indiceAtual === 0}
-              className="p-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white disabled:opacity-30 border border-white/5 transition-all cursor-pointer font-mono text-xs flex items-center gap-1.5"
+              className="p-3 rounded-2xl bg-[#091526] hover:bg-[#0f2442] text-slate-300 hover:text-white disabled:opacity-30 border border-white/5 transition-all cursor-pointer font-mono text-xs flex items-center gap-1.5 shadow-md active:scale-95"
               title="Momento Anterior"
             >
               <SkipBack className="w-4 h-4 text-cyan-400" />
@@ -649,7 +714,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             <button
               onClick={aplicarFadeOutEAvançar}
               disabled={!dadosSessao || indiceAtual >= dadosSessao.esteira_ritualistica.length - 1}
-              className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500/90 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-mono font-black text-xs transition-all shadow-[0_0_20px_rgba(245,158,11,0.25)] cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-30"
+              className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-mono font-black text-xs transition-all shadow-[0_0_25px_rgba(245,158,11,0.35)] cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-30 active:scale-98"
               title="Fade out e avanço para o próximo momento litúrgico"
             >
               <span>{fadeAtivo ? 'FADE OUT...' : 'PRÓXIMO MOMENTO'}</span>
@@ -660,7 +725,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             <button
               onClick={resortearMusicaAtual}
               disabled={(momentoAtual?.total_musicas_disponiveis ?? 0) <= 1}
-              className="p-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white disabled:opacity-30 border border-white/5 transition-all cursor-pointer font-mono text-xs flex items-center gap-1.5"
+              className="p-3 rounded-2xl bg-[#091526] hover:bg-[#0f2442] text-slate-300 hover:text-white disabled:opacity-30 border border-white/5 transition-all cursor-pointer font-mono text-xs flex items-center gap-1.5 shadow-md active:scale-95"
               title="Sortear outra faixa aleatória"
             >
               <Shuffle className="w-4 h-4 text-[#00E5FF]" />
@@ -670,7 +735,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             {/* Adicionar Faixa */}
             <button
               onClick={() => setModalUploadAberto(true)}
-              className="p-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] text-[#00E5FF] border border-cyan-500/20 transition-all cursor-pointer font-mono text-xs flex items-center gap-1.5"
+              className="p-3 rounded-2xl bg-[#091526] hover:bg-[#0f2442] text-[#00E5FF] border border-cyan-500/20 transition-all cursor-pointer font-mono text-xs flex items-center gap-1.5 shadow-md active:scale-95"
               title="Upload / Converter YouTube 320k"
             >
               <UploadCloud className="w-4 h-4" />
@@ -706,7 +771,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             </div>
           )}
 
-          {/* Controle de Volume */}
+          {/* Controle de Volume com Trilho Neon */}
           <div className="flex items-center justify-between gap-3 pt-2 border-t border-white/5">
             <button
               onClick={() => setMudo(!mudo)}
