@@ -33,12 +33,14 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
 
   // Handlers do Clique & Arraste Horizontal 3D (Desktop Web & Mobile Touch)
   const handlePointerDown = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest('button, a')) return;
+    if ((e.target as HTMLElement).closest('button, a, .vertical-tracks-container')) return;
 
     setEstaArrastandoH(true);
     startXRef.current = e.clientX;
     currentDragXRef.current = 0;
-    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {

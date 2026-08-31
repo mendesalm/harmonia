@@ -44,49 +44,69 @@ export const CardMomento3D: React.FC<Props> = ({
     return `${min < 10 ? '0' : ''}${min}:${seg < 10 ? '0' : ''}${seg}`;
   }, [musicas]);
 
-  // Handlers do Arraste Vertical (apenas se o card estiver ativo)
+  // Handlers do Arraste Vertical (Isolado e com prioridade no card ativo)
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (!isAtivo || musicas.length <= 1) return;
+    if (!isAtivo) return;
+    if ((e.target as HTMLElement).closest('button, a')) return;
+
+    e.stopPropagation(); // Impede o carrossel horizontal pai de roubar o gesto
     setEstaArrastandoV(true);
     startYRef.current = e.clientY;
     currentDragYRef.current = 0;
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!estaArrastandoV) return;
+    e.stopPropagation();
+
     const deltaY = e.clientY - startYRef.current;
     currentDragYRef.current = deltaY;
-    setOffsetYDrag(deltaY);
+    
+    // Se só tiver 1 música, aplica efeito elástico atenuado
+    const amortecimento = musicas.length <= 1 ? 0.25 : 1.0;
+    setOffsetYDrag(deltaY * amortecimento);
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
     if (!estaArrastandoV) return;
+    e.stopPropagation();
     setEstaArrastandoV(false);
-    (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
 
     const deltaY = currentDragYRef.current;
     setOffsetYDrag(0);
 
-    const passos = Math.round(-deltaY / 50);
-    if (passos !== 0) {
-      const novoIndice = Math.max(0, Math.min(musicas.length - 1, indiceMusicaAtiva + passos));
-      if (musicas[novoIndice] && musicas[novoIndice].id !== musicaSelecionadaId) {
-        onSelecionarMusica(musicas[novoIndice].id);
+    if (musicas.length > 1) {
+      const passos = Math.round(-deltaY / 44);
+      if (passos !== 0) {
+        const novoIndice = Math.max(0, Math.min(musicas.length - 1, indiceMusicaAtiva + passos));
+        if (musicas[novoIndice] && musicas[novoIndice].id !== musicaSelecionadaId) {
+          onSelecionarMusica(musicas[novoIndice].id);
+        }
       }
     }
   };
 
   // Suporte a Mouse Wheel Scroll Vertical para navegar nas músicas na versão Web
   const handleWheel = (e: React.WheelEvent) => {
-    if (!isAtivo || musicas.length <= 1) return;
+    if (!isAtivo) return;
+    e.stopPropagation(); // Impede rolagem da tela
+
+    if (musicas.length <= 1) return;
 
     const agora = Date.now();
-    if (agora - ultimoWheelRef.current < 160) {
+    if (agora - ultimoWheelRef.current < 140) {
       return;
     }
 
-    if (Math.abs(e.deltaY) > 15) {
+    if (Math.abs(e.deltaY) > 8) {
       ultimoWheelRef.current = agora;
       const direcao = e.deltaY > 0 ? 1 : -1;
       const novoIndice = Math.max(0, Math.min(musicas.length - 1, indiceMusicaAtiva + direcao));
@@ -153,18 +173,18 @@ export const CardMomento3D: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 2. CARROSSEL VERTICAL 3D DE MÚSICAS */}
+      {/* 2. CARROSSEL VERTICAL 3D DE MÚSICAS (TOTALMENTE DRAGGABLE & SCROLLABLE) */}
       <div
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         onWheel={handleWheel}
-        className={`relative flex-1 my-1.5 overflow-hidden flex flex-col items-center justify-center rounded-2xl border border-white/5 ${
-          isAtivo ? 'cursor-grab active:cursor-grabbing touch-none preserve-3d perspective-1000' : 'pointer-events-none'
+        className={`vertical-tracks-container relative flex-1 my-1.5 overflow-hidden flex flex-col items-center justify-center rounded-2xl border border-white/5 touch-none ${
+          isAtivo ? 'cursor-grab active:cursor-grabbing preserve-3d perspective-1000' : 'pointer-events-none'
         }`}
         style={{ backgroundColor: '#050b16' }}
-        title={isAtivo ? "Role a roda do mouse ou arraste verticalmente para navegar nas músicas" : undefined}
+        title={isAtivo ? "Arraste verticalmente ou role o mouse para escolher faixas" : undefined}
       >
         {musicas.length === 0 ? (
           <div className="py-3 px-3 rounded-2xl bg-white/[0.02] text-center flex flex-col items-center gap-1.5 w-full">
@@ -185,12 +205,12 @@ export const CardMomento3D: React.FC<Props> = ({
             )}
           </div>
         ) : (
-          <div className="relative w-full h-[160px] sm:h-[175px] flex items-center justify-center overflow-hidden">
+          <div className="relative w-full h-[160px] sm:h-[175px] flex items-center justify-center overflow-hidden pointer-events-none">
             {musicas.map((musica, idx) => {
               const estaSelecionada = idx === indiceMusicaAtiva;
               const distancia = idx - indiceMusicaAtiva;
               
-              const dragOffsetItems = isAtivo ? offsetYDrag / 50 : 0;
+              const dragOffsetItems = isAtivo ? offsetYDrag / 48 : 0;
               const deltaCont = distancia - dragOffsetItems;
 
               const visivel = Math.abs(deltaCont) <= 2.2;
@@ -208,14 +228,12 @@ export const CardMomento3D: React.FC<Props> = ({
                   onClick={(e) => {
                     if (isAtivo) {
                       e.stopPropagation();
-                      if (!estaArrastandoV && musica.id !== musicaSelecionadaId) {
+                      if (Math.abs(offsetYDrag) < 10 && musica.id !== musicaSelecionadaId) {
                         onSelecionarMusica(musica.id);
                       }
                     }
                   }}
-                  className={`absolute w-[96%] px-3 py-2 rounded-2xl transition-transform ease-out border flex items-center justify-between ${
-                    isAtivo ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none'
-                  } ${
+                  className={`absolute w-[96%] px-3 py-2 rounded-2xl transition-transform ease-out border flex items-center justify-between pointer-events-auto cursor-pointer ${
                     estaSelecionada && Math.abs(offsetYDrag) < 15
                       ? 'border-cyan-500/80 shadow-[0_0_15px_rgba(0,229,255,0.25)] text-[#00E5FF] z-20'
                       : 'border-white/5 hover:border-cyan-500/30 text-slate-300 z-10'
@@ -240,7 +258,7 @@ export const CardMomento3D: React.FC<Props> = ({
                   </div>
 
                   {/* Indicador Lateral */}
-                  <div className="shrink-0 flex items-center gap-1.5">
+                  <div className="shrink-0 flex items-center gap-1">
                     {estaSelecionada && isAtivo ? (
                       <div className="flex items-end gap-0.5 h-3.5 px-1.5 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/40">
                         {[0.6, 1, 0.4, 0.9].map((h, i) => (
