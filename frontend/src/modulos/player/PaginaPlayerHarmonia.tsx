@@ -135,19 +135,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             apenas_ativas: true
           }
         });
-        
-        // Mescla a flag 'preferida' das candidatas do momento atual (vindas da sessão)
-        // para dentro dos objetos completos retornados por /musicas
-        const candidatas = momentoAtual.candidatas || [];
-        const musicasComPreferencia = resp.data.map((musica: any) => {
-          const candidata = candidatas.find(c => c.id === musica.id);
-          return {
-            ...musica,
-            preferida: candidata ? !!candidata.preferida : false
-          };
-        });
-        
-        setMusicasDoMomento(musicasComPreferencia);
+        setMusicasDoMomento(resp.data);
       } catch (err) {
         console.error('Erro ao buscar músicas do momento litúrgico:', err);
       } finally {
@@ -157,6 +145,18 @@ export const PaginaPlayerHarmonia: React.FC = () => {
 
     buscarMusicasMomento();
   }, [momentoAtual?.evento_id, lojaAtiva]);
+
+  // Mescla reativamente as preferências em tempo real sem precisar refazer o fetch da API
+  const musicasDoMomentoComPreferencia = React.useMemo(() => {
+    const candidatas = momentoAtual?.candidatas || [];
+    return musicasDoMomento.map((musica: any) => {
+      const candidata = candidatas.find(c => c.id === musica.id);
+      return {
+        ...musica,
+        preferida: candidata ? !!candidata.preferida : false
+      };
+    });
+  }, [musicasDoMomento, momentoAtual?.candidatas]);
 
   const alternarPreferencia = async (eventoId: string, musicaId: string, preferidaAtual: boolean) => {
     try {
@@ -564,7 +564,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             <Carrossel3DMomentos
               momentos={dadosSessao.esteira_ritualistica}
               indiceAtual={indiceAtual}
-              musicasDoMomento={musicasDoMomento}
+              musicasDoMomento={musicasDoMomentoComPreferencia}
               musicaAtualId={musicaAtual?.id}
               tocando={tocando}
               onMudarMomento={(novoIndice) => {
