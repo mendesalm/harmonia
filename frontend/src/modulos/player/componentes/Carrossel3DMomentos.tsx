@@ -220,6 +220,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
                 musicaSelecionadaId={idx === indiceAtual ? musicaAtualId : momento.musica_sorteada?.id}
                 tocando={idx === indiceAtual && tocando}
                 onSelecionarMusica={onSelecionarMusica}
+                onAlternarPreferencia={onAlternarPreferencia}
                 onAbrirUpload={onAbrirUpload}
               />
             </div>
