@@ -219,17 +219,9 @@ export const CardMomento3D: React.FC<Props> = ({
                         onClick={(e) => {
                           e.stopPropagation();
                           const isPref = !!(musica as any).preferida;
-                          console.log(`[FRONTEND] Clique na estrela. Musica ID: ${musica.id}. Estado atual (isPref): ${isPref}`);
-                          
-                          if (isPref) {
-                            console.log(`[FRONTEND] Música já preferida, bloqueando clique (retornando).`);
-                            return;
-                          }
-                          
-                          console.log(`[FRONTEND] onAlternarPreferencia existe? ${!!onAlternarPreferencia}. evento_id existe? ${!!momento.evento_id} (Valor: ${momento.evento_id})`);
+                          if (isPref) return;
                           
                           if (onAlternarPreferencia && momento.evento_id) {
-                            console.log(`[FRONTEND] Chamando onAlternarPreferencia(evento: ${momento.evento_id}, musica: ${musica.id}, false)`);
                             onAlternarPreferencia(momento.evento_id, musica.id, false); 
                           }
                         }}

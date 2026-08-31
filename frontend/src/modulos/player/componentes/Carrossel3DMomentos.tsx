@@ -149,19 +149,24 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
       >
         {listaCardsProcessada.map(({ momento, idx, deltaCont }) => {
           const isAtivo = Math.abs(deltaCont) < 0.4;
-          
-          if (isAtivo) {
-             console.log(`[FRONTEND] Renderizando momento ativo ${idx}. Candidatas:`, musicasDoMomento);
-          }
 
-          // Geometria 3D: Curva em Semicírculo Cilíndrico com maior abertura panorâmica lateral
           const anguloRad = (deltaCont * 34 * Math.PI) / 180;
           const translateX = Math.sin(anguloRad) * 360;
           const translateZ = isAtivo ? 45 : (Math.cos(anguloRad) - 1) * 180 - 55;
           const rotateY = deltaCont * 25;
           const escala = isAtivo ? 1.0 : Math.max(0.83, 1 - Math.abs(deltaCont) * 0.08);
-          const opacidade = isAtivo ? 1.0 : Math.max(0.70, 0.90 - Math.abs(deltaCont) * 0.1);
-          const zIndex = isAtivo ? 300 : Math.round(100 - Math.abs(deltaCont) * 30);
+          
+          // Limita a visibilidade para apenas o ativo e os dois imediatamente ao lado
+          const distanciaAbs = Math.abs(deltaCont);
+          let opacidade = 0;
+          if (isAtivo) {
+            opacidade = 1.0;
+          } else if (distanciaAbs <= 1.5) {
+            // Suaviza a opacidade até zerar na borda
+            opacidade = Math.max(0, 0.90 - distanciaAbs * 0.3);
+          }
+          
+          const zIndex = isAtivo ? 300 : Math.round(100 - distanciaAbs * 30);
           const visualFilter = isAtivo ? 'none' : 'brightness(0.82)';
 
           // Lista completa de faixas candidatas daquele momento
@@ -208,7 +213,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
                   onMudarMomento(idx);
                 }
               }}
-              className="absolute preserve-3d transition-transform ease-out pointer-events-auto cursor-pointer"
+              className={`absolute preserve-3d transition-transform ease-out cursor-pointer ${opacidade > 0 ? 'pointer-events-auto' : 'pointer-events-none hidden sm:block'}`}
               style={{
                 transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${escala})`,
                 opacity: opacidade,
