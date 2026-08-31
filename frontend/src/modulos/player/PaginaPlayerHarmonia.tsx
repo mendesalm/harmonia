@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Play, Pause, SkipBack, Shuffle, Volume2, VolumeX,
-  Layers, ChevronRight, UploadCloud, Bluetooth, BatteryCharging, ChevronDown
+  Layers, ChevronRight, UploadCloud, Settings, Sparkles
 } from 'lucide-react';
 import { Sessao, SessaoPlayerExecucao, MomentoExecucao, MusicaSorteada, Musica } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
 import { ModalUploadMusica } from '../musicas/ModalUploadMusica';
-import { extrairIdYoutube, extrairEmbedSpotify } from '../../compartilhado/formatadores/midia';
+import { ModalConfiguracoesPlayer } from './componentes/ModalConfiguracoesPlayer';
+import { extrairIdYoutube } from '../../compartilhado/formatadores/midia';
 import { Carrossel3DMomentos } from './componentes/Carrossel3DMomentos';
 
 declare global {
@@ -39,9 +40,9 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const indiceAtualRef = useRef<number>(0);
   indiceAtualRef.current = indiceAtual;
 
-  // Modais e seletores
+  // Modais
   const [modalUploadAberto, setModalUploadAberto] = useState(false);
-  const [seletorSessaoAberto, setSeletorSessaoAberto] = useState(false);
+  const [modalConfigAberto, setModalConfigAberto] = useState(false);
 
   // Estados de Reprodução de Áudio (Inicialmente SEMPRE em PAUSA)
   const [tocando, setTocando] = useState(false);
@@ -418,42 +419,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     return `${min}:${seg < 10 ? '0' : ''}${seg}`;
   };
 
-  // Cálculo da porcentagem do anel radial de progresso
-  const progressoPercentual = duracaoTotal > 0 ? Math.min(1, Math.max(0, tempoAtual / duracaoTotal)) : 0;
-  const raioCirculo = 82;
-  const circunferencia = 2 * Math.PI * raioCirculo;
-  const strokeDashoffset = circunferencia - (progressoPercentual * circunferencia);
-
-  // Ponto exato da cabeça do progresso
-  const anguloHeadRad = (progressoPercentual * 360) * (Math.PI / 180);
-  const headX = 100 + raioCirculo * Math.cos(anguloHeadRad);
-  const headY = 100 + raioCirculo * Math.sin(anguloHeadRad);
-
-  // Manipulador de clique no anel circular para Seek
-  const manipularCliqueRadial = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (duracaoTotal <= 0) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const x = e.clientX - centerX;
-    const y = e.clientY - centerY;
-    
-    let anguloDeg = Math.atan2(y, x) * (180 / Math.PI) + 90;
-    if (anguloDeg < 0) anguloDeg += 360;
-
-    const novaFracao = Math.max(0, Math.min(1, anguloDeg / 360));
-    const novoTempo = novaFracao * duracaoTotal;
-
-    if (musicaAtual?.tipo_midia === 'ARQUIVO_LOCAL' && audioRef.current) {
-      audioRef.current.currentTime = novoTempo;
-      setTempoAtual(novoTempo);
-    } else if (musicaAtual?.tipo_midia === 'YOUTUBE' && ytPlayerRef.current) {
-      try {
-        ytPlayerRef.current.seekTo(novoTempo, true);
-        setTempoAtual(novoTempo);
-      } catch {}
-    }
-  };
+  const progressoPercentual = duracaoTotal > 0 ? Math.min(100, Math.max(0, (tempoAtual / duracaoTotal) * 100)) : 0;
 
   return (
     <div className="h-screen max-h-screen w-screen overflow-hidden bg-[#040811] text-slate-100 flex flex-col items-center justify-between p-2 sm:p-3 selection:bg-cyan-500 selection:text-black">
@@ -499,197 +465,73 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         }}
       />
 
-      {/* Container Principal Mobile/Deck (HUD 3D Cyber-Maçônico 100vh) */}
-      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl h-full flex flex-col justify-between gap-1">
+      {/* Container Principal HUD (100vh sem overflow) */}
+      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl h-full flex flex-col justify-between py-1 gap-1">
 
-        {/* 1. BARRA SUPERIOR HUD // STATUS DO SISTEMA */}
-        <div className="flex items-center justify-between px-1 shrink-0 text-[10px] sm:text-[11px] font-mono tracking-widest text-[#00E5FF]">
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-2 h-2 bg-[#00E5FF] rotate-45 shadow-[0_0_8px_#00E5FF]" />
-            <span className="font-bold">SYS.ONLINE // HARMONIA 3D</span>
-          </div>
-
-          <div className="flex items-center gap-3 text-slate-400">
-            <span className="text-[9px] text-slate-500 hidden sm:inline">
-              RITO {dadosSessao?.sessao_nome?.split('-')[1] || 'REAA'}
-            </span>
-            <Bluetooth className="w-3 h-3 text-cyan-400/80" />
-            <BatteryCharging className="w-3.5 h-3.5 text-[#00E5FF]" />
-          </div>
-        </div>
-
-        {/* Seletor Rápido de Sessão / Ritual */}
-        <div className="relative z-40 shrink-0">
-          <button
-            onClick={() => setSeletorSessaoAberto(!seletorSessaoAberto)}
-            className="w-full bg-[#091424]/90 hover:bg-[#0d1d33] border border-cyan-500/20 hover:border-cyan-500/40 rounded-xl px-3 py-1.5 flex items-center justify-between transition-all shadow-[0_0_12px_rgba(0,229,255,0.06)]"
-          >
-            <div className="flex items-center gap-2 truncate">
-              <Layers className="w-3.5 h-3.5 text-[#00E5FF] shrink-0" />
-              <span className="text-[11px] font-bold text-white font-mono uppercase truncate">
-                {dadosSessao?.sessao_nome || 'Selecione uma Sessão'}
+        {/* 1. BARRA SUPERIOR UNIFICADA // STATUS & CONFIGURAÇÕES */}
+        <div className="flex items-center justify-between px-2 py-1 bg-[#07111f]/90 border border-cyan-500/20 rounded-2xl shrink-0 shadow-lg backdrop-blur-md">
+          <div className="flex items-center gap-2 truncate">
+            <span className="w-2.5 h-2.5 bg-[#00E5FF] rotate-45 shadow-[0_0_8px_#00E5FF] shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-black font-mono tracking-wider text-white truncate uppercase">
+                {dadosSessao?.sessao_nome || 'Harmonia 3D'}
+              </span>
+              <span className="text-[9px] font-mono text-cyan-400 truncate">
+                RITO {dadosSessao?.sessao_nome?.split('-')[1] || 'REAA'} // GRAU 1
               </span>
             </div>
-            <ChevronDown className={`w-3.5 h-3.5 text-cyan-400 transition-transform ${seletorSessaoAberto ? 'rotate-180' : ''}`} />
-          </button>
+          </div>
 
-          {seletorSessaoAberto && (
-            <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-[#07111f] border border-cyan-500/30 rounded-xl shadow-2xl p-1.5 max-h-48 overflow-y-auto backdrop-blur-xl">
-              {sessoes.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => {
-                    setSessaoSelecionadaId(s.id);
-                    setSearchParams({ sessao: s.id });
-                    setSeletorSessaoAberto(false);
-                  }}
-                  className={`w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] font-mono transition-colors flex items-center justify-between ${
-                    s.id === sessaoSelecionadaId
-                      ? 'bg-cyan-500/20 text-[#00E5FF] font-bold border border-cyan-500/30'
-                      : 'text-slate-300 hover:bg-white/5'
-                  }`}
-                >
-                  <span className="truncate">{s.nome}</span>
-                  <span className="text-[9px] text-slate-400 shrink-0 ml-2">{s.rito} - G{s.grau}</span>
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => setModalUploadAberto(true)}
+              className="p-1.5 rounded-xl bg-white/[0.04] hover:bg-cyan-500/20 text-[#00E5FF] border border-cyan-500/30 transition-all text-[10px] font-mono font-bold flex items-center gap-1 cursor-pointer"
+              title="Catalogar / Upload"
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">+ Faixa</span>
+            </button>
+
+            <button
+              onClick={() => setModalConfigAberto(true)}
+              className="p-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] text-slate-300 hover:text-white border border-white/5 transition-all cursor-pointer"
+              title="Configurações e Troca de Sessão"
+            >
+              <Settings className="w-4 h-4 text-cyan-400" />
+            </button>
+          </div>
         </div>
 
         {/* 2. PALCO 3D COM CARROSSEL HORIZONTAL EM SEMICÍRCULO & CARROSSEL VERTICAL DE MÚSICAS */}
         {dadosSessao && (
-          <Carrossel3DMomentos
-            momentos={dadosSessao.esteira_ritualistica}
-            indiceAtual={indiceAtual}
-            musicasDoMomento={musicasDoMomento}
-            musicaAtualId={musicaAtual?.id}
-            tocando={tocando}
-            onMudarMomento={(novoIndice) => {
-              setIndiceAtual(novoIndice);
-              setTocando(false);
-            }}
-            onSelecionarMusica={selecionarMusicaManualmente}
-            onAbrirUpload={() => setModalUploadAberto(true)}
-          />
+          <div className="flex-1 flex items-center justify-center min-h-0 py-1">
+            <Carrossel3DMomentos
+              momentos={dadosSessao.esteira_ritualistica}
+              indiceAtual={indiceAtual}
+              musicasDoMomento={musicasDoMomento}
+              musicaAtualId={musicaAtual?.id}
+              tocando={tocando}
+              onMudarMomento={(novoIndice) => {
+                setIndiceAtual(novoIndice);
+                setTocando(false);
+              }}
+              onSelecionarMusica={selecionarMusicaManualmente}
+              onAbrirUpload={() => setModalUploadAberto(true)}
+            />
+          </div>
         )}
 
-        {/* 3. RADIAL DIAL PLAYER 3D COMPACTO (DISCO NEUMÓRFICO + BARRA HORIZONTAL) */}
-        <div className="flex flex-col items-center justify-center relative select-none shrink-0 py-0.5">
+        {/* 3. DOCK UNIFICADO DE CONTROLE // PLAYER HUD COMPACTO */}
+        <div className="rounded-2xl bg-[#060e1d] border border-cyan-500/30 p-2.5 sm:p-3 shadow-2xl flex flex-col gap-2 shrink-0">
           
-          <div className="absolute w-44 h-44 bg-[#00E5FF]/15 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative w-44 h-44 sm:w-48 sm:h-48 flex items-center justify-center">
-            
-            {/* SVG Circular Radial Progress Ring */}
-            <svg
-              className="w-full h-full -rotate-90 cursor-pointer drop-shadow-[0_0_14px_rgba(0,229,255,0.4)]"
-              viewBox="0 0 200 200"
-              onClick={manipularCliqueRadial}
-            >
-              <defs>
-                <linearGradient id="trilhoGrad3D" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#0a192e" />
-                  <stop offset="50%" stopColor="#030812" />
-                  <stop offset="100%" stopColor="#0e233d" />
-                </linearGradient>
-
-                <linearGradient id="neonArcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#00E5FF" />
-                  <stop offset="80%" stopColor="#00c8ff" />
-                  <stop offset="100%" stopColor="#70f3ff" />
-                </linearGradient>
-
-                <filter id="cyanGlow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="3" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-
-              {/* Trilho 3D Externo */}
-              <circle
-                cx="100"
-                cy="100"
-                r={raioCirculo}
-                stroke="url(#trilhoGrad3D)"
-                strokeWidth="10"
-                fill="none"
-              />
-
-              <circle
-                cx="100"
-                cy="100"
-                r={raioCirculo}
-                stroke="rgba(0, 229, 255, 0.15)"
-                strokeWidth="1"
-                fill="none"
-              />
-
-              {/* Arco de Progresso Ativo */}
-              <circle
-                cx="100"
-                cy="100"
-                r={raioCirculo}
-                stroke="url(#neonArcGrad)"
-                strokeWidth="8"
-                strokeDasharray={circunferencia}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-                fill="none"
-                filter="url(#cyanGlow)"
-                className="transition-all duration-100"
-              />
-
-              {/* Knob indicador na cabeça do progresso */}
-              {duracaoTotal > 0 && progressoPercentual > 0 && (
-                <circle
-                  cx={headX}
-                  cy={headY}
-                  r="5"
-                  fill="#ffffff"
-                  stroke="#00E5FF"
-                  strokeWidth="2.5"
-                  filter="url(#cyanGlow)"
-                />
-              )}
-            </svg>
-
-            {/* Botão Central de Play / Pause Neumórfico */}
-            <button
-              onClick={alternarPlayPause}
-              disabled={!musicaAtual}
-              className={`absolute w-24 h-24 sm:w-26 sm:h-26 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer disabled:opacity-40 group ${
-                tocando
-                  ? 'bg-gradient-to-b from-[#0e2744] via-[#061527] to-[#020710] border-2 border-[#00E5FF] shadow-[0_0_35px_rgba(0,229,255,0.6),inset_0_0_18px_rgba(0,229,255,0.35),inset_0_2px_4px_rgba(255,255,255,0.25)] text-[#00E5FF]'
-                  : 'bg-gradient-to-b from-[#0b1d33] via-[#05111f] to-[#02050b] border border-cyan-500/40 hover:border-[#00E5FF] shadow-[0_12px_28px_rgba(0,0,0,0.9),inset_0_2px_4px_rgba(255,255,255,0.15),inset_0_-3px_6px_rgba(0,0,0,0.8),0_0_20px_rgba(0,229,255,0.2)] text-white hover:text-[#00E5FF] hover:scale-105 active:scale-95'
-              }`}
-              title={tocando ? "Pausar Execução" : "Iniciar Reprodução"}
-            >
-              <div className={`absolute inset-2 rounded-full border transition-all ${
-                tocando ? 'border-cyan-400/40 bg-[#00E5FF]/5' : 'border-white/10 group-hover:border-cyan-400/30'
-              }`} />
-
-              <div className="relative z-10 flex items-center justify-center">
-                {tocando ? (
-                  <Pause className="w-8 h-8 fill-current drop-shadow-[0_0_10px_#00E5FF]" />
-                ) : (
-                  <Play className="w-8 h-8 fill-current ml-1 drop-shadow-[0_0_10px_#00E5FF]" />
-                )}
-              </div>
-            </button>
-          </div>
-
-          {/* Barra Horizontal Complementar de Precisão */}
-          <div className="w-full max-w-xs flex flex-col gap-1 px-2">
+          {/* Barra de Progresso Linear de Precisão & Timestamps */}
+          <div className="flex flex-col gap-1 px-1">
             <div
               role="progressbar"
               aria-valuenow={tempoAtual}
               aria-valuemin={0}
               aria-valuemax={duracaoTotal}
-              className="relative w-full h-1 bg-slate-800/90 hover:bg-slate-700 rounded-full overflow-hidden cursor-pointer transition-all group"
+              className="relative w-full h-1.5 bg-slate-800 rounded-full overflow-hidden cursor-pointer group transition-all"
               onClick={(e) => {
                 if (duracaoTotal <= 0) return;
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -705,118 +547,90 @@ export const PaginaPlayerHarmonia: React.FC = () => {
                   } catch {}
                 }
               }}
-              title="Clique para avançar ou retroceder"
+              title="Clique para seek na faixa"
             >
               <div
-                className="h-full bg-gradient-to-r from-[#00E5FF] to-cyan-300 rounded-full transition-all duration-100 shadow-[0_0_8px_#00E5FF]"
-                style={{ width: `${duracaoTotal > 0 ? Math.min(100, (tempoAtual / duracaoTotal) * 100) : 0}%` }}
+                className="h-full bg-gradient-to-r from-[#00E5FF] to-cyan-300 rounded-full transition-all duration-100 shadow-[0_0_10px_#00E5FF]"
+                style={{ width: `${progressoPercentual}%` }}
               />
             </div>
 
-            <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
               <span className="text-[#00E5FF] font-bold">{formatarTempo(tempoAtual)}</span>
-              <span className="text-slate-600">//</span>
-              <span className="text-slate-400">{duracaoTotal > 0 ? formatarTempo(duracaoTotal) : '--:--'}</span>
+              <span className={`px-2 py-0.5 rounded-full border text-[8px] font-bold uppercase ${
+                tocando
+                  ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 animate-pulse'
+                  : 'text-amber-300 bg-amber-500/10 border-amber-500/30'
+              }`}>
+                {tocando ? '● EM EXECUÇÃO' : '○ EM PAUSA'}
+              </span>
+              <span>{duracaoTotal > 0 ? formatarTempo(duracaoTotal) : '--:--'}</span>
             </div>
           </div>
 
-          <span className={`text-[9px] font-mono font-bold tracking-widest uppercase px-2 py-0.5 mt-1 rounded-full border ${
-            tocando
-              ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 animate-pulse'
-              : 'text-amber-300 bg-amber-500/10 border-amber-500/30'
-          }`}>
-            {tocando ? '● EXECUTANDO EM TEMPLO' : '○ EM PAUSA // AGUARDANDO COMANDO'}
-          </span>
-        </div>
-
-        {/* 4. DOCK DE CONTROLES DO MESTRE & ESTEIRA RITUALÍSTICA */}
-        <div className="rounded-2xl bg-[#060d19] border border-cyan-500/25 p-2 sm:p-2.5 shadow-2xl flex flex-col gap-2 shrink-0">
-          
-          {/* Botões de Ação Ritualística */}
-          <div className="flex items-center justify-between gap-1.5">
+          {/* Linha Principal de Controles Litúrgicos */}
+          <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5">
             
             {/* Voltar Momento */}
             <button
               onClick={voltarAnterior}
               disabled={indiceAtual === 0}
-              className="p-2 sm:p-2.5 rounded-xl bg-[#091526] hover:bg-[#0f2442] text-slate-300 hover:text-white disabled:opacity-30 border border-white/5 transition-all cursor-pointer font-mono text-[11px] flex items-center gap-1 shadow-md active:scale-95"
+              className="p-2 sm:p-2.5 rounded-xl bg-[#091526] hover:bg-[#0f2442] text-slate-300 hover:text-white disabled:opacity-30 border border-white/5 transition-all cursor-pointer font-mono text-[11px] flex items-center gap-1 shadow-md active:scale-95 shrink-0"
               title="Momento Anterior"
             >
-              <SkipBack className="w-3.5 h-3.5 text-cyan-400" />
+              <SkipBack className="w-4 h-4 text-cyan-400" />
               <span className="hidden sm:inline">ANTERIOR</span>
+            </button>
+
+            {/* BOTÃO CENTRAL PLAY / PAUSE 3D COMPACTO */}
+            <button
+              onClick={alternarPlayPause}
+              disabled={!musicaAtual}
+              className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer disabled:opacity-40 shrink-0 ${
+                tocando
+                  ? 'bg-gradient-to-b from-[#0e2744] via-[#061527] to-[#020710] border-2 border-[#00E5FF] shadow-[0_0_30px_rgba(0,229,255,0.7),inset_0_0_15px_rgba(0,229,255,0.4)] text-[#00E5FF]'
+                  : 'bg-gradient-to-b from-[#0b1d33] via-[#05111f] to-[#02050b] border border-cyan-500/40 hover:border-[#00E5FF] shadow-[0_10px_25px_rgba(0,0,0,0.9),0_0_15px_rgba(0,229,255,0.25)] text-white hover:text-[#00E5FF] active:scale-95'
+              }`}
+              title={tocando ? "Pausar" : "Executar"}
+            >
+              {tocando ? (
+                <Pause className="w-6 h-6 fill-current drop-shadow-[0_0_8px_#00E5FF]" />
+              ) : (
+                <Play className="w-6 h-6 fill-current ml-0.5 drop-shadow-[0_0_8px_#00E5FF]" />
+              )}
             </button>
 
             {/* Suavizar e Avançar (Fade Out) */}
             <button
               onClick={aplicarFadeOutEAvançar}
               disabled={!dadosSessao || indiceAtual >= dadosSessao.esteira_ritualistica.length - 1}
-              className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-mono font-black text-[11px] transition-all shadow-[0_0_20px_rgba(245,158,11,0.35)] cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-30 active:scale-98"
+              className="flex-1 py-2 sm:py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-mono font-black text-xs transition-all shadow-[0_0_20px_rgba(245,158,11,0.35)] cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-30 active:scale-98"
               title="Fade out e avanço para o próximo momento litúrgico"
             >
-              <span>{fadeAtivo ? 'FADE OUT...' : 'PRÓXIMO MOMENTO'}</span>
-              <ChevronRight className="w-3.5 h-3.5" />
+              <span>{fadeAtivo ? 'FADE OUT...' : 'PRÓXIMO'}</span>
+              <ChevronRight className="w-4 h-4" />
             </button>
 
             {/* Sortear Outra Faixa */}
             <button
               onClick={resortearMusicaAtual}
               disabled={(momentoAtual?.total_musicas_disponiveis ?? 0) <= 1}
-              className="p-2 sm:p-2.5 rounded-xl bg-[#091526] hover:bg-[#0f2442] text-slate-300 hover:text-white disabled:opacity-30 border border-white/5 transition-all cursor-pointer font-mono text-[11px] flex items-center gap-1 shadow-md active:scale-95"
+              className="p-2 sm:p-2.5 rounded-xl bg-[#091526] hover:bg-[#0f2442] text-slate-300 hover:text-white disabled:opacity-30 border border-white/5 transition-all cursor-pointer font-mono text-[11px] flex items-center gap-1 shadow-md active:scale-95 shrink-0"
               title="Sortear outra faixa aleatória"
             >
-              <Shuffle className="w-3.5 h-3.5 text-[#00E5FF]" />
-              <span className="hidden sm:inline">SORTEAR</span>
+              <Shuffle className="w-4 h-4 text-[#00E5FF]" />
             </button>
 
-            {/* Adicionar Faixa */}
-            <button
-              onClick={() => setModalUploadAberto(true)}
-              className="p-2 sm:p-2.5 rounded-xl bg-[#091526] hover:bg-[#0f2442] text-[#00E5FF] border border-cyan-500/20 transition-all cursor-pointer font-mono text-[11px] flex items-center gap-1 shadow-md active:scale-95"
-              title="Upload / Converter YouTube 320k"
-            >
-              <UploadCloud className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">+ ADD</span>
-            </button>
-          </div>
+            {/* Controle de Volume */}
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={() => setMudo(!mudo)}
+                className="p-1.5 text-slate-400 hover:text-[#00E5FF] transition-colors"
+                title={mudo ? "Desmutar" : "Mutar"}
+              >
+                {mudo || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-[#00E5FF]" />}
+              </button>
 
-          {/* Esteira de Navegação por Momentos */}
-          {dadosSessao && (
-            <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-              {dadosSessao.esteira_ritualistica.map((m, idx) => {
-                const ativo = idx === indiceAtual;
-                const concluido = idx < indiceAtual;
-                return (
-                  <button
-                    key={`${m.evento_id}-${idx}`}
-                    onClick={() => {
-                      setIndiceAtual(idx);
-                      setTocando(false);
-                    }}
-                    className={`shrink-0 px-2.5 py-1 rounded-lg font-mono text-[9px] font-bold border transition-all ${
-                      ativo
-                        ? 'bg-[#00E5FF] text-black border-[#00E5FF] shadow-[0_0_10px_rgba(0,229,255,0.4)]'
-                        : concluido
-                        ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
-                        : 'bg-white/[0.03] text-slate-400 border-white/5 hover:bg-white/[0.08]'
-                    }`}
-                  >
-                    {String(idx + 1).padStart(2, '0')} // {m.evento_nome.split(' ')[0].toUpperCase()}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Controle de Volume com Trilho Neon */}
-          <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5">
-            <button
-              onClick={() => setMudo(!mudo)}
-              className="text-slate-400 hover:text-[#00E5FF] transition-colors"
-            >
-              {mudo || volume === 0 ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 text-[#00E5FF]" />}
-            </button>
-
-            <div className="relative flex-1 flex items-center">
               <input
                 type="range"
                 min="0"
@@ -829,18 +643,32 @@ export const PaginaPlayerHarmonia: React.FC = () => {
                   setMudo(false);
                   if (audioRef.current) audioRef.current.volume = val;
                 }}
-                className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#00E5FF]"
+                className="w-14 sm:w-16 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#00E5FF]"
               />
             </div>
 
-            <span className="text-[9px] font-mono text-slate-400 w-8 text-right">
-              {Math.round((mudo ? 0 : volume) * 100)}%
-            </span>
           </div>
 
         </div>
 
       </div>
+
+      {/* Modal de Configurações e Troca de Sessão */}
+      <ModalConfiguracoesPlayer
+        aberto={modalConfigAberto}
+        onFechar={() => setModalConfigAberto(false)}
+        sessoes={sessoes}
+        sessaoSelecionadaId={sessaoSelecionadaId}
+        onSelecionarSessao={(id) => {
+          setSessaoSelecionadaId(id);
+          setSearchParams({ sessao: id });
+          setModalConfigAberto(false);
+        }}
+        onAbrirUpload={() => {
+          setModalConfigAberto(false);
+          setModalUploadAberto(true);
+        }}
+      />
 
       {/* Modal de Upload / Conversor YouTube para MP3 320k */}
       {modalUploadAberto && momentoAtual && (
