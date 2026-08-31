@@ -149,6 +149,10 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
       >
         {listaCardsProcessada.map(({ momento, idx, deltaCont }) => {
           const isAtivo = Math.abs(deltaCont) < 0.4;
+          
+          if (isAtivo) {
+             console.log(`[FRONTEND] Renderizando momento ativo ${idx}. Candidatas:`, musicasDoMomento);
+          }
 
           // Geometria 3D: Curva em Semicírculo Cilíndrico com maior abertura panorâmica lateral
           const anguloRad = (deltaCont * 34 * Math.PI) / 180;
@@ -173,6 +177,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
                     caminho_arquivo: c.caminho_arquivo || undefined,
                     link_externo: c.link_externo || undefined,
                     duracao_segundos: c.duracao_segundos || undefined,
+                    preferida: c.preferida || false,
                     metadados: {},
                     ativo: true,
                     eventos: [],
