@@ -218,8 +218,16 @@ export const CardMomento3D: React.FC<Props> = ({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          // Optimistic update local
+                          const isPref = !!(musica as any).preferida;
+                          (musica as any).preferida = !isPref;
+                          // Força re-render caso o react não pegue a mutação
+                          e.currentTarget.style.color = !isPref ? '#fbbf24' : '#475569';
+                          const svg = e.currentTarget.querySelector('svg');
+                          if (svg) svg.setAttribute('fill', !isPref ? 'currentColor' : 'none');
+                          
                           if (onAlternarPreferencia && momento.evento_id) {
-                            onAlternarPreferencia(momento.evento_id, musica.id, !!(musica as any).preferida);
+                            onAlternarPreferencia(momento.evento_id, musica.id, isPref);
                           }
                         }}
                         title={(musica as any).preferida ? "Remover preferência" : "Fixar como preferida"}
