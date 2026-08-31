@@ -87,13 +87,19 @@ export const CardMomento3D: React.FC<Props> = ({
     <div
       className={`w-[320px] sm:w-[360px] md:w-[380px] h-[400px] sm:h-[420px] rounded-[30px] p-3.5 flex flex-col justify-between select-none transition-all duration-200 ${
         isAtivo
-          ? 'bg-[#060e1d] border-2 border-[#00E5FF] shadow-[0_15px_50px_rgba(0,0,0,0.95),0_0_35px_rgba(0,229,255,0.3)]'
-          : 'bg-[#040914] border border-cyan-500/20 opacity-60 hover:opacity-85 shadow-2xl'
+          ? 'border-2 border-[#00E5FF] shadow-[0_25px_60px_rgba(0,0,0,1),0_0_40px_rgba(0,229,255,0.35)]'
+          : 'border border-cyan-500/25 shadow-2xl'
       }`}
+      style={{
+        backgroundColor: isAtivo ? '#060e1d' : '#050b16',
+        opacity: isAtivo ? 1 : 0.85,
+      }}
     >
       {/* 1. HERO BANNER DO MOMENTO LITÚRGICO */}
-      <div className="relative w-full h-32 sm:h-34 rounded-2xl overflow-hidden p-3.5 flex flex-col justify-end border border-cyan-500/20 shadow-inner shrink-0 bg-[#021424]">
-        
+      <div 
+        className="relative w-full h-32 sm:h-34 rounded-2xl overflow-hidden p-3.5 flex flex-col justify-end border border-cyan-500/20 shadow-inner shrink-0"
+        style={{ backgroundColor: '#021424' }}
+      >
         {/* Fundo com Textura Fluídica / Cyber Waves */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#02182b] via-[#04324f] to-[#011424] opacity-100" />
         
@@ -135,7 +141,8 @@ export const CardMomento3D: React.FC<Props> = ({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className="relative flex-1 my-2 overflow-hidden flex flex-col items-center justify-center cursor-grab active:cursor-grabbing preserve-3d perspective-1000 touch-none bg-[#050b16] rounded-2xl border border-white/5"
+        className="relative flex-1 my-2 overflow-hidden flex flex-col items-center justify-center cursor-grab active:cursor-grabbing preserve-3d perspective-1000 touch-none rounded-2xl border border-white/5"
+        style={{ backgroundColor: '#050b16' }}
       >
         {musicas.length === 0 ? (
           <div className="py-4 px-3 rounded-2xl bg-white/[0.02] text-center flex flex-col items-center gap-2 w-full">
@@ -168,7 +175,7 @@ export const CardMomento3D: React.FC<Props> = ({
               const anguloRotacaoX = deltaCont * 26;
               const translateY = deltaCont * 54;
               const translateZ = 30 - Math.min(Math.abs(deltaCont) * 25, 60);
-              const opacidade = Math.max(0.2, 1 - Math.abs(deltaCont) * 0.35);
+              const opacidade = Math.max(0.3, 1 - Math.abs(deltaCont) * 0.35);
               const escala = Math.max(0.78, 1 - Math.abs(deltaCont) * 0.1);
 
               return (
@@ -182,10 +189,11 @@ export const CardMomento3D: React.FC<Props> = ({
                   }}
                   className={`absolute w-[95%] px-3 py-2.5 rounded-2xl transition-transform ease-out border flex items-center justify-between pointer-events-auto ${
                     estaSelecionada && Math.abs(offsetYDrag) < 15
-                      ? 'bg-[#0b1c33] border-cyan-500/80 shadow-[0_0_20px_rgba(0,229,255,0.25)] text-[#00E5FF] z-20'
-                      : 'bg-[#071322] border-white/5 hover:border-cyan-500/30 text-slate-300 z-10'
+                      ? 'border-cyan-500/80 shadow-[0_0_20px_rgba(0,229,255,0.25)] text-[#00E5FF] z-20'
+                      : 'border-white/5 hover:border-cyan-500/30 text-slate-300 z-10'
                   }`}
                   style={{
+                    backgroundColor: estaSelecionada ? '#0b1c33' : '#071322',
                     transform: `translateY(${translateY}px) translateZ(${translateZ}px) rotateX(${-anguloRotacaoX}deg) scale(${escala})`,
                     opacity: opacidade,
                     transition: estaArrastandoV ? 'none' : 'transform 0.25s ease-out, opacity 0.25s ease-out',
