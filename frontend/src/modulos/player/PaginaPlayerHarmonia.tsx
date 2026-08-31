@@ -135,7 +135,19 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             apenas_ativas: true
           }
         });
-        setMusicasDoMomento(resp.data);
+        
+        // Mescla a flag 'preferida' das candidatas do momento atual (vindas da sessão)
+        // para dentro dos objetos completos retornados por /musicas
+        const candidatas = momentoAtual.candidatas || [];
+        const musicasComPreferencia = resp.data.map((musica: any) => {
+          const candidata = candidatas.find(c => c.id === musica.id);
+          return {
+            ...musica,
+            preferida: candidata ? !!candidata.preferida : false
+          };
+        });
+        
+        setMusicasDoMomento(musicasComPreferencia);
       } catch (err) {
         console.error('Erro ao buscar músicas do momento litúrgico:', err);
       } finally {
