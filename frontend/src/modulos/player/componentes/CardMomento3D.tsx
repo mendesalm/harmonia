@@ -233,13 +233,12 @@ export const CardMomento3D: React.FC<Props> = ({
                   <div className="flex flex-col min-w-0 pr-1.5 flex-1">
                     <div className="flex items-center gap-1.5 truncate w-full">
                       <button
-                        onClick={(e) => {
+                        onPointerDown={(e) => {
                           e.stopPropagation();
                           if (onAlternarPreferencia && momento.evento_id) {
                             onAlternarPreferencia(momento.evento_id, musica.id, !!(musica as any).preferida);
                           }
                         }}
-                        onPointerDown={(e) => e.stopPropagation()}
                         title={(musica as any).preferida ? "Remover preferência" : "Fixar como preferida"}
                         className={`shrink-0 p-1 rounded hover:bg-white/10 transition-colors ${
                           (musica as any).preferida ? 'text-amber-400' : 'text-slate-600 hover:text-amber-400/50'
