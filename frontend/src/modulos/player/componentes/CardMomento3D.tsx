@@ -68,7 +68,7 @@ export const CardMomento3D: React.FC<Props> = ({
     const deltaY = currentDragYRef.current;
     setOffsetYDrag(0);
 
-    const passos = Math.round(-deltaY / 54);
+    const passos = Math.round(-deltaY / 46);
     if (passos !== 0) {
       const novoIndice = Math.max(0, Math.min(musicas.length - 1, indiceMusicaAtiva + passos));
       if (musicas[novoIndice] && musicas[novoIndice].id !== musicaSelecionadaId) {
@@ -82,7 +82,6 @@ export const CardMomento3D: React.FC<Props> = ({
     if (!isAtivo || musicas.length <= 1) return;
 
     const agora = Date.now();
-    // Cooldown para garantir transições suaves e deliberadas de faixa
     if (agora - ultimoWheelRef.current < 160) {
       return;
     }
@@ -106,10 +105,10 @@ export const CardMomento3D: React.FC<Props> = ({
 
   return (
     <div
-      className={`w-[320px] sm:w-[360px] md:w-[380px] h-[400px] sm:h-[420px] rounded-[30px] p-3.5 flex flex-col justify-between select-none overflow-hidden transition-all duration-200 ${
+      className={`w-[290px] sm:w-[330px] md:w-[350px] h-[260px] sm:h-[280px] rounded-[24px] p-3 flex flex-col justify-between select-none overflow-hidden transition-all duration-200 ${
         isAtivo
-          ? 'border-2 border-[#00E5FF] shadow-[0_25px_60px_rgba(0,0,0,1),0_0_40px_rgba(0,229,255,0.35)]'
-          : 'border border-cyan-500/25 shadow-2xl pointer-events-none'
+          ? 'border-2 border-[#00E5FF] shadow-[0_20px_50px_rgba(0,0,0,1),0_0_35px_rgba(0,229,255,0.35)]'
+          : 'border border-cyan-500/25 shadow-xl pointer-events-none'
       }`}
       style={{
         backgroundColor: isAtivo ? '#060e1d' : '#050b16',
@@ -118,7 +117,7 @@ export const CardMomento3D: React.FC<Props> = ({
     >
       {/* 1. HERO BANNER DO MOMENTO LITÚRGICO */}
       <div 
-        className="relative w-full h-32 sm:h-34 rounded-2xl overflow-hidden p-3.5 flex flex-col justify-end border border-cyan-500/20 shadow-inner shrink-0"
+        className="relative w-full h-20 sm:h-22 rounded-xl overflow-hidden p-2.5 flex flex-col justify-end border border-cyan-500/20 shadow-inner shrink-0"
         style={{ backgroundColor: '#021424' }}
       >
         {/* Fundo com Textura Fluídica / Cyber Waves */}
@@ -132,23 +131,23 @@ export const CardMomento3D: React.FC<Props> = ({
               <stop offset="100%" stopColor="#00E5FF" stopOpacity="0.9" />
             </linearGradient>
           </defs>
-          <path d="M-100,45 Q100,110 300,35 T700,60 L700,200 L-100,200 Z" fill={`url(#grad-${indiceMomento})`} />
-          <path d="M-50,75 Q150,15 350,85 T750,35 L750,200 L-50,200 Z" fill="#00E5FF" opacity="0.2" />
+          <path d="M-100,35 Q100,90 300,25 T700,50 L700,160 L-100,160 Z" fill={`url(#grad-${indiceMomento})`} />
+          <path d="M-50,60 Q150,10 350,70 T750,25 L750,160 L-50,160 Z" fill="#00E5FF" opacity="0.2" />
         </svg>
 
         {/* Linha superior de neon */}
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#00E5FF] to-transparent opacity-60" />
 
         <div className="relative z-10">
-          <span className="text-[10px] font-mono tracking-widest text-cyan-300 font-bold uppercase block mb-0.5">
+          <span className="text-[9px] font-mono tracking-widest text-cyan-300 font-bold uppercase block">
             {String(indiceMomento + 1).padStart(2, '0')} // MOMENTO RITUALÍSTICO
           </span>
 
-          <h3 className="text-base sm:text-lg font-black text-white font-mono uppercase tracking-wider leading-tight truncate drop-shadow-md">
+          <h3 className="text-xs sm:text-sm font-black text-white font-mono uppercase tracking-wider leading-tight truncate drop-shadow-md">
             {momento.evento_nome}
           </h3>
 
-          <div className="flex items-center gap-2 mt-1.5 font-mono text-[10px] font-bold text-[#00E5FF] tracking-wider">
+          <div className="flex items-center gap-2 mt-0.5 font-mono text-[9px] font-bold text-[#00E5FF] tracking-wider">
             <span>{musicas.length} {musicas.length === 1 ? 'TRACK' : 'TRACKS'}</span>
             <span className="text-cyan-500/60">//</span>
             <span>{tempoTotalFormatado}</span>
@@ -156,22 +155,22 @@ export const CardMomento3D: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 2. CARROSSEL VERTICAL 3D DE MÚSICAS (DRAGGABLE & SCROLL COM RODA DO MOUSE) */}
+      {/* 2. CARROSSEL VERTICAL 3D DE MÚSICAS */}
       <div
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         onWheel={handleWheel}
-        className={`relative flex-1 my-2 overflow-hidden flex flex-col items-center justify-center rounded-2xl border border-white/5 ${
+        className={`relative flex-1 my-1 overflow-hidden flex flex-col items-center justify-center rounded-xl border border-white/5 ${
           isAtivo ? 'cursor-grab active:cursor-grabbing touch-none preserve-3d perspective-1000' : 'pointer-events-none'
         }`}
         style={{ backgroundColor: '#050b16' }}
         title={isAtivo ? "Role a roda do mouse ou arraste verticalmente para navegar nas músicas" : undefined}
       >
         {musicas.length === 0 ? (
-          <div className="py-4 px-3 rounded-2xl bg-white/[0.02] text-center flex flex-col items-center gap-2 w-full">
-            <p className="text-[11px] font-mono text-slate-400 italic">
+          <div className="py-2 px-2 rounded-xl bg-white/[0.02] text-center flex flex-col items-center gap-1.5 w-full">
+            <p className="text-[10px] font-mono text-slate-400 italic">
               [ SILÊNCIO PROGRAMADO ]
             </p>
             {isAtivo && (
@@ -180,30 +179,30 @@ export const CardMomento3D: React.FC<Props> = ({
                   e.stopPropagation();
                   onAbrirUpload();
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-[#00E5FF] border border-cyan-500/30 text-[10px] font-mono font-bold transition-all cursor-pointer pointer-events-auto"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-[#00E5FF] border border-cyan-500/30 text-[9px] font-mono font-bold transition-all cursor-pointer pointer-events-auto"
               >
-                <PlusCircle className="w-3.5 h-3.5" />
+                <PlusCircle className="w-3 h-3" />
                 <span>+ CATALOGAR FAIXA</span>
               </button>
             )}
           </div>
         ) : (
-          <div className="relative w-full h-[210px] flex items-center justify-center overflow-hidden">
+          <div className="relative w-full h-[140px] flex items-center justify-center overflow-hidden">
             {musicas.map((musica, idx) => {
               const estaSelecionada = idx === indiceMusicaAtiva;
               const distancia = idx - indiceMusicaAtiva;
               
-              const dragOffsetItems = isAtivo ? offsetYDrag / 54 : 0;
+              const dragOffsetItems = isAtivo ? offsetYDrag / 46 : 0;
               const deltaCont = distancia - dragOffsetItems;
 
-              const visivel = Math.abs(deltaCont) <= 2.5;
+              const visivel = Math.abs(deltaCont) <= 2.2;
               if (!visivel) return null;
 
-              const anguloRotacaoX = isAtivo ? deltaCont * 26 : 0;
-              const translateY = deltaCont * 54;
-              const translateZ = isAtivo ? 20 - Math.min(Math.abs(deltaCont) * 20, 50) : 0;
+              const anguloRotacaoX = isAtivo ? deltaCont * 24 : 0;
+              const translateY = deltaCont * 44;
+              const translateZ = isAtivo ? 16 - Math.min(Math.abs(deltaCont) * 16, 40) : 0;
               const opacidade = Math.max(0.3, 1 - Math.abs(deltaCont) * 0.35);
-              const escala = Math.max(0.78, 1 - Math.abs(deltaCont) * 0.1);
+              const escala = Math.max(0.8, 1 - Math.abs(deltaCont) * 0.1);
 
               return (
                 <div
@@ -216,11 +215,11 @@ export const CardMomento3D: React.FC<Props> = ({
                       }
                     }
                   }}
-                  className={`absolute w-[95%] px-3 py-2.5 rounded-2xl transition-transform ease-out border flex items-center justify-between ${
+                  className={`absolute w-[95%] px-2.5 py-1.5 rounded-xl transition-transform ease-out border flex items-center justify-between ${
                     isAtivo ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none'
                   } ${
                     estaSelecionada && Math.abs(offsetYDrag) < 15
-                      ? 'border-cyan-500/80 shadow-[0_0_20px_rgba(0,229,255,0.25)] text-[#00E5FF] z-20'
+                      ? 'border-cyan-500/80 shadow-[0_0_15px_rgba(0,229,255,0.25)] text-[#00E5FF] z-20'
                       : 'border-white/5 hover:border-cyan-500/30 text-slate-300 z-10'
                   }`}
                   style={{
@@ -230,22 +229,22 @@ export const CardMomento3D: React.FC<Props> = ({
                     transition: estaArrastandoV ? 'none' : 'transform 0.25s ease-out, opacity 0.25s ease-out',
                   }}
                 >
-                  <div className="flex flex-col min-w-0 pr-2">
+                  <div className="flex flex-col min-w-0 pr-1.5">
                     <div className="flex items-center gap-1.5 truncate">
-                      <span className={`text-xs font-mono font-bold truncate ${estaSelecionada ? 'text-[#00E5FF]' : 'text-slate-300'}`}>
+                      <span className={`text-[11px] font-mono font-bold truncate ${estaSelecionada ? 'text-[#00E5FF]' : 'text-slate-300'}`}>
                         {String(idx + 1).padStart(2, '0')} // {musica.titulo.toUpperCase()}
                       </span>
                     </div>
 
-                    <span className="text-[10px] font-mono text-slate-400 truncate">
+                    <span className="text-[9px] font-mono text-slate-400 truncate">
                       {musica.autor_artista || 'Compositor Tradicional'}
                     </span>
                   </div>
 
                   {/* Indicador Lateral */}
-                  <div className="shrink-0 flex items-center gap-1.5">
+                  <div className="shrink-0 flex items-center gap-1">
                     {estaSelecionada && isAtivo ? (
-                      <div className="flex items-end gap-0.5 h-3.5 px-1.5 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/40">
+                      <div className="flex items-end gap-0.5 h-3 px-1 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/40">
                         {[0.6, 1, 0.4, 0.9].map((h, i) => (
                           <span
                             key={i}
@@ -258,7 +257,7 @@ export const CardMomento3D: React.FC<Props> = ({
                         ))}
                       </div>
                     ) : (
-                      <span className="text-[10px] font-mono text-slate-500">
+                      <span className="text-[9px] font-mono text-slate-500">
                         {formatarTempo(musica.duracao_segundos || 180)}
                       </span>
                     )}
@@ -271,10 +270,10 @@ export const CardMomento3D: React.FC<Props> = ({
       </div>
 
       {/* 3. RODAPÉ DO CARD: DICA DE NAVEGAÇÃO WEB / TOUCH */}
-      <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-slate-500">
-        <span className="flex items-center gap-1.5 text-cyan-400/90 truncate">
-          <Disc3 className={`w-3.5 h-3.5 text-[#00E5FF] ${tocando ? 'animate-spin' : ''}`} />
-          <span className="truncate">{isAtivo ? 'Mouse Scroll / Arraste para faixas' : 'Clique para selecionar'}</span>
+      <div className="pt-1 border-t border-white/5 flex items-center justify-between text-[9px] font-mono text-slate-500">
+        <span className="flex items-center gap-1 text-cyan-400/90 truncate">
+          <Disc3 className={`w-3 h-3 text-[#00E5FF] ${tocando ? 'animate-spin' : ''}`} />
+          <span className="truncate">{isAtivo ? 'Scroll / Arraste faixas' : 'Clique para selecionar'}</span>
         </span>
         {isAtivo && (
           <button
@@ -282,7 +281,7 @@ export const CardMomento3D: React.FC<Props> = ({
               e.stopPropagation();
               onAbrirUpload();
             }}
-            className="text-cyan-400 hover:underline font-bold pointer-events-auto shrink-0 ml-2"
+            className="text-cyan-400 hover:underline font-bold pointer-events-auto shrink-0 ml-1.5"
           >
             + Faixa
           </button>
