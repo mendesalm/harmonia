@@ -219,24 +219,16 @@ export const CardMomento3D: React.FC<Props> = ({
                         onClick={(e) => {
                           e.stopPropagation();
                           const isPref = !!(musica as any).preferida;
+                          console.log(`[FRONTEND] Clique na estrela. Musica ID: ${musica.id}. Estado atual (isPref): ${isPref}`);
                           
-                          // Regra: Uma vez preferida, não pode ser desmarcada clicando nela mesma.
-                          // Só pode ser desmarcada se o usuário marcar OUTRA música como preferida.
-                          if (isPref) return;
-                          
-                          // Optimistic update local
-                          musicas.forEach(m => {
-                            if (m.id !== musica.id) (m as any).preferida = false;
-                          });
-                          
-                          (musica as any).preferida = true;
-                          // Força re-render caso o react não pegue a mutação
-                          e.currentTarget.style.color = '#fbbf24';
-                          const svg = e.currentTarget.querySelector('svg');
-                          if (svg) svg.setAttribute('fill', 'currentColor');
+                          if (isPref) {
+                            console.log(`[FRONTEND] Música já preferida, bloqueando clique (retornando).`);
+                            return;
+                          }
                           
                           if (onAlternarPreferencia && momento.evento_id) {
-                            onAlternarPreferencia(momento.evento_id, musica.id, false); // enviamos false para que o backend alterne para true
+                            console.log(`[FRONTEND] Chamando onAlternarPreferencia(evento: ${momento.evento_id}, musica: ${musica.id}, false)`);
+                            onAlternarPreferencia(momento.evento_id, musica.id, false); 
                           }
                         }}
                         title={(musica as any).preferida ? "Música preferencial" : "Fixar como preferida"}
