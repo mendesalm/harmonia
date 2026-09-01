@@ -6,10 +6,11 @@ import { getMasonicIcon } from './MasonicIcons';
 interface MasonicTimelineProps {
   momentos: MomentoExecucao[];
   indiceAtual: number;
+  tocando: boolean;
   onMudarMomento: (idx: number) => void;
 }
 
-export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indiceAtual, onMudarMomento }) => {
+export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indiceAtual, tocando, onMudarMomento }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -195,6 +196,32 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
                       <div className={`relative z-10 ${isAtivo ? 'text-macaonico-dourado drop-shadow-[0_0_8px_rgba(212,175,55,1)]' : 'text-macaonico-inactive'}`}>
                         {getMasonicIcon(momento.evento_nome, { size: isAtivo ? 30 : 20, strokeWidth: isAtivo ? 1.5 : 1 })}
                       </div>
+
+                      {/* Equalizer (Bargraph) Overlay when Playing */}
+                      {isAtivo && tocando && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-[#111]/80 rounded-[8px] z-30 backdrop-blur-[1px]">
+                          <style>{`
+                            @keyframes eq {
+                              0%, 100% { transform: scaleY(0.3); }
+                              50% { transform: scaleY(1); }
+                            }
+                            .eq-bar {
+                              width: 3px;
+                              background-color: #D4AF37;
+                              border-radius: 2px;
+                              animation: eq 1s ease-in-out infinite;
+                              transform-origin: bottom;
+                              box-shadow: 0 0 5px rgba(212,175,55,0.8);
+                            }
+                          `}</style>
+                          <div className="flex space-x-[3px] items-end h-[18px]">
+                            <div className="eq-bar h-[80%]" style={{ animationDuration: '0.8s', animationDelay: '0.1s' }}></div>
+                            <div className="eq-bar h-[100%]" style={{ animationDuration: '0.9s', animationDelay: '0.3s' }}></div>
+                            <div className="eq-bar h-[60%]" style={{ animationDuration: '0.7s', animationDelay: '0.0s' }}></div>
+                            <div className="eq-bar h-[90%]" style={{ animationDuration: '1.1s', animationDelay: '0.2s' }}></div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Label - ONLY VISIBLE IF ACTIVE */}

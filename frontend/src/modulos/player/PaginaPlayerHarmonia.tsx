@@ -252,6 +252,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         <MasonicTimeline
           momentos={dadosSessao.esteira_ritualistica}
           indiceAtual={indiceAtual}
+          tocando={tocando}
           onMudarMomento={setIndiceAtual}
         />
       )}
