@@ -79,7 +79,7 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
                     <feGaussianBlur stdDeviation="3" result="blur" />
                     <feComposite in="SourceGraphic" in2="blur" operator="over" />
                   </filter>
-                  <linearGradient id="gold-gradient" x1="0" y1="0" x2="1" y2="0">
+                  <linearGradient id="gold-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#D4AF37" />
                     <stop offset="50%" stopColor="#FBF5B7" />
                     <stop offset="100%" stopColor="#D4AF37" />
@@ -97,12 +97,13 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
                 />
 
                 {/* Active Progress Fill (Thick glowing center line) */}
-                <line 
-                  x1={paddingX} y1="15" 
-                  x2={activeWidth} y2="15" 
-                  stroke="url(#gold-gradient)" 
-                  strokeWidth="5" 
-                  strokeLinecap="round"
+                <rect 
+                  x={paddingX} 
+                  y="12.5" 
+                  width={Math.max(0, activeWidth - paddingX)} 
+                  height="5" 
+                  rx="2.5"
+                  fill="url(#gold-gradient)" 
                   filter="url(#glow)"
                   className="transition-all duration-700 ease-in-out"
                 />
