@@ -52,11 +52,11 @@ export const CarrosselMiniaturas3D: React.FC<Props> = ({
     const moveLimit = 40;
     
     if (dx > moveLimit) {
-      // Arrastar para a direita retrocede (índice anterior)
-      onMudarMomento(Math.max(0, indiceAtual - 1));
-    } else if (dx < -moveLimit) {
-      // Arrastar para a esquerda avança (próximo índice)
+      // Arrastar para a direita avança
       onMudarMomento(Math.min(momentos.length - 1, indiceAtual + 1));
+    } else if (dx < -moveLimit) {
+      // Arrastar para a esquerda retrocede
+      onMudarMomento(Math.max(0, indiceAtual - 1));
     }
     
     setOffsetXDrag(0);
