@@ -135,19 +135,33 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
                     <g key={`svg-node-${idx}`}>
                       {/* Outer Ring */}
                       <circle 
-                        cx={cx} cy="15" r="7" 
-                        stroke={isPassado ? "#D4AF37" : "#3A3A3A"} 
-                        strokeWidth="1.5" 
+                        cx={cx} cy="15" r={isAtivo ? "12" : "7"} 
+                        stroke={isAtivo ? "#FBF5B7" : isPassado ? "#D4AF37" : "#3A3A3A"} 
+                        strokeWidth={isAtivo ? "2" : "1.5"} 
                         fill="#080808" 
-                        className="transition-colors duration-500"
-                      />
-                      {/* Inner Dot */}
-                      <circle 
-                        cx={cx} cy="15" r={isAtivo ? "4.5" : "3"} 
-                        fill={isAtivo ? "#FBF5B7" : isPassado ? "#D4AF37" : "#3A3A3A"} 
                         filter={isAtivo ? "url(#glow)" : "none"}
                         className="transition-all duration-500"
                       />
+                      
+                      {/* Inner Element */}
+                      {isAtivo ? (
+                        <g transform={`translate(${cx - 10}, 5) scale(0.85)`} stroke="#FBF5B7" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" filter="url(#glow)">
+                           {/* Compass */}
+                           <path d="M12 4 L5 18 M12 4 L19 18" />
+                           {/* Square */}
+                           <path d="M6 13 L12 19 L18 13" />
+                           {/* Hinge */}
+                           <circle cx="12" cy="4" r="1.5" fill="#FBF5B7" />
+                           {/* G (Central Dot) */}
+                           <circle cx="12" cy="11.5" r="1" fill="#FBF5B7" stroke="none" />
+                        </g>
+                      ) : (
+                        <circle 
+                          cx={cx} cy="15" r="3" 
+                          fill={isPassado ? "#D4AF37" : "#3A3A3A"} 
+                          className="transition-all duration-500"
+                        />
+                      )}
                     </g>
                   );
                 })}
