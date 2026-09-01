@@ -6,10 +6,14 @@ import os
 import uuid
 import re
 import asyncio
+from pathlib import Path
 from typing import Dict, Any, Optional
 import imageio_ffmpeg
 import yt_dlp
 from backend.nucleo.formatadores import sanitizar_nome_arquivo, formatar_titulo_inteligente
+from backend.nucleo.configuracoes import configuracoes
+
+DIRETORIO_BASE = configuracoes.DIRETORIO_INSTANCIAS_PRIVATE
 
 
 def _executar_download_yt_dlp(
