@@ -132,11 +132,12 @@ async def atualizar_musica(
 
 @roteador_musicas.delete(
     "/{musica_id}",
-    summary="Excluir Música",
-    description="Remove a música do catálogo e apaga o arquivo físico correspondente do disco."
+    summary="Desvincular Música da Loja",
+    description="Remove a música de todos os eventos da Loja."
 )
 async def deletar_musica(
     musica_id: uuid.UUID,
+    organizacao_id: uuid.UUID = Query(..., description="UUID da Loja"),
     db: AsyncSession = Depends(obter_banco_de_dados)
 ):
-    return await ServicoMusica.deletar(db=db, musica_id=musica_id)
+    return await ServicoMusica.deletar(db=db, musica_id=musica_id, organizacao_id=organizacao_id)

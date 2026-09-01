@@ -85,7 +85,7 @@ class ServicoMusica:
         if apenas_ativas:
             filtros.append(Musica.ativo == True)
         if organizacao_id is not None:
-            filtros.append(Musica.organizacao_id == organizacao_id)
+            filtros.append(or_(Musica.organizacao_id == organizacao_id, Musica.organizacao_id.is_(None)))
         if tipo_midia is not None:
             filtros.append(Musica.tipo_midia == tipo_midia.upper())
         if termo_busca:
@@ -158,6 +158,28 @@ class ServicoMusica:
         if tamanho == 0:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="O arquivo enviado está vazio.")
 
+        # 0. Verifica duplicidade global via hash SHA-256
+        import hashlib
+        hash_arquivo = hashlib.sha256(conteudo_bytes).hexdigest()
+        
+        stmt_existente = select(Musica).where(Musica.hash_arquivo == hash_arquivo)
+        res_existente = await db.execute(stmt_existente)
+        musica_existente = res_existente.scalar_one_or_none()
+        
+        if musica_existente:
+            # Se já existe, apenas associa aos eventos solicitados, sem salvar o arquivo novamente
+            if evento_ids:
+                for ev_id in evento_ids:
+                    # Verifica se já está associado
+                    stmt_assoc = select(MusicaEvento).where(
+                        MusicaEvento.musica_id == musica_existente.id, 
+                        MusicaEvento.evento_id == ev_id
+                    )
+                    if not (await db.execute(stmt_assoc)).scalar_one_or_none():
+                        db.add(MusicaEvento(musica_id=musica_existente.id, evento_id=ev_id))
+                await db.commit()
+            return await ServicoMusica.obter_por_id(db, musica_existente.id)
+
         # 1. Determina título e autor
         nome_sem_ext = arquivo.filename.rsplit(".", 1)[0]
         titulo_final = formatar_titulo_inteligente(titulo or nome_sem_ext)
@@ -182,11 +204,12 @@ class ServicoMusica:
                 pass
 
         nova_musica = Musica(
-            organizacao_id=organizacao_id,
+            organizacao_id=None, # Músicas físicas agora são globais por design
             titulo=titulo_final,
             autor_artista=autor_final,
             tipo_midia="ARQUIVO_LOCAL",
             caminho_arquivo=caminho_relativo,
+            hash_arquivo=hash_arquivo,
             duracao_segundos=duracao,
             tamanho_bytes=tamanho,
             tipo_mime=arquivo.content_type,
@@ -332,18 +355,30 @@ class ServicoMusica:
         return await ServicoMusica.obter_por_id(db, musica_id)
 
     @staticmethod
-    async def deletar(db: AsyncSession, musica_id: uuid.UUID) -> dict:
-        """Exclui a música e remove seu arquivo físico do disco caso seja local."""
+    async def deletar(db: AsyncSession, musica_id: uuid.UUID, organizacao_id: uuid.UUID) -> dict:
+        """Desvincula a música de todos os eventos associados a essa organização."""
         stmt = select(Musica).where(Musica.id == musica_id)
         res = await db.execute(stmt)
         musica = res.scalar_one_or_none()
         if not musica:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Música não encontrada.")
 
-        # Remove o arquivo físico se for local
-        if musica.caminho_arquivo:
-            ServicoArmazenamentoTenant.remover_arquivo_musica(musica.caminho_arquivo)
+        from backend.modelos.evento import Evento
+        from backend.modelos.musica import MusicaEvento
+        from sqlalchemy import delete
+        
+        # Desvincula de todos os eventos que pertencem a essa organizacao
+        stmt_eventos_org = select(Evento.id).where(Evento.organizacao_id == organizacao_id)
+        res_evs = await db.execute(stmt_eventos_org)
+        evento_ids_org = [row[0] for row in res_evs.fetchall()]
 
-        await db.delete(musica)
-        await db.commit()
-        return {"mensagem": f"Música '{musica.titulo}' removida com sucesso."}
+        if evento_ids_org:
+            await db.execute(
+                delete(MusicaEvento).where(
+                    MusicaEvento.musica_id == musica_id,
+                    MusicaEvento.evento_id.in_(evento_ids_org)
+                )
+            )
+            await db.commit()
+
+        return {"mensagem": f"Música '{musica.titulo}' desvinculada da Loja com sucesso."}

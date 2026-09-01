@@ -39,6 +39,10 @@ class Sessao(Base):
     criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     atualizado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
+    __table_args__ = (
+        UniqueConstraint("nome", "organizacao_id", name="uq_sessao_nome_org"),
+    )
+
     # Relacionamentos
     organizacao: Mapped["Organizacao"] = relationship("Organizacao", back_populates="sessoes")
     eventos_associados: Mapped[List["SessaoEvento"]] = relationship(

@@ -24,8 +24,8 @@ class Musica(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True
     )
-    organizacao_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("organizacoes.id", ondelete="CASCADE"), nullable=False, index=True
+    organizacao_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizacoes.id", ondelete="CASCADE"), nullable=True, index=True
     )
     titulo: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     autor_artista: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
@@ -35,6 +35,9 @@ class Musica(Base):
     
     # Caminho do arquivo físico no storage (/storage/instancias/public/slug/musicas/nome.mp3)
     caminho_arquivo: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    
+    # Hash SHA-256 do arquivo para evitar uploads duplicados globalmente
+    hash_arquivo: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
     
     # Link externo de streaming (YouTube, Spotify)
     link_externo: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)

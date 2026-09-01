@@ -4,7 +4,7 @@ Modelo ORM de Evento Ritualístico (Momento da Sessão / Playlist).
 import uuid
 from datetime import datetime
 from typing import Optional, List, TYPE_CHECKING
-from sqlalchemy import String, Text, Boolean, DateTime, ForeignKey, Integer
+from sqlalchemy import String, Text, Boolean, DateTime, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.nucleo.banco import Base
@@ -42,6 +42,10 @@ class Evento(Base):
     ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     atualizado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("nome", "organizacao_id", name="uq_evento_nome_org"),
+    )
 
     # Relacionamentos
     organizacao: Mapped[Optional["Organizacao"]] = relationship("Organizacao", back_populates="eventos")

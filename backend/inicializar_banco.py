@@ -98,6 +98,27 @@ async def inicializar_banco():
         # Migração idempotente para colunas novas
         await conn.execute(text("ALTER TABLE organizacoes ADD COLUMN IF NOT EXISTS status_assinatura VARCHAR(50) DEFAULT 'ATIVO';"))
         await conn.execute(text("ALTER TABLE organizacoes ADD COLUMN IF NOT EXISTS plano_assinatura VARCHAR(50) DEFAULT 'MENSAL_HARMONIA';"))
+        await conn.execute(text("ALTER TABLE organizacoes ADD COLUMN IF NOT EXISTS configuracoes JSONB DEFAULT '{}'::jsonb;"))
+        
+        # Migrações para Globalização de Músicas e Unicidade
+        await conn.execute(text("ALTER TABLE musicas ALTER COLUMN organizacao_id DROP NOT NULL;"))
+        await conn.execute(text("ALTER TABLE musicas ADD COLUMN IF NOT EXISTS hash_arquivo VARCHAR(64);"))
+        await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_musicas_hash_arquivo ON musicas (hash_arquivo);"))
+        
+        # Unicidade (ignora erro se já existir usando bloco DO)
+        await conn.execute(text('''
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_evento_nome_org') THEN
+                    ALTER TABLE eventos ADD CONSTRAINT uq_evento_nome_org UNIQUE (nome, organizacao_id);
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_sessao_nome_org') THEN
+                    ALTER TABLE sessoes ADD CONSTRAINT uq_sessao_nome_org UNIQUE (nome, organizacao_id);
+                END IF;
+            END
+            $$;
+        '''))
+
     print("Tabelas e colunas verificadas com sucesso!")
 
     async with SessaoAssincronaLocal() as db:

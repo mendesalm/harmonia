@@ -70,14 +70,15 @@ export const PaginaMusicas: React.FC = () => {
   };
 
   const deletarMusica = async (musica: Musica) => {
-    if (!window.confirm(`Tem certeza que deseja excluir "${musica.titulo}" do acervo?`)) return;
+    if (!window.confirm(`Tem certeza que deseja desvincular "${musica.titulo}" desta loja? A música continuará no servidor, mas não aparecerá mais nos seus momentos.`)) return;
 
     try {
       if (musicaTocandoId === musica.id && audioRef.current) {
         audioRef.current.pause();
         setMusicaTocandoId(null);
       }
-      await clienteHttp.delete(`/musicas/${musica.id}`);
+      const params = lojaAtiva ? { organizacao_id: lojaAtiva.id } : {};
+      await clienteHttp.delete(`/musicas/${musica.id}`, { params });
       await carregarDados();
     } catch (err: any) {
       alert(err.response?.data?.detail || 'Erro ao deletar música.');
