@@ -464,7 +464,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const progressoPercentual = duracaoTotal > 0 ? Math.min(100, Math.max(0, (tempoAtual / duracaoTotal) * 100)) : 0;
 
   return (
-    <div className="h-full w-full overflow-hidden bg-[#040811] text-slate-100 flex flex-col items-center justify-between p-2 sm:p-3 selection:bg-cyan-500 selection:text-black">
+    <div className="h-full w-full overflow-hidden bg-[#040811] text-slate-100 flex flex-col items-center justify-between p-0 sm:p-3 pb-0 sm:pb-3 selection:bg-cyan-500 selection:text-black">
       
       {/* Elemento de Áudio HTML5 para Arquivos Locais */}
       <audio
@@ -508,7 +508,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
       />
 
       {/* Container Principal Panorâmico HUD */}
-      <div className="w-full max-w-lg sm:max-w-2xl md:max-w-4xl lg:max-w-5xl h-full flex flex-col justify-between py-0.5 gap-1.5">
+      <div className="w-full max-w-lg sm:max-w-2xl md:max-w-4xl lg:max-w-5xl h-full flex flex-col justify-between pt-2 sm:pt-0 py-0.5 gap-1.5">
 
         {/* 1. BARRA SUPERIOR UNIFICADA // STATUS & CONFIGURAÇÕES */}
         <div className="flex items-center justify-between px-3 py-1.5 bg-[#07111f]/90 border border-cyan-500/20 rounded-2xl shrink-0 shadow-lg backdrop-blur-md">
@@ -583,20 +583,22 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         )}
 
         {/* 3. DOCK UNIFICADO DE CONTROLE // PLAYER HUD COMPACTO */}
-        <div className="max-w-2xl mx-auto w-full rounded-2xl bg-[#060e1d] border border-cyan-500/30 p-2.5 sm:p-3 shadow-2xl flex flex-col gap-2 shrink-0">
+        <div className="max-w-2xl mx-auto w-full rounded-t-[32px] sm:rounded-2xl bg-[#060e1d] border-t border-x sm:border border-cyan-500/30 p-2.5 sm:p-3 shadow-2xl flex flex-col gap-2 shrink-0 pb-5 sm:pb-3 mt-1 sm:mt-0">
           
           {/* Barra de Progresso Linear de Precisão & Timestamps */}
           <div className="flex flex-col gap-1 px-1">
             {/* Display Dinâmico do Título Acima da Barra (Substituindo a tag Em Execução) */}
             <div className="flex flex-col items-center justify-center w-full pb-1 h-8">
               {!musicaAtual ? (
-                <button
-                  onClick={() => setModalUploadAberto(true)}
-                  className="px-3 py-1 bg-cyan-500/20 text-[#00E5FF] border border-cyan-500/40 rounded-lg text-[10px] font-mono font-bold hover:bg-cyan-500/30 transition-all pointer-events-auto cursor-pointer flex items-center gap-1.5 shadow-[0_0_10px_rgba(0,229,255,0.15)]"
-                >
-                  <UploadCloud className="w-3 h-3" />
-                  + CATALOGAR FAIXA PARA ESTE MOMENTO
-                </button>
+                  <button
+                    onClick={() => setModalUploadAberto(true)}
+                    className="px-3 py-1.5 sm:py-1 bg-cyan-500/20 text-[#00E5FF] border border-cyan-500/40 rounded-lg text-[10px] sm:text-xs font-mono font-bold hover:bg-cyan-500/30 transition-all pointer-events-auto cursor-pointer flex items-center gap-2 shadow-[0_0_10px_rgba(0,229,255,0.15)]"
+                    title="Catalogar Faixa"
+                  >
+                    <UploadCloud className="w-4 h-4 sm:w-3 sm:h-3" />
+                    <span className="hidden sm:inline">+ CATALOGAR FAIXA PARA ESTE MOMENTO</span>
+                    <span className="inline sm:hidden">CATALOGAR</span>
+                  </button>
               ) : (
                   <>
                     <div className="flex items-center gap-2 max-w-full px-2">
