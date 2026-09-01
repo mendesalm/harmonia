@@ -412,25 +412,23 @@ class ServicoMusica:
 
         from backend.modelos.evento import Evento
         from backend.modelos.musica import MusicaEvento
-        from sqlalchemy import delete, or_
+        import os
+        from backend.nucleo.configuracoes import configuracoes
+
+        # Deleta as associações (por garantia, apesar do cascade)
+        await db.execute(delete(MusicaEvento).where(MusicaEvento.musica_id == musica_id))
         
-        # Desvincula de todos os eventos que pertencem a essa organizacao ou sao globais
-        stmt_eventos_org = select(Evento.id).where(
-            or_(
-                Evento.organizacao_id == organizacao_id,
-                Evento.organizacao_id.is_(None)
-            )
-        )
-        res_evs = await db.execute(stmt_eventos_org)
-        evento_ids_org = [row[0] for row in res_evs.fetchall()]
-
-        if evento_ids_org:
-            await db.execute(
-                delete(MusicaEvento).where(
-                    MusicaEvento.musica_id == musica_id,
-                    MusicaEvento.evento_id.in_(evento_ids_org)
-                )
-            )
-            await db.commit()
-
-        return {"mensagem": f"Música '{musica.titulo}' desvinculada da Loja com sucesso."}
+        # Deleta do banco de dados
+        await db.execute(delete(Musica).where(Musica.id == musica_id))
+        await db.commit()
+        
+        # Deleta o arquivo físico se existir
+        if musica.caminho_arquivo:
+            caminho_completo = os.path.join(configuracoes.DIRETORIO_INSTANCIAS_PRIVATE, musica.caminho_arquivo.lstrip('/'))
+            if os.path.exists(caminho_completo):
+                try:
+                    os.remove(caminho_completo)
+                except Exception:
+                    pass
+                    
+        return {"sucesso": True, "mensagem": "Música e arquivo excluídos com sucesso do acervo global."}
