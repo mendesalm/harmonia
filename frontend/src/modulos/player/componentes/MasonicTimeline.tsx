@@ -199,10 +199,10 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
 
                     {/* Label - ONLY VISIBLE IF ACTIVE */}
                     <div className={`
-                      absolute top-[100px] w-40 text-base font-cinzel transition-all duration-300 whitespace-nowrap text-center tracking-widest text-macaonico-dourado font-bold drop-shadow-[0_0_8px_rgba(212,175,55,0.9)]
+                      absolute top-[100px] w-64 text-sm font-cinzel transition-all duration-300 whitespace-normal leading-tight text-center tracking-widest text-macaonico-dourado font-bold drop-shadow-[0_0_8px_rgba(212,175,55,0.9)]
                       ${isAtivo ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}
                     `}>
-                      {momento.evento_nome.substring(0, 24)}
+                      {momento.evento_nome}
                     </div>
                   </div>
                 );
