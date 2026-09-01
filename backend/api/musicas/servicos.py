@@ -412,10 +412,15 @@ class ServicoMusica:
 
         from backend.modelos.evento import Evento
         from backend.modelos.musica import MusicaEvento
-        from sqlalchemy import delete
+        from sqlalchemy import delete, or_
         
-        # Desvincula de todos os eventos que pertencem a essa organizacao
-        stmt_eventos_org = select(Evento.id).where(Evento.organizacao_id == organizacao_id)
+        # Desvincula de todos os eventos que pertencem a essa organizacao ou sao globais
+        stmt_eventos_org = select(Evento.id).where(
+            or_(
+                Evento.organizacao_id == organizacao_id,
+                Evento.organizacao_id.is_(None)
+            )
+        )
         res_evs = await db.execute(stmt_eventos_org)
         evento_ids_org = [row[0] for row in res_evs.fetchall()]
 
