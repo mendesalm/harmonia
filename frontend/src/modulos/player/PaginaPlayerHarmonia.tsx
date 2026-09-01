@@ -210,6 +210,200 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     }
   };
 
+export const PaginaPlayerHarmonia: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sessaoParamId = searchParams.get('sessao');
+
+  const [sessoes, setSessoes] = useState<Sessao[]>([]);
+  const [sessaoSelecionadaId, setSessaoSelecionadaId] = useState<string>(sessaoParamId || '');
+  const [dadosSessao, setDadosSessao] = useState<SessaoPlayerExecucao | null>(null);
+  
+  const [indiceAtual, setIndiceAtual] = useState(0);
+  const [modalUploadAberto, setModalUploadAberto] = useState(false);
+  const [musicasDoMomento, setMusicasDoMomento] = useState<Musica[]>([]);
+  
+  // Audio state
+  const [tocando, setTocando] = useState(false);
+  const [tempoAtual, setTempoAtual] = useState(0);
+  const [duracaoTotal, setDuracaoTotal] = useState(0);
+  
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ytPlayerRef = useRef<any>(null);
+  
+  const dadosSessaoRef = useRef<SessaoPlayerExecucao | null>(null);
+  dadosSessaoRef.current = dadosSessao;
+
+  useEffect(() => {
+    carregarSessoes();
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    if (firstScriptTag && firstScriptTag.parentNode) {
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (sessaoSelecionadaId) {
+      carregarEsteira(sessaoSelecionadaId);
+    } else if (sessoes.length > 0) {
+      setSessaoSelecionadaId(sessoes[0].id);
+      setSearchParams({ sessao: sessoes[0].id });
+    }
+  }, [sessaoSelecionadaId, sessoes]);
+
+  const carregarSessoes = async () => {
+    try {
+      const res = await clienteHttp.get('/sessoes');
+      setSessoes(res.data);
+    } catch (e) {}
+  };
+
+  const carregarEsteira = async (idSessao: string) => {
+    try {
+      const res = await clienteHttp.get(`/player/sessao/${idSessao}`);
+      setDadosSessao(res.data);
+      if (res.data.esteira_ritualistica.length > 0) {
+        setIndiceAtual(0);
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    if (!dadosSessao || !dadosSessao.esteira_ritualistica[indiceAtual]) return;
+    const eventoId = dadosSessao.esteira_ritualistica[indiceAtual].evento_id;
+    carregarMusicasDoMomento(eventoId);
+  }, [indiceAtual, dadosSessao]);
+
+  const carregarMusicasDoMomento = async (eventoId: string) => {
+    try {
+      const res = await clienteHttp.get(`/musicas?evento_id=${eventoId}`);
+      // Ensure the currently selected music is at the top or in the list
+      setMusicasDoMomento(res.data);
+    } catch (e) {}
+  };
+
+  const momentoAtual = dadosSessao?.esteira_ritualistica[indiceAtual];
+  const musicaAtual = momentoAtual?.musica_sorteada;
+
+  // Sync Audio source when active track changes
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    setTocando(false);
+    setTempoAtual(0);
+    setDuracaoTotal(0);
+    
+    if (musicaAtual) {
+      if (musicaAtual.tipo_midia === 'ARQUIVO_LOCAL' && musicaAtual.caminho_arquivo) {
+        let caminho = musicaAtual.caminho_arquivo;
+        if (!caminho.startsWith('http') && !caminho.startsWith('/')) {
+          caminho = '/' + caminho;
+        }
+        audio.src = caminho;
+        audio.volume = 1.0;
+        audio.currentTime = 0;
+        audio.pause();
+        if (musicaAtual.duracao_segundos) setDuracaoTotal(musicaAtual.duracao_segundos);
+      } else {
+        audio.pause();
+        audio.src = '';
+        if (musicaAtual.duracao_segundos) setDuracaoTotal(musicaAtual.duracao_segundos);
+      }
+    } else {
+      audio.pause();
+      audio.src = '';
+    }
+  }, [musicaAtual]);
+
+  const alternarPlayPause = () => {
+    if (!musicaAtual) return;
+
+    if (musicaAtual.tipo_midia === 'ARQUIVO_LOCAL') {
+      const audio = audioRef.current;
+      if (!audio) return;
+      if (tocando) {
+        audio.pause();
+        setTocando(false);
+      } else {
+        audio.play().then(() => setTocando(true)).catch(() => setTocando(false));
+      }
+    } else if (musicaAtual.tipo_midia === 'YOUTUBE' && ytPlayerRef.current) {
+      if (tocando) {
+        ytPlayerRef.current.pauseVideo();
+      } else {
+        ytPlayerRef.current.playVideo();
+      }
+    }
+  };
+
+  const aoTerminarMusica = () => {
+    const audio = audioRef.current;
+    if (audio) audio.pause();
+    setTocando(false);
+    setTempoAtual(0);
+    
+    // Auto-advance is now implicit if they let it finish
+    avancarProximo();
+  };
+
+  const avancarProximo = () => {
+    if (!dadosSessao) return;
+    if (indiceAtual < dadosSessao.esteira_ritualistica.length - 1) {
+      setIndiceAtual(indiceAtual + 1);
+    }
+  };
+
+  const voltarAnterior = () => {
+    if (indiceAtual > 0) {
+      setIndiceAtual(indiceAtual - 1);
+    }
+  };
+
+  const pularFaixa = () => {
+    // Para simplificar, "Pular Faixa" seleciona a próxima da lista deste momento
+    if (!musicaAtual || musicasDoMomento.length <= 1) return;
+    const idx = musicasDoMomento.findIndex(m => m.id === musicaAtual.id);
+    const proxIdx = (idx + 1) % musicasDoMomento.length;
+    selecionarMusicaDaLista(proxIdx);
+  };
+
+  const voltarFaixa = () => {
+    if (!musicaAtual || musicasDoMomento.length <= 1) return;
+    const idx = musicasDoMomento.findIndex(m => m.id === musicaAtual.id);
+    const prevIdx = idx <= 0 ? musicasDoMomento.length - 1 : idx - 1;
+    selecionarMusicaDaLista(prevIdx);
+  };
+
+  const selecionarMusicaDaLista = (idx: number) => {
+    if (!dadosSessao || !musicasDoMomento[idx]) return;
+    const novaSessao = { ...dadosSessao };
+    novaSessao.esteira_ritualistica[indiceAtual].musica_sorteada = musicasDoMomento[idx];
+    setDadosSessao(novaSessao);
+    // When they manually select a track, auto-play it
+    setTimeout(() => {
+      setTocando(true);
+      if (musicasDoMomento[idx].tipo_midia === 'ARQUIVO_LOCAL' && audioRef.current) {
+        audioRef.current.play().catch(()=>{});
+      } else if (ytPlayerRef.current) {
+        ytPlayerRef.current.playVideo();
+      }
+    }, 100);
+  };
+
+  const onSeek = (novoTempo: number) => {
+    if (musicaAtual?.tipo_midia === 'ARQUIVO_LOCAL' && audioRef.current) {
+      audioRef.current.currentTime = novoTempo;
+      setTempoAtual(novoTempo);
+    } else if (musicaAtual?.tipo_midia === 'YOUTUBE' && ytPlayerRef.current) {
+      try {
+        ytPlayerRef.current.seekTo(novoTempo, true);
+        setTempoAtual(novoTempo);
+      } catch {}
+    }
+  };
+
   // Find the index of the currently active track in the full list
   const indiceTrackAtivo = musicasDoMomento.findIndex(m => m.id === musicaAtual?.id);
   const safeIndiceTrack = indiceTrackAtivo >= 0 ? indiceTrackAtivo : 0;
@@ -259,8 +453,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         />
       )}
 
-      {/* Center Axis: Tracks (3D Vertical) */}
-      <div className="flex-1 overflow-hidden relative">
+      {/* Middle Axis: Tracklist */}
+      {dadosSessao && (
         <MasonicTrackList
           musicas={musicasDoMomento}
           indiceAtivo={safeIndiceTrack}
@@ -269,10 +463,10 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           onAbrirUpload={() => setModalUploadAberto(true)}
           progressoPercentual={progressoPercentual}
         />
-      </div>
+      )}
 
       {/* Bottom Axis: Controls */}
-      <div className="shrink-0 bg-macaonico-surface relative z-30">
+      <div className="shrink-0 relative z-30">
         <MasonicControls
           tocando={tocando}
           onPlayPause={alternarPlayPause}
@@ -280,7 +474,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           onNextTrack={pularFaixa}
           onPrevMoment={voltarAnterior}
           onNextMoment={avancarProximo}
-          tempoRestanteMomento="04:12" 
+          proximoEventoNome={dadosSessao?.esteira_ritualistica[indiceAtual + 1]?.evento_nome}
           tempoAtual={tempoAtual}
           duracaoTotal={duracaoTotal}
           onSeek={onSeek}

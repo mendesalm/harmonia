@@ -8,7 +8,7 @@ interface MasonicControlsProps {
   onNextTrack: () => void;
   onPrevMoment: () => void;
   onNextMoment: () => void;
-  tempoRestanteMomento?: string; // e.g. "04:12"
+  proximoEventoNome?: string;
   // Progress bar props
   tempoAtual: number;
   duracaoTotal: number;
@@ -22,29 +22,41 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
   onNextTrack,
   onPrevMoment,
   onNextMoment,
-  tempoRestanteMomento,
+  proximoEventoNome,
   tempoAtual,
   duracaoTotal,
   onSeek
 }) => {
-
-  const formatarTempo = (segundos: number) => {
-    if (isNaN(segundos)) return '00:00';
-    const m = Math.floor(segundos / 60);
-    const s = Math.floor(segundos % 60);
+  // Format MM:SS
+  const formatTime = (secs: number) => {
+    if (!secs || isNaN(secs)) return "00:00";
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const progressoPercentual = duracaoTotal > 0 ? (tempoAtual / duracaoTotal) * 100 : 0;
+  const progressPercent = duracaoTotal > 0 ? (tempoAtual / duracaoTotal) * 100 : 0;
+
+  const handleSeekClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const perc = clickX / rect.width;
+    onSeek(perc * duracaoTotal);
+  };
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4 pt-2 pb-6 flex flex-col items-center">
+    <div className="w-full bg-[#050505] border-t border-macaonico-dourado/20 pt-4 pb-6 px-4 flex flex-col items-center relative z-20">
       
-      {tempoRestanteMomento && (
-        <div className="text-macaonico-dourado/80 font-cinzel mb-3 tracking-widest text-sm">
-          Next Moment in: {tempoRestanteMomento}
-        </div>
-      )}
+      {/* Decorative Top Border */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-px bg-gradient-to-r from-transparent via-macaonico-dourado/50 to-transparent"></div>
+
+      <div className="max-w-md w-full flex flex-col items-center">
+        
+        {proximoEventoNome && (
+          <div className="text-macaonico-dourado/80 font-cinzel mb-3 tracking-widest text-sm uppercase font-bold drop-shadow-[0_0_5px_rgba(212,175,55,0.4)]">
+            Próximo Evento: {proximoEventoNome}
+          </div>
+        )}
 
       {/* Main Control Panel */}
       <div className="relative w-full max-w-[450px] h-32 flex items-center justify-center mb-6">
