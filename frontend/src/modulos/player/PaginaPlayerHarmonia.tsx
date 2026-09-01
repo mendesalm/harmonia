@@ -215,8 +215,20 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const progressoPercentual = duracaoTotal > 0 ? (tempoAtual / duracaoTotal) * 100 : 0;
 
   return (
-    <div className="h-full w-full flex flex-col bg-macaonico-surface overflow-hidden text-slate-100 relative">
+    <div className="h-full w-full flex flex-col bg-macaonico-surface overflow-hidden text-slate-100 relative p-1 pb-0">
       
+      {/* Outer Golden Border to match the design */}
+      <div className="absolute inset-1 border-[1.5px] border-macaonico-dourado/40 pointer-events-none z-50 rounded-sm">
+         {/* Corner Decorations */}
+         <div className="absolute top-0 left-0 w-4 h-4 border-t-[1.5px] border-l-[1.5px] border-macaonico-dourado -translate-x-[2px] -translate-y-[2px]"></div>
+         <div className="absolute top-0 right-0 w-4 h-4 border-t-[1.5px] border-r-[1.5px] border-macaonico-dourado translate-x-[2px] -translate-y-[2px]"></div>
+         <div className="absolute bottom-0 left-0 w-4 h-4 border-b-[1.5px] border-l-[1.5px] border-macaonico-dourado -translate-x-[2px] translate-y-[2px]"></div>
+         <div className="absolute bottom-0 right-0 w-4 h-4 border-b-[1.5px] border-r-[1.5px] border-macaonico-dourado translate-x-[2px] translate-y-[2px]"></div>
+      </div>
+
+      {/* Global Background Texture */}
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')] opacity-20 pointer-events-none z-0"></div>
+
       {/* HTML5 Audio */}
       <audio
         ref={audioRef}
