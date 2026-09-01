@@ -31,11 +31,21 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
   };
 
   const nodeWidth = 100; // Distance between each node in pixels
-  const paddingX = 40; // Padding on left and right
+  const viewWidth = 300; // Fixed width for 3 items
+  const paddingX = viewWidth / 2; // Padding so first and last items can reach exact center
   const totalWidth = (momentos.length > 1 ? momentos.length - 1 : 0) * nodeWidth + paddingX * 2;
   
   // Calculate the active fill width
   const activeWidth = paddingX + (indiceAtual * nodeWidth);
+
+  // Auto-scroll logic to ALWAYS center the active node in the 300px viewport
+  useEffect(() => {
+    if (containerRef.current) {
+      // scrollLeft should be the center of the active node minus half the viewport
+      const targetScroll = (paddingX + indiceAtual * nodeWidth) - (viewWidth / 2);
+      containerRef.current.scrollTo({ left: targetScroll, behavior: 'smooth' });
+    }
+  }, [indiceAtual]);
 
   return (
     <div className="relative w-full pb-6 pt-4 border-b border-white/5 bg-[#080808] z-10 before:absolute before:inset-0 before:bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')] before:opacity-10 before:pointer-events-none">
@@ -52,11 +62,11 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
         <div className="h-px w-64 mx-auto mt-2 bg-gradient-to-r from-transparent via-macaonico-dourado to-transparent opacity-80"></div>
       </div>
 
-      <div className="relative w-full max-w-lg mx-auto flex items-center px-2">
+      <div className="relative w-full max-w-lg mx-auto flex items-center px-2 justify-center">
         {/* Left Arrow */}
         <button 
           onClick={handlePrev}
-          className="text-macaonico-inactive hover:text-macaonico-dourado transition-colors disabled:opacity-20 absolute left-0 z-20 bg-[#080808]/80 backdrop-blur-sm rounded-full"
+          className="text-macaonico-inactive hover:text-macaonico-dourado transition-colors disabled:opacity-20 absolute left-4 z-20 bg-[#080808]/80 backdrop-blur-sm rounded-full"
           disabled={indiceAtual === 0}
         >
           <ChevronLeft size={28} strokeWidth={1} />
@@ -64,14 +74,15 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
 
         {/* Scrollable Timeline Area with Fade Mask to show exactly 3 items */}
         <div 
-          className="flex-1 overflow-x-auto scrollbar-hide relative mx-8" 
+          className="overflow-hidden scrollbar-hide relative" 
           ref={containerRef}
           style={{ 
-            maskImage: 'linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)'
+            width: `${viewWidth}px`, // Strictly 300px wide
+            maskImage: 'linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%)'
           }}
         >
-           <div className="relative mx-auto" style={{ width: `${totalWidth}px`, height: '140px' }}>
+           <div className="relative" style={{ width: `${totalWidth}px`, height: '140px' }}>
               
               {/* --- SVG PROGRESS TRACK --- */}
               <svg 
@@ -81,8 +92,8 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
                 viewBox={`0 0 ${totalWidth} 30`}
               >
                 <defs>
-                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="3" result="blur" />
+                  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
                     <feComposite in="SourceGraphic" in2="blur" operator="over" />
                   </filter>
                   <linearGradient id="gold-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -158,23 +169,23 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
                     <div className={`
                       mb-[26px] flex items-center justify-center transition-all duration-500 relative rounded-[10px]
                       ${isAtivo 
-                        ? 'w-12 h-12 border-[1.5px] border-macaonico-dourado bg-macaonico-dourado/10 shadow-[0_0_15px_rgba(212,175,55,0.3)] scale-110' 
-                        : 'w-10 h-10 border border-macaonico-inactive bg-[#0c0c0c] group-hover:border-macaonico-dourado/50 opacity-60 hover:opacity-100'
+                        ? 'w-14 h-14 border-2 border-macaonico-dourado bg-macaonico-dourado/20 shadow-[0_0_25px_rgba(212,175,55,0.7)] scale-110 z-20' 
+                        : 'w-10 h-10 border border-macaonico-inactive bg-[#0c0c0c] group-hover:border-macaonico-dourado/50 opacity-50 hover:opacity-100 z-10'
                       }
                     `}>
                       {/* Arrow Pointer */}
                       <div className={`absolute -bottom-[6px] left-1/2 -translate-x-1/2 w-[10px] h-[10px] transform rotate-45 border-b-[1.5px] border-r-[1.5px] transition-colors duration-500
-                        ${isAtivo ? 'border-macaonico-dourado bg-[#1a1710]' : 'border-macaonico-inactive bg-[#0c0c0c]'}
+                        ${isAtivo ? 'border-macaonico-dourado bg-macaonico-dourado' : 'border-macaonico-inactive bg-[#0c0c0c]'}
                       `}></div>
                       
-                      <div className={`relative z-10 ${isAtivo ? 'text-macaonico-dourado' : 'text-macaonico-inactive'}`}>
-                        {getMasonicIcon(momento.evento_nome, { size: isAtivo ? 26 : 20, strokeWidth: isAtivo ? 1.5 : 1 })}
+                      <div className={`relative z-10 ${isAtivo ? 'text-macaonico-dourado drop-shadow-[0_0_8px_rgba(212,175,55,1)]' : 'text-macaonico-inactive'}`}>
+                        {getMasonicIcon(momento.evento_nome, { size: isAtivo ? 30 : 20, strokeWidth: isAtivo ? 1.5 : 1 })}
                       </div>
                     </div>
 
                     {/* Label - ONLY VISIBLE IF ACTIVE */}
                     <div className={`
-                      absolute top-[100px] w-28 text-[11px] font-cinzel transition-all duration-300 whitespace-nowrap text-center tracking-wide text-macaonico-dourado font-bold
+                      absolute top-[100px] w-32 text-xs font-cinzel transition-all duration-300 whitespace-nowrap text-center tracking-wider text-macaonico-dourado font-bold drop-shadow-[0_0_5px_rgba(212,175,55,0.8)]
                       ${isAtivo ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}
                     `}>
                       {momento.evento_nome.substring(0, 20)}
@@ -188,7 +199,7 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
         {/* Right Arrow */}
         <button 
           onClick={handleNext}
-          className="text-macaonico-inactive hover:text-macaonico-dourado transition-colors disabled:opacity-20 absolute right-0 z-20 bg-[#080808]/80 backdrop-blur-sm rounded-full"
+          className="text-macaonico-inactive hover:text-macaonico-dourado transition-colors disabled:opacity-20 absolute right-4 z-20 bg-[#080808]/80 backdrop-blur-sm rounded-full"
           disabled={indiceAtual === momentos.length - 1}
         >
           <ChevronRight size={28} strokeWidth={1} />
