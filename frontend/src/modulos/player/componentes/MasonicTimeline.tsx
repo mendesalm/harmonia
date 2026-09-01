@@ -86,7 +86,7 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
                        <div className="absolute -bottom-[9px] left-1/2 -translate-x-1/2 w-4 h-4 border-b-2 border-r-2 border-macaonico-dourado transform rotate-45 bg-macaonico-surface z-0"></div>
                      )}
                      <div className={`relative z-10 ${isAtivo ? 'text-macaonico-dourado' : 'text-macaonico-inactive'}`}>
-                       {getMasonicIcon(momento.nome, { size: isAtivo ? 32 : 24 })}
+                       {getMasonicIcon(momento.evento_nome, { size: isAtivo ? 32 : 24 })}
                      </div>
                    </div>
 
@@ -103,7 +103,7 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
                      mt-3 text-xs font-cinzel transition-all duration-300 whitespace-nowrap text-center
                      ${isAtivo ? 'text-macaonico-dourado font-bold' : 'text-macaonico-inactive font-normal'}
                    `}>
-                     {momento.nome.substring(0, 15)}
+                     {momento.evento_nome.substring(0, 15)}
                    </div>
                  </div>
                );

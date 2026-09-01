@@ -36,8 +36,7 @@ export default {
       backgroundImage: {
         'gold-gradient': 'linear-gradient(90deg, #D4AF37 0%, #FBF5B7 50%, #D4AF37 100%)',
       }
-    },
-    },
+    }
   },
   plugins: [],
 }

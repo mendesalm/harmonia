@@ -109,7 +109,7 @@ export const MasonicTrackList: React.FC<MasonicTrackListProps> = ({
                   {musica.titulo}
                 </h3>
                 <p className="font-inter text-xs text-slate-500 truncate mt-0.5">
-                  {musica.autor_artista} • {Math.floor(musica.duracao_segundos / 60)}:{(musica.duracao_segundos % 60).toString().padStart(2, '0')}
+                  {musica.autor_artista} • {Math.floor((musica.duracao_segundos || 0) / 60)}:{((musica.duracao_segundos || 0) % 60).toString().padStart(2, '0')}
                 </p>
               </div>
 
