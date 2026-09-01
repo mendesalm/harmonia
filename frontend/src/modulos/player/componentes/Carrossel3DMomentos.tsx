@@ -26,51 +26,8 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
   onAlternarPreferencia,
   onAbrirUpload,
 }) => {
-  const [offsetXDrag, setOffsetXDrag] = useState(0);
-  const [estaArrastandoH, setEstaArrastandoH] = useState(false);
-  const startXRef = useRef(0);
-  const currentDragXRef = useRef(0);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const ultimoWheelHRef = useRef(0);
-
-  // Handlers do Clique & Arraste Horizontal 3D (Desktop Web & Mobile Touch)
-  const handlePointerDown = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest('button, a, .vertical-tracks-container')) return;
-
-    setEstaArrastandoH(true);
-    startXRef.current = e.clientX;
-    currentDragXRef.current = 0;
-    try {
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    } catch {}
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!estaArrastandoH) return;
-    const deltaX = e.clientX - startXRef.current;
-    currentDragXRef.current = deltaX;
-    setOffsetXDrag(deltaX);
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (!estaArrastandoH) return;
-    setEstaArrastandoH(false);
-    try {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {}
-
-    const deltaX = currentDragXRef.current;
-    setOffsetXDrag(0);
-
-    const moveLimit = 40;
-    if (deltaX > moveLimit) {
-      // Arrastar para a direita -> Avança
-      onMudarMomento(Math.min(momentos.length - 1, indiceAtual + 1));
-    } else if (deltaX < -moveLimit) {
-      // Arrastar para a esquerda -> Retrocede
-      onMudarMomento(Math.max(0, indiceAtual - 1));
-    }
-  };
 
   // Suporte a Mouse Wheel Horizontal / Shift+Wheel para momentos no Desktop
   const handleWheelStage = (e: React.WheelEvent) => {
@@ -92,14 +49,16 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
 
   if (!momentos || momentos.length === 0) {
     return (
-      <div className="w-full py-12 text-center font-mono text-slate-400 vidro-escuro rounded-3xl">
-        [ NENHUM MOMENTO LITÚRGICO CONFIGURADO ]
+      <div className="w-full flex-1 flex flex-col items-center justify-center p-8 text-center bg-black/20 rounded-2xl border border-white/5 mx-4 max-w-2xl">
+        <Music className="w-16 h-16 text-slate-500 mb-4 opacity-50" />
+        <h3 className="text-xl font-cinzel text-slate-300">Sessão Vazia</h3>
+        <p className="text-slate-500 mt-2">Adicione momentos e músicas na aba de acervo para começar o ritual.</p>
       </div>
     );
   }
 
-  // Movimento visual alinhado com a lógica de índice
-  const deltaDragItems = -offsetXDrag / 200;
+  // Sem arraste, não há desvio visual
+  const deltaDragItems = 0;
 
   // Prepara e ordena os cards para que os secundários fiquem atrás no DOM e o ativo fique SEMPRE no topo absoluto
   const listaCardsProcessada = momentos
@@ -140,14 +99,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
       {/* PALCO 3D AMPLO COM MAIOR ESPALHAMENTO HORIZONTAL PANORÂMICO */}
       <div
         ref={containerRef}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        className={`relative w-full h-[320px] sm:h-[345px] md:h-[360px] flex items-center justify-center preserve-3d perspective-1200 overflow-visible touch-none ${
-          estaArrastandoH ? 'cursor-grabbing' : 'cursor-grab'
-        }`}
-        title="Clique e arraste horizontalmente para girar os momentos"
+        className="relative w-full h-[320px] sm:h-[345px] md:h-[360px] flex items-center justify-center preserve-3d perspective-1200 overflow-visible"
       >
         {listaCardsProcessada.map(({ momento, idx, deltaCont }) => {
           const isAtivo = Math.abs(deltaCont) < 0.4;
