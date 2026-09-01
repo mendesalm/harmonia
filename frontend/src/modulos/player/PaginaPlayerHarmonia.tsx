@@ -65,7 +65,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
 
   const carregarEsteira = async (idSessao: string) => {
     try {
-      const res = await clienteHttp.get(`/sessoes/${idSessao}/player`);
+      const res = await clienteHttp.get(`/player/sessao/${idSessao}`);
       setDadosSessao(res.data);
       if (res.data.esteira_ritualistica.length > 0) {
         setIndiceAtual(0);
