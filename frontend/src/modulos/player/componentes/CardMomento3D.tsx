@@ -157,14 +157,14 @@ export const CardMomento3D: React.FC<Props> = ({
 
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#00E5FF] to-transparent opacity-60" />
 
-        <div className="relative z-10 flex flex-col items-center justify-center w-full">
-          <h3 className="text-sm sm:text-base font-black text-white font-mono uppercase tracking-wider leading-tight truncate drop-shadow-md w-full px-2">
+        <div className="relative z-10 flex flex-col items-center justify-center w-full text-center pb-2 border-b border-white/5 flex-shrink-0">
+          <h3 className="text-lg sm:text-xl font-extrabold text-white font-mono uppercase tracking-widest leading-tight truncate drop-shadow-[0_0_12px_rgba(255,255,255,0.4)] w-full px-2">
             {momento.evento_nome}
           </h3>
 
-          <div className="flex items-center justify-center gap-2 mt-1 font-mono text-[9px] sm:text-[10px] font-bold text-[#00E5FF] tracking-wider">
-            <span>{musicas.length} {musicas.length === 1 ? 'TRACK' : 'TRACKS'}</span>
-            <span className="text-cyan-500/60">//</span>
+          <div className="flex items-center justify-center gap-2 mt-1 font-mono text-[10px] sm:text-xs font-bold text-[#00F0FF] drop-shadow-[0_0_8px_rgba(0,240,255,0.5)] tracking-widest">
+            <span>{String(musicas.length).padStart(2, '0')} {musicas.length === 1 ? 'TRACK' : 'TRACKS'}</span>
+            <span className="text-[#00F0FF]/50">//</span>
             <span>{tempoTotalFormatado}</span>
           </div>
         </div>
@@ -215,25 +215,25 @@ export const CardMomento3D: React.FC<Props> = ({
                 >
                   <div className="flex flex-col min-w-0 pr-1.5 flex-1">
                     <div className="flex items-center gap-2 truncate w-full">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const isPref = !!(musica as any).preferida;
-                          if (isPref) return;
-                          
-                          if (onAlternarPreferencia && momento.evento_id) {
-                            onAlternarPreferencia(momento.evento_id, musica.id, false); 
-                          }
-                        }}
-                        title={(musica as any).preferida ? "Música preferencial" : "Fixar como preferida"}
-                        className={`shrink-0 p-1.5 -ml-1.5 rounded-lg transition-colors ${
-                          (musica as any).preferida ? 'text-amber-400' : 'text-slate-600 hover:text-amber-400/50 hover:bg-white/10'
-                        }`}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={(musica as any).preferida ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                        </svg>
-                      </button>
+                        <button
+                          title="Definir música de inicialização rápida"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const isPref = !!(musica as any).preferida;
+                            if (isPref) return;
+                            
+                            if (onAlternarPreferencia && momento.evento_id) {
+                              onAlternarPreferencia(momento.evento_id, musica.id, false); 
+                            }
+                          }}
+                          className={`p-1 rounded-full transition-all shrink-0 opacity-80 hover:opacity-100 ${
+                            (musica as any).preferida ? 'text-amber-400' : 'text-slate-600 hover:text-amber-400/50 hover:bg-white/10'
+                          }`}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill={(musica as any).preferida ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                          </svg>
+                        </button>
                       <span className={`text-[13px] font-mono font-bold truncate ${estaSelecionada ? 'text-[#00E5FF]' : 'text-slate-300'}`}>
                         {String(idx + 1).padStart(2, '0')} // {musica.titulo.toUpperCase()}
                       </span>

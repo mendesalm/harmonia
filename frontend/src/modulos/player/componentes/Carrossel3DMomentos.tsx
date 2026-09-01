@@ -164,8 +164,8 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
           if (isAtivo) {
             opacidade = 1.0;
           } else if (distanciaAbs <= 1.5) {
-            // Suaviza a opacidade até zerar na borda
-            opacidade = Math.max(0, 0.90 - distanciaAbs * 0.3);
+            // Suaviza a opacidade até 40% na borda adjacente
+            opacidade = Math.max(0.40, 0.85 - distanciaAbs * 0.35);
           }
           
           const zIndex = isAtivo ? 300 : Math.round(100 - distanciaAbs * 30);

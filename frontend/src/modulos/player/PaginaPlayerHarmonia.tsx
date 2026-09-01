@@ -624,7 +624,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
               aria-valuenow={tempoAtual}
               aria-valuemin={0}
               aria-valuemax={duracaoTotal}
-              className="relative w-full h-1.5 bg-slate-800 rounded-full overflow-hidden cursor-pointer group transition-all mt-1"
+              className="relative w-full h-1 bg-slate-800 rounded-full overflow-hidden cursor-pointer group transition-all mt-1"
               onClick={(e) => {
                 if (duracaoTotal <= 0) return;
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -643,7 +643,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
               title="Clique para seek na faixa"
             >
               <div
-                className="h-full bg-gradient-to-r from-[#00E5FF] to-cyan-300 rounded-full transition-all duration-100 shadow-[0_0_10px_#00E5FF]"
+                className="h-full bg-gradient-to-r from-[#00E5FF] to-cyan-300 rounded-full transition-all duration-100 shadow-[0_0_10px_#00E5FF] drop-shadow-[0_0_8px_#00F0FF]"
                 style={{ width: `${progressoPercentual}%` }}
               />
             </div>
@@ -669,33 +669,33 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             </button>
 
             {/* AGRUPAMENTO CENTRAL: Sortear, Play/Pause, Volume */}
-            <div className="flex items-center justify-center gap-3 sm:gap-5 flex-1">
+            <div className="flex items-center justify-center gap-6 sm:gap-8 flex-1 px-4">
               
               {/* Sortear Outra Faixa */}
               <button
                 onClick={resortearMusicaAtual}
                 disabled={(momentoAtual?.total_musicas_disponiveis ?? 0) <= 1}
-                className="p-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] text-slate-300 hover:text-white disabled:opacity-30 transition-all cursor-pointer shadow-sm active:scale-95"
+                className="p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] text-slate-300 hover:text-white disabled:opacity-30 transition-all cursor-pointer shadow-sm active:scale-95"
                 title="Sortear outra faixa aleatória"
               >
-                <Shuffle className="w-4 h-4 text-[#00E5FF]" />
+                <Shuffle className="w-5 h-5 text-[#00E5FF]" />
               </button>
 
               {/* BOTÃO CENTRAL PLAY / PAUSE 3D COMPACTO */}
               <button
                 onClick={alternarPlayPause}
                 disabled={!musicaAtual}
-                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer disabled:opacity-40 shrink-0 ${
+                className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer disabled:opacity-40 shrink-0 ${
                   tocando
-                    ? 'bg-gradient-to-b from-[#0e2744] via-[#061527] to-[#020710] border-2 border-[#00E5FF] shadow-[0_0_30px_rgba(0,229,255,0.7),inset_0_0_15px_rgba(0,229,255,0.4)] text-[#00E5FF]'
+                    ? 'bg-gradient-to-b from-[#0e2744] via-[#061527] to-[#020710] border-2 border-[#00E5FF] shadow-[0_0_40px_rgba(0,240,255,0.8),inset_0_0_20px_rgba(0,240,255,0.8)] text-[#00E5FF]'
                     : 'bg-gradient-to-b from-[#0b1d33] via-[#05111f] to-[#02050b] border border-cyan-500/40 hover:border-[#00E5FF] shadow-[0_10px_25px_rgba(0,0,0,0.9),0_0_15px_rgba(0,229,255,0.25)] text-white hover:text-[#00E5FF] active:scale-95'
                 }`}
                 title={tocando ? "Pausar" : "Executar"}
               >
                 {tocando ? (
-                  <Pause className="w-6 h-6 fill-current drop-shadow-[0_0_8px_#00E5FF]" />
+                  <Pause className="w-8 h-8 fill-current drop-shadow-[0_0_12px_#00E5FF]" />
                 ) : (
-                  <Play className="w-6 h-6 fill-current ml-0.5 drop-shadow-[0_0_8px_#00E5FF]" />
+                  <Play className="w-8 h-8 fill-current ml-1 drop-shadow-[0_0_12px_#00E5FF]" />
                 )}
               </button>
 
