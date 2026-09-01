@@ -15,9 +15,8 @@ export const App: React.FC = () => {
     <ProvedorAutenticacao>
       <ProvedorTenant>
         <Router>
-          <div className="h-screen max-h-screen w-screen overflow-hidden flex flex-col bg-[#040811] text-slate-100 selection:bg-cyan-500 selection:text-black">
-            <Navbar />
-            <main className="flex-1 min-h-0 overflow-hidden">
+          <div className="h-screen max-h-screen w-screen overflow-hidden flex flex-col bg-[#080808] text-slate-100 selection:bg-macaonico-dourado selection:text-black font-inter">
+            <main className="flex-1 min-h-0 overflow-hidden relative">
               <Routes>
                 {/* Rota Pública de Login */}
                 <Route path="/login" element={<PaginaLogin />} />
@@ -66,6 +65,7 @@ export const App: React.FC = () => {
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </main>
+            <Navbar />
           </div>
         </Router>
       </ProvedorTenant>

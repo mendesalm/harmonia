@@ -19,13 +19,24 @@ export default {
         },
         macaonico: {
           dourado: '#D4AF37',
-          douradoClaro: '#F3E5AB',
+          douradoClaro: '#FBF5B7',
+          douradoEscuro: '#AA8529',
           azulProfundo: '#0b192c',
           azulTemplo: '#1E3E62',
           vermelhoCortejo: '#8B0000',
           cianoSigma: '#00E5FF',
+          surface: '#080808',
+          inactive: '#3A3A3A',
         }
       },
+      fontFamily: {
+        cinzel: ['Cinzel', 'serif'],
+        inter: ['Inter', 'sans-serif'],
+      },
+      backgroundImage: {
+        'gold-gradient': 'linear-gradient(90deg, #D4AF37 0%, #FBF5B7 50%, #D4AF37 100%)',
+      }
+    },
     },
   },
   plugins: [],

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b192c"/>
+      <stop offset="50%" stop-color="#1e3e62"/>
+      <stop offset="100%" stop-color="#060d17"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="50%" stop-color="#d4af37"/>
+      <stop offset="100%" stop-color="#f3e5ab"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="180" stroke="url(#gold)" stroke-width="8" fill="none" opacity="0.3"/>
+  <!-- Clave de Sol estilizada / Volume -->
+  <path d="M220 340 A40 40 0 1 1 260 300 L260 140 L340 120 L340 200 A30 30 0 1 1 310 170" fill="url(#gold)"/>
+  <circle cx="220" cy="340" r="30" fill="url(#gold)"/>
+  <circle cx="310" cy="200" r="22" fill="url(#gold)"/>
+</svg>
