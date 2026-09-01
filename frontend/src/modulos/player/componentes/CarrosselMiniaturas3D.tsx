@@ -53,10 +53,10 @@ export const CarrosselMiniaturas3D: React.FC<Props> = ({
     
     if (dx > moveLimit) {
       // Invertido: Arrastar para a direita avança (próximo índice)
-      onMudarMomento(Math.min(momentos.length - 1, indiceAtual + 1));
+      onMudarMomento(Math.max(0, indiceAtual - 1));
     } else if (dx < -moveLimit) {
       // Arrastar para a esquerda retrocede (índice anterior)
-      onMudarMomento(Math.max(0, indiceAtual - 1));
+      onMudarMomento(Math.min(momentos.length - 1, indiceAtual + 1));
     }
     
     setOffsetXDrag(0);
@@ -67,8 +67,7 @@ export const CarrosselMiniaturas3D: React.FC<Props> = ({
     const n = momentos.length;
     if (n === 0) return [];
     
-    // Invertido: O arrasto agora move na direção oposta visualmente para bater com o novo índice
-    const dragOffset = -offsetXDrag / 150; 
+    const dragOffset = offsetXDrag / 150; 
     const currentPosition = indiceAtual - dragOffset;
     
     const cards: CardInfo[] = [];
