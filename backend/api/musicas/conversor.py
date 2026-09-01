@@ -23,6 +23,9 @@ def _executar_download_yt_dlp(
     os.makedirs(pasta_destino, exist_ok=True)
 
     caminho_template = os.path.join(pasta_destino, f"{nome_arquivo_base}.%(ext)s")
+    
+    # Suporte a cookies para evitar bloqueio de bot (Cloud/VPS)
+    caminho_cookies = Path(DIRETORIO_BASE) / "cookies.txt"
 
     ydl_opts = {
         'format': 'bestaudio/best',
@@ -42,6 +45,9 @@ def _executar_download_yt_dlp(
         'noplaylist': True,  # Impede o download de playlists inteiras
         'socket_timeout': 30,  # Adiciona timeout nativo na conexão de rede do ytdlp
     }
+    
+    if caminho_cookies.exists():
+        ydl_opts['cookiefile'] = str(caminho_cookies)
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
