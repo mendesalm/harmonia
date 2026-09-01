@@ -52,19 +52,25 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
         <div className="h-px w-64 mx-auto mt-2 bg-gradient-to-r from-transparent via-macaonico-dourado to-transparent opacity-80"></div>
       </div>
 
-      <div className="relative max-w-4xl mx-auto flex items-center px-2">
+      <div className="relative w-full max-w-lg mx-auto flex items-center px-2">
         {/* Left Arrow */}
         <button 
           onClick={handlePrev}
-          className="text-macaonico-inactive hover:text-macaonico-dourado transition-colors disabled:opacity-20 absolute left-2 z-20 bg-[#080808]/80 backdrop-blur-sm rounded-full"
+          className="text-macaonico-inactive hover:text-macaonico-dourado transition-colors disabled:opacity-20 absolute left-0 z-20 bg-[#080808]/80 backdrop-blur-sm rounded-full"
           disabled={indiceAtual === 0}
         >
           <ChevronLeft size={28} strokeWidth={1} />
         </button>
 
-        {/* Scrollable Timeline Area */}
-        <div className="flex-1 overflow-x-auto scrollbar-hide relative px-[5%]" ref={containerRef}>
-           
+        {/* Scrollable Timeline Area with Fade Mask to show exactly 3 items */}
+        <div 
+          className="flex-1 overflow-x-auto scrollbar-hide relative mx-8" 
+          ref={containerRef}
+          style={{ 
+            maskImage: 'linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)'
+          }}
+        >
            <div className="relative mx-auto" style={{ width: `${totalWidth}px`, height: '140px' }}>
               
               {/* --- SVG PROGRESS TRACK --- */}
@@ -152,8 +158,8 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
                     <div className={`
                       mb-[26px] flex items-center justify-center transition-all duration-500 relative rounded-[10px]
                       ${isAtivo 
-                        ? 'w-12 h-12 border-[1.5px] border-macaonico-dourado bg-macaonico-dourado/10 shadow-[0_0_15px_rgba(212,175,55,0.3)]' 
-                        : 'w-10 h-10 border border-macaonico-inactive bg-[#0c0c0c] group-hover:border-macaonico-dourado/50'
+                        ? 'w-12 h-12 border-[1.5px] border-macaonico-dourado bg-macaonico-dourado/10 shadow-[0_0_15px_rgba(212,175,55,0.3)] scale-110' 
+                        : 'w-10 h-10 border border-macaonico-inactive bg-[#0c0c0c] group-hover:border-macaonico-dourado/50 opacity-60 hover:opacity-100'
                       }
                     `}>
                       {/* Arrow Pointer */}
@@ -166,12 +172,12 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
                       </div>
                     </div>
 
-                    {/* Label */}
+                    {/* Label - ONLY VISIBLE IF ACTIVE */}
                     <div className={`
-                      absolute top-[100px] w-24 text-[10px] font-cinzel transition-all duration-300 whitespace-nowrap text-center tracking-wide
-                      ${isAtivo ? 'text-macaonico-dourado font-bold' : 'text-slate-400 font-normal'}
+                      absolute top-[100px] w-28 text-[11px] font-cinzel transition-all duration-300 whitespace-nowrap text-center tracking-wide text-macaonico-dourado font-bold
+                      ${isAtivo ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}
                     `}>
-                      {momento.evento_nome.substring(0, 16)}
+                      {momento.evento_nome.substring(0, 20)}
                     </div>
                   </div>
                 );
@@ -182,7 +188,7 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
         {/* Right Arrow */}
         <button 
           onClick={handleNext}
-          className="text-macaonico-inactive hover:text-macaonico-dourado transition-colors disabled:opacity-20 absolute right-2 z-20 bg-[#080808]/80 backdrop-blur-sm rounded-full"
+          className="text-macaonico-inactive hover:text-macaonico-dourado transition-colors disabled:opacity-20 absolute right-0 z-20 bg-[#080808]/80 backdrop-blur-sm rounded-full"
           disabled={indiceAtual === momentos.length - 1}
         >
           <ChevronRight size={28} strokeWidth={1} />
