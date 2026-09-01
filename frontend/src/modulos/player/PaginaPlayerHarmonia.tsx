@@ -7,6 +7,7 @@ import { extrairIdYoutube } from '../../compartilhado/formatadores/midia';
 import { MasonicTimeline } from './componentes/MasonicTimeline';
 import { MasonicTrackList } from './componentes/MasonicTrackList';
 import { MasonicControls } from './componentes/MasonicControls';
+import { ModalUploadMusica } from '../musicas/ModalUploadMusica';
 
 declare global {
   interface Window {
@@ -24,6 +25,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const [dadosSessao, setDadosSessao] = useState<SessaoPlayerExecucao | null>(null);
   
   const [indiceAtual, setIndiceAtual] = useState(0);
+  const [modalUploadAberto, setModalUploadAberto] = useState(false);
   const [musicasDoMomento, setMusicasDoMomento] = useState<Musica[]>([]);
   
   // Audio state
@@ -264,6 +266,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           indiceAtivo={safeIndiceTrack}
           tocando={tocando}
           onSelecionarMusica={selecionarMusicaDaLista}
+          onAbrirUpload={() => setModalUploadAberto(true)}
           progressoPercentual={progressoPercentual}
         />
       </div>
@@ -295,6 +298,22 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         </div>
       )}
 
+      {/* Modal de Upload */}
+      {modalUploadAberto && dadosSessao && (
+        <ModalUploadMusica
+          eventoIdPreSelecionado={dadosSessao.esteira_ritualistica[indiceAtual]?.evento_id}
+          onFechar={() => setModalUploadAberto(false)}
+          onSalvo={async () => {
+            const momentoAtual = dadosSessao.esteira_ritualistica[indiceAtual];
+            if (momentoAtual) {
+              const resp = await clienteHttp.get<Musica[]>('/musicas', {
+                params: { evento_id: momentoAtual.evento_id }
+              });
+              setMusicasDoMomento(resp.data);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

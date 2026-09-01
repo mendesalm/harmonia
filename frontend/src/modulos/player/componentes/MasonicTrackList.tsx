@@ -8,6 +8,7 @@ interface MasonicTrackListProps {
   indiceAtivo: number;
   tocando: boolean;
   onSelecionarMusica: (idx: number) => void;
+  onAbrirUpload: () => void;
   progressoPercentual: number;
 }
 
@@ -16,6 +17,7 @@ export const MasonicTrackList: React.FC<MasonicTrackListProps> = ({
   indiceAtivo,
   tocando,
   onSelecionarMusica,
+  onAbrirUpload
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -92,8 +94,17 @@ export const MasonicTrackList: React.FC<MasonicTrackListProps> = ({
         })}
         
         {musicas.length === 0 && (
-          <div className="flex items-center justify-center h-full text-macaonico-inactive font-cinzel text-lg tracking-widest absolute inset-0">
-            [ Sem Músicas ]
+          <div className="flex flex-col items-center justify-center h-full text-macaonico-inactive font-cinzel absolute inset-0 z-10">
+            <span className="text-lg tracking-widest mb-4 opacity-70">[ Sem Músicas ]</span>
+            <button 
+              onClick={onAbrirUpload}
+              className="px-6 py-2.5 bg-macaonico-dourado/10 border border-macaonico-dourado/40 text-macaonico-dourado hover:bg-macaonico-dourado/20 transition-all rounded-md tracking-wider flex items-center shadow-[0_0_15px_rgba(212,175,55,0.15)] hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Adicionar Música ao Acervo
+            </button>
           </div>
         )}
       </div>
