@@ -29,7 +29,8 @@ def _executar_download_yt_dlp(
     caminho_template = os.path.join(pasta_destino, f"{nome_arquivo_base}.%(ext)s")
     
     # Suporte a cookies para evitar bloqueio de bot (Cloud/VPS)
-    caminho_cookies = Path(DIRETORIO_BASE) / "cookies.txt"
+    # Procuramos o arquivo na raiz do projeto (onde o usuǭrio fez o upload)
+    caminho_cookies = Path(os.getcwd()) / "cookies.txt"
 
     ydl_opts = {
         'format': 'bestaudio/best',
