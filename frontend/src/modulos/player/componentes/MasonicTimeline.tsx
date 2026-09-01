@@ -56,10 +56,10 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
       
       {/* Title */}
       <div className="text-center mb-8 relative">
-        <h1 className="font-cinzel text-2xl tracking-wider text-slate-100 font-normal shadow-black drop-shadow-md">
+        <h1 className="font-cinzel text-3xl tracking-widest text-slate-100 font-normal shadow-black drop-shadow-lg">
           Player Sequencial Ritualístico
         </h1>
-        <div className="h-px w-64 mx-auto mt-2 bg-gradient-to-r from-transparent via-macaonico-dourado to-transparent opacity-80"></div>
+        <div className="h-px w-72 mx-auto mt-3 bg-gradient-to-r from-transparent via-macaonico-dourado to-transparent opacity-80"></div>
       </div>
 
       <div className="relative w-full max-w-lg mx-auto flex items-center px-2 justify-center">
@@ -82,7 +82,7 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
             WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%)'
           }}
         >
-           <div className="relative" style={{ width: `${totalWidth}px`, height: '140px' }}>
+           <div className="relative" style={{ width: `${totalWidth}px`, height: '150px' }}>
               
               {/* --- SVG PROGRESS TRACK --- */}
               <svg 
@@ -199,10 +199,10 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
 
                     {/* Label - ONLY VISIBLE IF ACTIVE */}
                     <div className={`
-                      absolute top-[100px] w-32 text-xs font-cinzel transition-all duration-300 whitespace-nowrap text-center tracking-wider text-macaonico-dourado font-bold drop-shadow-[0_0_5px_rgba(212,175,55,0.8)]
+                      absolute top-[100px] w-40 text-base font-cinzel transition-all duration-300 whitespace-nowrap text-center tracking-widest text-macaonico-dourado font-bold drop-shadow-[0_0_8px_rgba(212,175,55,0.9)]
                       ${isAtivo ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}
                     `}>
-                      {momento.evento_nome.substring(0, 20)}
+                      {momento.evento_nome.substring(0, 24)}
                     </div>
                   </div>
                 );
