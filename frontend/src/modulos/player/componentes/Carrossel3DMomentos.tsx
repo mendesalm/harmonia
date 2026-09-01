@@ -62,7 +62,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
     const deltaX = currentDragXRef.current;
     setOffsetXDrag(0);
 
-    const passos = Math.round(deltaX / 80);
+    const passos = Math.round(-deltaX / 80);
     if (passos !== 0) {
       const novoIndice = Math.max(0, Math.min(momentos.length - 1, indiceAtual + passos));
       if (novoIndice !== indiceAtual) {
@@ -98,7 +98,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
   }
 
   // Movimento visual alinhado com a lógica de índice
-  const deltaDragItems = -offsetXDrag / 200;
+  const deltaDragItems = offsetXDrag / 200;
 
   // Prepara e ordena os cards para que os secundários fiquem atrás no DOM e o ativo fique SEMPRE no topo absoluto
   const listaCardsProcessada = momentos
