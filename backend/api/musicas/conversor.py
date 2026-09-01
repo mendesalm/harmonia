@@ -33,7 +33,7 @@ def _executar_download_yt_dlp(
     caminho_cookies = Path(os.getcwd()) / "cookies.txt"
 
     ydl_opts = {
-        'format': 'bestaudio/best',
+        'format': 'ba/b',
         'outtmpl': caminho_template,
         'ffmpeg_location': ffmpeg_exe,
         'postprocessors': [{
