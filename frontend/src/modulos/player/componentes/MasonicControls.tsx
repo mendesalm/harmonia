@@ -8,7 +8,6 @@ interface MasonicControlsProps {
   onNextTrack: () => void;
   onPrevMoment: () => void;
   onNextMoment: () => void;
-  proximoEventoNome?: string;
   // Progress bar props
   tempoAtual: number;
   duracaoTotal: number;
@@ -22,7 +21,6 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
   onNextTrack,
   onPrevMoment,
   onNextMoment,
-  proximoEventoNome,
   tempoAtual,
   duracaoTotal,
   onSeek
@@ -45,21 +43,15 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
   };
 
   return (
-    <div className="w-full bg-[#050505] border-t border-macaonico-dourado/20 pt-4 pb-6 px-4 flex flex-col items-center relative z-20">
+    <div className="w-full bg-[#050505] border-t border-macaonico-dourado/20 pt-8 pb-6 px-4 flex flex-col items-center relative z-20">
       
       {/* Decorative Top Border */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-px bg-gradient-to-r from-transparent via-macaonico-dourado/50 to-transparent"></div>
 
       <div className="w-full max-w-3xl mx-auto flex flex-col items-center">
-        {proximoEventoNome && (
-          <div className="text-macaonico-dourado/80 font-cinzel mb-3 tracking-widest text-sm uppercase font-bold drop-shadow-[0_0_5px_rgba(212,175,55,0.4)]">
-            Próximo Evento: {proximoEventoNome}
-          </div>
-        )}
-      </div>
 
-      {/* Main Control Panel */}
-      <div className="relative w-full max-w-[450px] h-32 flex items-center justify-center mb-6">
+        {/* Main Control Panel */}
+        <div className="relative w-full max-w-[450px] h-32 flex items-center justify-center mb-6">
         
         {/* Left Wing (Previous) */}
         <div className="absolute left-0 w-[45%] h-14 bg-macaonico-surface rounded-l-full border border-macaonico-inactive/50 flex items-center justify-between px-5 pr-12 z-0 shadow-[inset_0_0_15px_rgba(212,175,55,0.05)]">
@@ -148,6 +140,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
             ></div>
          </div>
       </div>
+    </div>
     </div>
   );
 };

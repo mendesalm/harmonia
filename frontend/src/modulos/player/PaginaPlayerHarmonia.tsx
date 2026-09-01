@@ -280,7 +280,6 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           onNextTrack={pularFaixa}
           onPrevMoment={voltarAnterior}
           onNextMoment={avancarProximo}
-          proximoEventoNome={dadosSessao?.esteira_ritualistica[indiceAtual + 1]?.evento_nome}
           tempoAtual={tempoAtual}
           duracaoTotal={duracaoTotal}
           onSeek={onSeek}

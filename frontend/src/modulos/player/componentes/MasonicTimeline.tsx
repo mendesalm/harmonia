@@ -230,6 +230,11 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
                       ${isAtivo ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}
                     `}>
                       {momento.evento_nome}
+                      {isAtivo && idx < momentos.length - 1 && (
+                        <div className="text-[10px] text-macaonico-inactive/80 mt-1 font-inter font-normal tracking-wide normal-case drop-shadow-none">
+                          Próximo: {momentos[idx + 1].evento_nome}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
