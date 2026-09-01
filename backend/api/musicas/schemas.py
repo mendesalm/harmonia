@@ -55,7 +55,7 @@ class MusicaAtualizacao(BaseModel):
 class MusicaResposta(MusicaBase):
     """Schema de resposta detalhada de Música com seus eventos associados."""
     id: uuid.UUID
-    organizacao_id: uuid.UUID
+    organizacao_id: Optional[uuid.UUID]
     caminho_arquivo: Optional[str]
     tamanho_bytes: Optional[int]
     tipo_mime: Optional[str]
