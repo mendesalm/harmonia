@@ -233,13 +233,31 @@ class ServicoMusica:
     ) -> MusicaResposta:
         """
         Baixa o áudio de um vídeo do YouTube, converte para MP3 em 320 kbps,
-        salva no storage do tenant e registra como ARQUIVO_LOCAL no acervo da Loja.
+        salva no storage global e registra no acervo. Evita conversões duplicadas.
         """
         stmt_org = select(Organizacao).where(Organizacao.id == dados.organizacao_id)
         res_org = await db.execute(stmt_org)
         org = res_org.scalar_one_or_none()
         if not org:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Loja não encontrada.")
+
+        # 0. Verifica se já convertemos essa música antes
+        stmt_existente = select(Musica).where(Musica.link_externo == dados.link_youtube, Musica.caminho_arquivo.isnot(None))
+        res_existente = await db.execute(stmt_existente)
+        musica_existente = res_existente.scalar_one_or_none()
+
+        if musica_existente:
+            # Reutiliza o arquivo global já convertido
+            if dados.evento_ids:
+                for ev_id in dados.evento_ids:
+                    stmt_assoc = select(MusicaEvento).where(
+                        MusicaEvento.musica_id == musica_existente.id, 
+                        MusicaEvento.evento_id == ev_id
+                    )
+                    if not (await db.execute(stmt_assoc)).scalar_one_or_none():
+                        db.add(MusicaEvento(musica_id=musica_existente.id, evento_id=ev_id))
+                await db.commit()
+            return await ServicoMusica.obter_por_id(db, musica_existente.id)
 
         pasta_absoluta = ServicoArmazenamentoTenant.obter_diretorio_musicas(org.slug_armazenamento)
 
@@ -261,13 +279,25 @@ class ServicoMusica:
 
         caminho_relativo = f"/storage/instancias/public/{org.slug_armazenamento}/musicas/{res_conversao['nome_arquivo']}"
 
+        # Lemos o arquivo para obter o hash
+        import hashlib
+        import aiofiles
+        import os
+        hash_arquivo = None
+        caminho_completo = os.path.join(pasta_absoluta, res_conversao['nome_arquivo'])
+        if os.path.exists(caminho_completo):
+            async with aiofiles.open(caminho_completo, 'rb') as f:
+                conteudo_bytes = await f.read()
+                hash_arquivo = hashlib.sha256(conteudo_bytes).hexdigest()
+
         nova_musica = Musica(
-            organizacao_id=dados.organizacao_id,
+            organizacao_id=None, # Arquivos agora são globais
             titulo=titulo_final,
             autor_artista=autor_final,
             tipo_midia="ARQUIVO_LOCAL",
             caminho_arquivo=caminho_relativo,
             link_externo=dados.link_youtube,
+            hash_arquivo=hash_arquivo,
             duracao_segundos=res_conversao.get("duracao_segundos"),
             tamanho_bytes=res_conversao.get("tamanho_bytes"),
             tipo_mime="audio/mpeg",
@@ -290,7 +320,7 @@ class ServicoMusica:
 
     @staticmethod
     async def criar_com_link(db: AsyncSession, dados: MusicaCriacaoLink) -> MusicaResposta:
-        """Cadastra uma música via link externo de streaming (YouTube)."""
+        """Cadastra uma música via link externo de streaming (YouTube) globalmente."""
         stmt_org = select(Organizacao).where(Organizacao.id == dados.organizacao_id)
         res_org = await db.execute(stmt_org)
         if not res_org.scalar_one_or_none():
@@ -299,12 +329,29 @@ class ServicoMusica:
         if not dados.link_externo:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="O link externo é obrigatório.")
 
+        # Verifica se o link já está cadastrado globalmente (como link, não como arquivo baixado)
+        stmt_existente = select(Musica).where(Musica.link_externo == dados.link_externo, Musica.caminho_arquivo.is_(None))
+        res_existente = await db.execute(stmt_existente)
+        musica_existente = res_existente.scalar_one_or_none()
+
+        if musica_existente:
+            if dados.evento_ids:
+                for ev_id in dados.evento_ids:
+                    stmt_assoc = select(MusicaEvento).where(
+                        MusicaEvento.musica_id == musica_existente.id, 
+                        MusicaEvento.evento_id == ev_id
+                    )
+                    if not (await db.execute(stmt_assoc)).scalar_one_or_none():
+                        db.add(MusicaEvento(musica_id=musica_existente.id, evento_id=ev_id))
+                await db.commit()
+            return await ServicoMusica.obter_por_id(db, musica_existente.id)
+
         tipo = dados.tipo_midia.upper() if dados.tipo_midia else "YOUTUBE"
         titulo_final = formatar_titulo_inteligente(dados.titulo)
         autor_final = formatar_titulo_inteligente(dados.autor_artista) if dados.autor_artista else None
 
         nova_musica = Musica(
-            organizacao_id=dados.organizacao_id,
+            organizacao_id=None, # Links também são globais
             titulo=titulo_final,
             autor_artista=autor_final,
             tipo_midia=tipo,
