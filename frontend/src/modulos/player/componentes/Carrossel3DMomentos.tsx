@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Music } from 'lucide-react';
 import { MomentoExecucao, Musica } from '../../../compartilhado/tipos';
 import { CardMomento3D } from './CardMomento3D';
 
@@ -163,17 +163,18 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
             <div
               key={`${momento.evento_id}-${idx}`}
               onClick={() => {
-                if (!estaArrastandoH && idx !== indiceAtual) {
+                if (idx !== indiceAtual) {
                   onMudarMomento(idx);
                 }
               }}
               className={`absolute preserve-3d transition-transform ease-out cursor-pointer ${opacidade > 0 ? 'pointer-events-auto' : 'pointer-events-none hidden sm:block'}`}
               style={{
+                position: 'absolute',
                 transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${escala})`,
                 opacity: opacidade,
                 zIndex: zIndex,
                 filter: visualFilter,
-                transition: estaArrastandoH ? 'none' : 'transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s ease-out, filter 0.35s ease-out',
+                transition: 'transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s ease-out, filter 0.35s ease-out',
               }}
             >
               <CardMomento3D
