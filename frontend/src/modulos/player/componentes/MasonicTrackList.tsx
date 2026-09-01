@@ -41,11 +41,9 @@ export const MasonicTrackList: React.FC<MasonicTrackListProps> = ({
       <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, transparent 0%, #000 100%)' }}></div>
 
       <div 
-        className="flex-1 w-full max-w-2xl relative overflow-y-auto scrollbar-hide px-4"
+        className="flex-1 w-full max-w-2xl relative overflow-y-auto scrollbar-hide px-4 pt-8 pb-32"
         ref={containerRef}
       >
-        <div className="w-full flex-shrink-0" style={{ height: 'calc(45vh - 120px)' }}></div>
-        
         {musicas.map((musica, idx) => {
           const isAtivo = idx === indiceAtivo;
 
@@ -94,8 +92,6 @@ export const MasonicTrackList: React.FC<MasonicTrackListProps> = ({
             </div>
           );
         })}
-        
-        <div className="w-full flex-shrink-0" style={{ height: 'calc(45vh - 120px)' }}></div>
         
         {musicas.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-macaonico-inactive font-cinzel absolute inset-0 z-10">
