@@ -9,7 +9,7 @@ from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
-from backend.modelos.sessao import Sessao, SessaoEvento
+from backend.modelos.sessao import SessaoLoja, SessaoLojaEvento
 from backend.modelos.evento import Evento
 from backend.modelos.musica import Musica, MusicaEvento
 from backend.api.player.schemas import (
@@ -29,10 +29,11 @@ class ServicoPlayer:
         para cada evento, sorteia aleatoriamente uma música elegível do acervo.
         """
         stmt = (
-            select(Sessao)
-            .where(Sessao.id == sessao_id)
+            select(SessaoLoja)
+            .where(SessaoLoja.id == sessao_id)
             .options(
-                selectinload(Sessao.eventos_associados).selectinload(SessaoEvento.evento)
+                selectinload(SessaoLoja.tipo_sessao),
+                selectinload(SessaoLoja.eventos_customizados).selectinload(SessaoLojaEvento.evento)
             )
         )
         res = await db.execute(stmt)
@@ -41,7 +42,7 @@ class ServicoPlayer:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sessão não encontrada.")
 
         esteira: List[MomentoRitualisticoExecucao] = []
-        eventos_ordenados = sorted(sessao.eventos_associados, key=lambda x: x.ordem)
+        eventos_ordenados = sorted(sessao.eventos_customizados, key=lambda x: x.ordem_execucao)
 
         for item in eventos_ordenados:
             evento = item.evento
@@ -90,7 +91,7 @@ class ServicoPlayer:
 
             esteira.append(
                 MomentoRitualisticoExecucao(
-                    posicao=item.ordem,
+                    posicao=item.ordem_execucao,
                     evento_id=evento.id,
                     evento_nome=evento.nome,
                     evento_descricao=evento.descricao,
@@ -104,10 +105,10 @@ class ServicoPlayer:
 
         return SessaoPlayerExecucao(
             sessao_id=sessao.id,
-            sessao_nome=sessao.nome,
-            rito=sessao.rito,
-            grau=sessao.grau,
-            configuracoes_audio=sessao.configuracoes,
+            sessao_nome=sessao.nome_personalizado or sessao.tipo_sessao.nome,
+            rito="Rito Atual",
+            grau=1,
+            configuracoes_audio={},
             total_momentos=len(esteira),
             esteira_ritualistica=esteira
         )
