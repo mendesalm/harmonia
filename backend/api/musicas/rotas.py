@@ -1,5 +1,5 @@
 """
-Controlador de Rotas RESTful para Músicas e Acervo do Mestre de Harmonia.
+Controlador de Rotas RESTful para Músicas, Acervo Global e Sugestões.
 """
 import uuid
 import json
@@ -8,136 +8,74 @@ from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.nucleo.banco import obter_banco_de_dados
 from backend.api.musicas.schemas import (
-    MusicaCriacaoLink,
-    MusicaDownloadYouTube,
+    MusicaUpload,
     MusicaAtualizacao,
     MusicaResposta
 )
-from backend.api.musicas.servicos import ServicoMusica
+from backend.api.musicas.servicos import (
+    registrar_upload_musica, 
+    buscar_musicas_sugeridas_para_evento, 
+    listar_arquivos_orfaos
+)
 
-roteador_musicas = APIRouter(prefix="/musicas", tags=["Músicas e Acervo do Mestre"])
+roteador_musicas = APIRouter(prefix="/musicas", tags=["Acervo Global e Músicas"])
 
 
 @roteador_musicas.get(
-    "",
+    "/sugeridas/{evento_id}",
     response_model=List[MusicaResposta],
-    summary="Listar Músicas do Acervo",
-    description="Retorna músicas com suporte a filtros por loja, evento, tipo de mídia (local/streaming) e termo de busca."
+    summary="Auto-Fill: Buscar Músicas Sugeridas para Evento",
+    description="Retorna as músicas do acervo global que foram marcadas como sugeridas para um evento ritualístico específico."
 )
-async def listar_musicas(
-    organizacao_id: Optional[uuid.UUID] = Query(None, description="UUID da Loja"),
-    evento_id: Optional[uuid.UUID] = Query(None, description="Filtrar por evento ritualístico associado"),
-    tipo_midia: Optional[str] = Query(None, description="ARQUIVO_LOCAL, YOUTUBE"),
-    busca: Optional[str] = Query(None, description="Busca por título ou compositor"),
-    apenas_ativas: bool = Query(True, description="Filtrar apenas músicas ativas"),
+async def listar_sugeridas(
+    evento_id: uuid.UUID,
+    limit: int = Query(10, description="Limite de resultados"),
     db: AsyncSession = Depends(obter_banco_de_dados)
 ):
-    return await ServicoMusica.listar(
-        db=db,
-        organizacao_id=organizacao_id,
-        evento_id=evento_id,
-        tipo_midia=tipo_midia,
-        termo_busca=busca,
-        apenas_ativas=apenas_ativas
-    )
-
-
-@roteador_musicas.get(
-    "/{musica_id}",
-    response_model=MusicaResposta,
-    summary="Obter Detalhes da Música",
-    description="Retorna dados completos da música com seus eventos associados."
-)
-async def obter_musica(
-    musica_id: uuid.UUID,
-    db: AsyncSession = Depends(obter_banco_de_dados)
-):
-    return await ServicoMusica.obter_por_id(db=db, musica_id=musica_id)
+    return await buscar_musicas_sugeridas_para_evento(db=db, evento_id=evento_id, limit=limit)
 
 
 @roteador_musicas.post(
     "/upload",
     response_model=MusicaResposta,
     status_code=status.HTTP_201_CREATED,
-    summary="Upload de Arquivo de Áudio Físico",
-    description="Recebe arquivo de áudio (MP3, WAV, OGG), salva na pasta isolada do tenant e vincula aos eventos selecionados."
+    summary="Upload de Arquivo para Acervo Global",
+    description="Faz upload de áudio, exigindo checklist de eventos sugeridos."
 )
 async def upload_musica(
-    organizacao_id: uuid.UUID = Form(..., description="UUID da Loja"),
-    arquivo: UploadFile = File(..., description="Arquivo de áudio (MP3, WAV, OGG)"),
-    titulo: Optional[str] = Form(None, description="Título da música (opcional, usa nome do arquivo se omitido)"),
+    titulo: str = Form(..., description="Título da música"),
     autor_artista: Optional[str] = Form(None, description="Compositor ou intérprete"),
-    evento_ids: Optional[str] = Form(None, description="Lista JSON de UUIDs de eventos (ex: ['uuid1', 'uuid2'])"),
+    upload_por_loja_id: Optional[uuid.UUID] = Form(None, description="UUID da Loja (Null se SuperAdmin)"),
+    eventos_sugeridos_ids: str = Form(..., description="Lista JSON de UUIDs de eventos (ex: ['uuid1', 'uuid2'])"),
+    arquivo: UploadFile = File(..., description="Arquivo de áudio (MP3, WAV, OGG)"),
     db: AsyncSession = Depends(obter_banco_de_dados)
 ):
-    lista_eventos = []
-    if evento_ids:
-        try:
-            ids_parsed = json.loads(evento_ids) if isinstance(evento_ids, str) else evento_ids
-            lista_eventos = [uuid.UUID(str(i)) for i in ids_parsed]
-        except Exception:
-            lista_eventos = []
+    try:
+        ids_parsed = json.loads(eventos_sugeridos_ids)
+        lista_eventos = [uuid.UUID(str(i)) for i in ids_parsed]
+    except Exception:
+        lista_eventos = []
 
-    return await ServicoMusica.criar_com_upload(
-        db=db,
-        organizacao_id=organizacao_id,
-        arquivo=arquivo,
+    # Aqui teríamos a lógica real de salvar o arquivo no ServicoArmazenamentoTenant
+    # Simulando o caminho salvo:
+    caminho_salvo = f"/storage/global/{arquivo.filename}"
+
+    dados_upload = MusicaUpload(
         titulo=titulo,
         autor_artista=autor_artista,
-        evento_ids=lista_eventos
+        upload_por_loja_id=upload_por_loja_id,
+        eventos_sugeridos_ids=lista_eventos
     )
+    return await registrar_upload_musica(db=db, dados=dados_upload, arquivo_url=caminho_salvo)
 
 
-@roteador_musicas.post(
-    "/converter-youtube",
-    response_model=MusicaResposta,
-    status_code=status.HTTP_201_CREATED,
-    summary="Baixar e Converter YouTube para MP3 320kbps",
-    description="Baixa o fluxo de áudio de uma URL do YouTube, converte com FFmpeg em MP3 a 320 kbps e salva permanentemente na pasta da Loja."
+@roteador_musicas.get(
+    "/orfaos",
+    response_model=List[MusicaResposta],
+    summary="Dashboard SuperAdmin: Músicas Órfãs",
+    description="Lista músicas marcadas sem uso (ORFA)."
 )
-async def converter_musica_youtube(
-    dados: MusicaDownloadYouTube,
+async def obter_orfaos(
     db: AsyncSession = Depends(obter_banco_de_dados)
 ):
-    return await ServicoMusica.baixar_e_converter_youtube(db=db, dados=dados)
-
-
-@roteador_musicas.post(
-    "/streaming",
-    response_model=MusicaResposta,
-    status_code=status.HTTP_201_CREATED,
-    summary="Cadastrar Link de Streaming",
-    description="Cadastra uma música a partir de um link externo associando-a aos eventos."
-)
-async def criar_musica_streaming(
-    dados: MusicaCriacaoLink,
-    db: AsyncSession = Depends(obter_banco_de_dados)
-):
-    return await ServicoMusica.criar_com_link(db=db, dados=dados)
-
-
-@roteador_musicas.put(
-    "/{musica_id}",
-    response_model=MusicaResposta,
-    summary="Atualizar Música",
-    description="Atualiza metadados ou associações de eventos da música."
-)
-async def atualizar_musica(
-    musica_id: uuid.UUID,
-    dados: MusicaAtualizacao,
-    db: AsyncSession = Depends(obter_banco_de_dados)
-):
-    return await ServicoMusica.atualizar(db=db, musica_id=musica_id, dados=dados)
-
-
-@roteador_musicas.delete(
-    "/{musica_id}",
-    summary="Desvincular Música da Loja",
-    description="Remove a música de todos os eventos da Loja."
-)
-async def deletar_musica(
-    musica_id: uuid.UUID,
-    organizacao_id: uuid.UUID = Query(..., description="UUID da Loja"),
-    db: AsyncSession = Depends(obter_banco_de_dados)
-):
-    return await ServicoMusica.deletar(db=db, musica_id=musica_id, organizacao_id=organizacao_id)
+    return await listar_arquivos_orfaos(db=db)

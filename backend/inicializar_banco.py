@@ -1,6 +1,6 @@
 """
 Script de Inicialização e População Inicial (Seed) do Banco de Dados Harmonia.
-Cria as tabelas no PostgreSQL e insere os eventos ritualísticos padrão e loja modelo.
+Cria as tabelas no PostgreSQL e insere os ritos, eventos globais, templates de sessão e loja modelo.
 """
 import asyncio
 import sys
@@ -11,341 +11,142 @@ DIRETORIO_RAIZ = str(Path(__file__).resolve().parent.parent)
 if DIRETORIO_RAIZ not in sys.path:
     sys.path.insert(0, DIRETORIO_RAIZ)
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.nucleo.banco import motor_assincrono, Base, SessaoAssincronaLocal
 from backend.nucleo.armazenamento import ServicoArmazenamentoTenant
 from backend.nucleo.formatadores import formatar_titulo_inteligente
-from backend.modelos import Organizacao, Evento, Sessao, SessaoEvento, Musica, MusicaEvento
+from backend.modelos import Organizacao, Evento, Musica, MusicaEvento
+from backend.modelos.rito import Rito
+from backend.modelos.sessao import TipoSessao, TipoSessaoEvento, SessaoLoja, SessaoLojaEvento
+from backend.modelos.pessoa import Pessoa
+from backend.nucleo.seguranca import gerar_hash_senha
 
-# Lista de Eventos Ritualísticos Padrão Maçônicos
-EVENTOS_PADRAO = [
-    {
-        "nome": "Entrada do Cortejo",
-        "descricao": "Música solene para o ingresso das Luzes e Oficiais no Templo.",
-        "categoria_rito": "Geral",
-        "ordem_sugerida": 1
-    },
-    {
-        "nome": "Cerimônia das Luzes",
-        "descricao": "Harmonia para o acendimento das Luzes no Altar e colunas.",
-        "categoria_rito": "Geral",
-        "ordem_sugerida": 2
-    },
-    {
-        "nome": "Abertura do Livro da Lei",
-        "descricao": "Música reverente durante a abertura do Livro Sagrado e posicionamento do Esquadro e Compasso.",
-        "categoria_rito": "Geral",
-        "ordem_sugerida": 3
-    },
-    {
-        "nome": "Entrada do Pavilhão Nacional",
-        "descricao": "Hino à Bandeira ou marcha solene para recepção da Bandeira Nacional.",
-        "categoria_rito": "Geral",
-        "ordem_sugerida": 4
-    },
-    {
-        "nome": "Entrada de Autoridades",
-        "descricao": "Marcha para recepção de Grão-Mestres, Delegados e Autoridades Maçônicas.",
-        "categoria_rito": "Geral",
-        "ordem_sugerida": 5
-    },
-    {
-        "nome": "Tronco de Beneficência",
-        "descricao": "Harmonia suave para o giro do Tronco de Solidariedade.",
-        "categoria_rito": "Geral",
-        "ordem_sugerida": 6
-    },
-    {
-        "nome": "Saída do Pavilhão Nacional",
-        "descricao": "Música patriótica ou hino para saudação e retirada da Bandeira.",
-        "categoria_rito": "Geral",
-        "ordem_sugerida": 7
-    },
-    {
-        "nome": "Fechamento do Livro da Lei",
-        "descricao": "Música reverente para o encerramento dos trabalhos litúrgicos.",
-        "categoria_rito": "Geral",
-        "ordem_sugerida": 8
-    },
-    {
-        "nome": "Amortização das Luzes",
-        "descricao": "Harmonia solene para o apagamento das luzes.",
-        "categoria_rito": "Geral",
-        "ordem_sugerida": 9
-    },
-    {
-        "nome": "Cadeia de União",
-        "descricao": "Música reflexiva e fraternal para a formação da Cadeia de União.",
-        "categoria_rito": "Geral",
-        "ordem_sugerida": 10
-    },
-    {
-        "nome": "Encerramento e Saída do Templo",
-        "descricao": "Música triunfal ou fraterna para a saída dos irmãos.",
-        "categoria_rito": "Geral",
-        "ordem_sugerida": 11
-    }
+# Eventos do Rito Brasileiro (conforme especificado pelo usuário)
+EVENTOS_BRASILEIRO = [
+    # Ordinária
+    "Ingresso no Templo - Irmãos", "Ingresso no Templo - Cortejo", "Verificações Iniciais",
+    "Cerimônia das Luzes", "Transmissão da Palavra Sagrada", "Abertura do Livro da Lei",
+    "Leitura e Aprovação da Ata", "Expediente", "Saco de Propostas e Informação",
+    "Ordem do Dia", "Entrada de Visitantes - Autoridades", "Escrutínio Secreto",
+    "Tempo de Instrução", "Tronco de Beneficência", "Palavra a Bem Geral da Ordem e do Quadro em Particular",
+    "Retirada das Autoridades", "Verificações Finais", "Retorno da Palavra",
+    "Fechamento do Livro da Lei", "Amortização das Luzes", "Conclusão do Trabalhos", "Retirada dos Irmãos",
+    # Iniciação adicionais
+    "Entrada do Pavilhão Nacional", "Preparo do Candidato", "Ingresso do Candidato no Templo",
+    "Taça Sagrada", "Primeira Viagem", "Segunda Viagem", "Terceira Viagem",
+    "Compromisso de Adesão", "Decisão Final da Loja", "Retorno do Candidato",
+    "Solene Juramento", "A Luz", "Consagração", "Investidura", "Assinatura do Livro de Presenças", "Distribuição de Flores"
 ]
 
-
 async def inicializar_banco():
-    """Cria todas as tabelas e popula os dados padrão."""
     print("Iniciando criacao de tabelas no PostgreSQL...")
-    from sqlalchemy import text
     async with motor_assincrono.begin() as conn:
+        print("Limpando banco de dados anterior (Drop Schema CASCADE)...")
+        await conn.execute(text("DROP SCHEMA public CASCADE"))
+        await conn.execute(text("CREATE SCHEMA public"))
+        await conn.execute(text("GRANT ALL ON SCHEMA public TO public"))
+        print("Criando novas tabelas...")
         await conn.run_sync(Base.metadata.create_all)
-        # Migração idempotente para colunas novas
-        await conn.execute(text("ALTER TABLE organizacoes ADD COLUMN IF NOT EXISTS status_assinatura VARCHAR(50) DEFAULT 'ATIVO';"))
-        await conn.execute(text("ALTER TABLE organizacoes ADD COLUMN IF NOT EXISTS plano_assinatura VARCHAR(50) DEFAULT 'MENSAL_HARMONIA';"))
-        await conn.execute(text("ALTER TABLE organizacoes ADD COLUMN IF NOT EXISTS configuracoes JSONB DEFAULT '{}'::jsonb;"))
-        
-        # Migrações para Globalização de Músicas e Unicidade
-        await conn.execute(text("ALTER TABLE musicas ALTER COLUMN organizacao_id DROP NOT NULL;"))
-        await conn.execute(text("ALTER TABLE musicas ADD COLUMN IF NOT EXISTS hash_arquivo VARCHAR(64);"))
-        await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_musicas_hash_arquivo ON musicas (hash_arquivo);"))
-        
-        # Unicidade (ignora erro se já existir usando bloco DO)
-        await conn.execute(text('''
-            DO $$
-            BEGIN
-                IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_evento_nome_org') THEN
-                    ALTER TABLE eventos ADD CONSTRAINT uq_evento_nome_org UNIQUE (nome, organizacao_id);
-                END IF;
-                IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_sessao_nome_org') THEN
-                    ALTER TABLE sessoes ADD CONSTRAINT uq_sessao_nome_org UNIQUE (nome, organizacao_id);
-                END IF;
-            END
-            $$;
-        '''))
-
-    print("Tabelas e colunas verificadas com sucesso!")
+    print("Tabelas verificadas com sucesso!")
 
     async with SessaoAssincronaLocal() as db:
-        # 1. Popula Eventos Padrão do Sistema
-        print("Verificando eventos ritualisticos padrao...")
-        eventos_criados = {}
-        for ev_data in EVENTOS_PADRAO:
-            nome_formatado = formatar_titulo_inteligente(ev_data["nome"])
-            stmt = select(Evento).where(Evento.nome == nome_formatado, Evento.padrao_sistema == True)
-            resultado = await db.execute(stmt)
-            evento_existente = resultado.scalar_one_or_none()
-
-            if not evento_existente:
-                novo_evento = Evento(
-                    nome=nome_formatado,
-                    descricao=ev_data["descricao"],
-                    categoria_rito=ev_data["categoria_rito"],
-                    padrao_sistema=True,
-                    compartilhado=True,
-                    ordem_sugerida=ev_data["ordem_sugerida"],
-                    organizacao_id=None
-                )
-                db.add(novo_evento)
+        # 1. Ritos
+        print("Criando Ritos...")
+        ritos_dados = ["REAA", "Rito Brasileiro"]
+        ritos_obj = {}
+        for nome_rito in ritos_dados:
+            res = await db.execute(select(Rito).where(Rito.nome == nome_rito))
+            r = res.scalar_one_or_none()
+            if not r:
+                r = Rito(nome=nome_rito, descricao=f"Rito {nome_rito}")
+                db.add(r)
                 await db.flush()
-                eventos_criados[nome_formatado] = novo_evento
-                print(f"  [+] Evento Padrao Criado: {nome_formatado}")
-            else:
-                eventos_criados[nome_formatado] = evento_existente
+                print(f" [+] Rito criado: {nome_rito}")
+            ritos_obj[nome_rito] = r
 
-        # 2. Popula Loja Modelo de Teste
-        print("Verificando Loja Modelo (Tenant)...")
-        stmt_org = select(Organizacao).where(Organizacao.slug_armazenamento == "GOB_Loja2181")
-        res_org = await db.execute(stmt_org)
+        # 2. Eventos Globais
+        print("Criando Eventos Globais...")
+        eventos_obj = {}
+        for ev_nome in EVENTOS_BRASILEIRO:
+            res = await db.execute(select(Evento).where(Evento.nome == ev_nome))
+            ev = res.scalar_one_or_none()
+            if not ev:
+                ev = Evento(nome=ev_nome, observacao_padrao_mestre_harmonia="Aguardar comando do Venerável Mestre.")
+                db.add(ev)
+                await db.flush()
+            eventos_obj[ev_nome] = ev
+
+        # 3. Tipos de Sessão (Templates)
+        print("Criando Templates de Sessao...")
+        rito_br = ritos_obj["Rito Brasileiro"]
+        
+        # Ordinaria Rito BR
+        res = await db.execute(select(TipoSessao).where(TipoSessao.nome == "Sessão Ordinária", TipoSessao.rito_id == rito_br.id))
+        ts_ord = res.scalar_one_or_none()
+        if not ts_ord:
+            ts_ord = TipoSessao(nome="Sessão Ordinária", rito_id=rito_br.id)
+            db.add(ts_ord)
+            await db.flush()
+            # Adiciona eventos (apenas os ordinários)
+            ordem = 1
+            for ev_nome in EVENTOS_BRASILEIRO[:22]: # Os 22 primeiros
+                db.add(TipoSessaoEvento(tipo_sessao_id=ts_ord.id, evento_id=eventos_obj[ev_nome].id, ordem_sequencia=ordem))
+                ordem += 1
+
+        # 4. Loja Modelo
+        print("Verificando Loja Modelo...")
+        res_org = await db.execute(select(Organizacao).where(Organizacao.slug_armazenamento == "GOB_Loja2181"))
         loja_modelo = res_org.scalar_one_or_none()
-
         if not loja_modelo:
             loja_modelo = Organizacao(
                 nome="A.R.L.S. João Pedro Junqueira nº 2181",
-                sigla="JPJ-2181",
-                tipo="LOJA",
                 slug_armazenamento="GOB_Loja2181",
-                rito_padrao="REAA",
-                dados_especificos={
-                    "numero": "2181",
-                    "oriente": "Goiânia",
-                    "uf": "GO",
-                    "obediencia": "GOB",
-                    "subobediencia": "GOB-GO",
-                    "webmaster": "gob.loja2181@e-sigma.app"
-                },
-                ativo=True
+                rito_id=rito_br.id, # Vinculado ao Rito BR
+                dados_especificos={"numero": "2181"}
             )
             db.add(loja_modelo)
             await db.flush()
-            print(f"  [+] Loja Modelo Criada: {loja_modelo.nome} (Slug: {loja_modelo.slug_armazenamento})")
+            print(f" [+] Loja Modelo Criada")
 
-        # Provisiona a pasta em disco para a Loja Modelo
         ServicoArmazenamentoTenant.provisionar_estrutura_tenant(loja_modelo.slug_armazenamento)
-        print(f"  [+] Estrutura de pastas provisionada para {loja_modelo.slug_armazenamento}")
 
-        # 3. Popula Sessões Padrão para a Loja Modelo
-        print("Verificando Sessoes Padrao para a Loja Modelo...")
-        sessoes_iniciais = [
-            {
-                "nome": "Sessão Ordinária no Grau de Aprendiz",
-                "rito": "REAA",
-                "grau": 1,
-                "eventos": [
-                    "Entrada do Cortejo",
-                    "Cerimônia das Luzes",
-                    "Abertura do Livro da Lei",
-                    "Tronco de Beneficência",
-                    "Cadeia de União",
-                    "Fechamento do Livro da Lei",
-                    "Amortização das Luzes",
-                    "Encerramento e Saída do Templo"
-                ]
-            },
-            {
-                "nome": "Sessão Magna de Iniciação",
-                "rito": "REAA",
-                "grau": 1,
-                "eventos": [
-                    "Entrada do Cortejo",
-                    "Cerimônia das Luzes",
-                    "Abertura do Livro da Lei",
-                    "Entrada de Autoridades",
-                    "Tronco de Beneficência",
-                    "Cadeia de União",
-                    "Fechamento do Livro da Lei",
-                    "Amortização das Luzes",
-                    "Encerramento e Saída do Templo"
-                ]
-            },
-            {
-                "nome": "Sessão Ordinária de Aprendiz - Rito Brasileiro",
-                "rito": "Brasileiro",
-                "grau": 1,
-                "eventos": [
-                    "Entrada do Cortejo",
-                    "Cerimônia das Luzes",
-                    "Abertura do Livro da Lei",
-                    "Entrada do Pavilhão Nacional",
-                    "Tronco de Beneficência",
-                    "Cadeia de União",
-                    "Saída do Pavilhão Nacional",
-                    "Fechamento do Livro da Lei",
-                    "Amortização das Luzes",
-                    "Encerramento e Saída do Templo"
-                ]
-            },
-            {
-                "nome": "Sessão Magna de Iniciação - Rito Brasileiro",
-                "rito": "Brasileiro",
-                "grau": 1,
-                "eventos": [
-                    "Entrada do Cortejo",
-                    "Cerimônia das Luzes",
-                    "Abertura do Livro da Lei",
-                    "Entrada do Pavilhão Nacional",
-                    "Entrada de Autoridades",
-                    "Tronco de Beneficência",
-                    "Cadeia de União",
-                    "Saída do Pavilhão Nacional",
-                    "Fechamento do Livro da Lei",
-                    "Amortização das Luzes",
-                    "Encerramento e Saída do Templo"
-                ]
-            }
-        ]
+        # 5. Instanciando a Sessão para a Loja
+        print("Instanciando Sessao na Loja...")
+        res_sl = await db.execute(select(SessaoLoja).where(SessaoLoja.loja_id == loja_modelo.id, SessaoLoja.tipo_sessao_id == ts_ord.id))
+        sl = res_sl.scalar_one_or_none()
+        if not sl:
+            sl = SessaoLoja(loja_id=loja_modelo.id, tipo_sessao_id=ts_ord.id, nome_personalizado="Minha Sessão Ordinária BR")
+            db.add(sl)
+            await db.flush()
+            
+            # Copia os eventos do template
+            res_tse = await db.execute(select(TipoSessaoEvento).where(TipoSessaoEvento.tipo_sessao_id == ts_ord.id))
+            for tse in res_tse.scalars():
+                sle = SessaoLojaEvento(
+                    sessao_loja_id=sl.id,
+                    evento_id=tse.evento_id,
+                    ordem_execucao=tse.ordem_sequencia,
+                    observacao_mestre_harmonia=tse.evento.observacao_padrao_mestre_harmonia
+                )
+                db.add(sle)
 
-        for sessao_info in sessoes_iniciais:
-            nome_sessao = formatar_titulo_inteligente(sessao_info["nome"])
-            stmt_s = select(Sessao).where(
-                Sessao.nome == nome_sessao,
-                Sessao.organizacao_id == loja_modelo.id
+        # 6. Usuários
+        print("Verificando usuarios...")
+        stmt_u = select(Pessoa).where(Pessoa.email == "mestre.harmonia@e-sigma.app")
+        u_existente = (await db.execute(stmt_u)).scalar_one_or_none()
+        if not u_existente:
+            novo_u = Pessoa(
+                nome="Mestre de Harmonia", email="mestre.harmonia@e-sigma.app",
+                senha_hash=gerar_hash_senha("harmonia@2026"), tipo="MESTRE_HARMONIA",
+                organizacao_id=loja_modelo.id, dados_civis={"permissoes_sistema": ["mestre_harmonia"]},
+                dados_especificos={}, status_acesso=True
             )
-            res_s = await db.execute(stmt_s)
-            sessao_existente = res_s.scalar_one_or_none()
-
-            if not sessao_existente:
-                nova_sessao = Sessao(
-                    organizacao_id=loja_modelo.id,
-                    nome=nome_sessao,
-                    rito=sessao_info["rito"],
-                    grau=sessao_info["grau"],
-                    descricao=f"Modelo padrão de {nome_sessao} para o Rito {sessao_info['rito']}."
-                )
-                db.add(nova_sessao)
-                await db.flush()
-
-                # Adiciona a esteira sequencial de eventos
-                ordem = 1
-                for nome_ev in sessao_info["eventos"]:
-                    ev_obj = eventos_criados.get(nome_ev)
-                    if ev_obj:
-                        db.add(SessaoEvento(
-                            sessao_id=nova_sessao.id,
-                            evento_id=ev_obj.id,
-                            ordem=ordem,
-                            obrigatorio=True
-                        ))
-                        ordem += 1
-                print(f"  [+] Sessao Criada: {nome_sessao} com {ordem-1} eventos sequenciados.")
-
-        # 4. Popula Usuários / Mestres de Harmonia Padrão
-        print("Verificando usuarios padrao...")
-        from backend.modelos.pessoa import Pessoa
-        from backend.nucleo.seguranca import gerar_hash_senha
-
-        usuarios_seed = [
-            {
-                "nome": "Loja João Pedro Junqueira nº 2181",
-                "email": "loja2181@harmonia.sigma.app",
-                "senha": "harmonia@2026",
-                "tipo": "MESTRE_HARMONIA",
-                "organizacao_id": loja_modelo.id,
-                "dados_civis": {"permissoes_sistema": ["mestre_harmonia", "membro"]},
-                "dados_especificos": {"cargo": "Mestre de Harmonia", "senha_inicial_definida": True}
-            },
-            {
-                "nome": "Ir. Mestre de Harmonia",
-                "email": "mestre.harmonia@e-sigma.app",
-                "senha": "harmonia@2026",
-                "tipo": "MESTRE_HARMONIA",
-                "organizacao_id": loja_modelo.id,
-                "dados_civis": {"permissoes_sistema": ["mestre_harmonia", "membro"]},
-                "dados_especificos": {"cargo": "Mestre de Harmonia", "grau": 3, "cim": "218101"}
-            },
-            {
-                "nome": "Super Administrador Sigma",
-                "email": "sistema@e-sigma.app",
-                "senha": "harmonia@2026",
-                "tipo": "SUPER_ADMIN",
-                "organizacao_id": loja_modelo.id,
-                "dados_civis": {"permissoes_sistema": ["super_admin", "webmaster", "mestre_harmonia", "membro"]},
-                "dados_especificos": {"cargo": "SuperAdmin", "grau": 33}
-            }
-        ]
-
-        for u_data in usuarios_seed:
-            stmt_u = select(Pessoa).where(Pessoa.email == u_data["email"])
-            res_u = await db.execute(stmt_u)
-            usuario_existente = res_u.scalar_one_or_none()
-
-            if not usuario_existente:
-                novo_u = Pessoa(
-                    nome=u_data["nome"],
-                    email=u_data["email"],
-                    senha_hash=gerar_hash_senha(u_data["senha"]),
-                    tipo=u_data["tipo"],
-                    organizacao_id=u_data["organizacao_id"],
-                    dados_civis=u_data["dados_civis"],
-                    dados_especificos=u_data["dados_especificos"],
-                    status_acesso=True
-                )
-                db.add(novo_u)
-                print(f"  [+] Usuario Criado: {u_data['email']} ({u_data['nome']})")
-            else:
-                # Atualiza senha e permissões se necessário
-                usuario_existente.senha_hash = gerar_hash_senha(u_data["senha"])
-                usuario_existente.status_acesso = True
-                usuario_existente.dados_civis = u_data["dados_civis"]
+            db.add(novo_u)
+            print(f" [+] Usuario Mestre de Harmonia Criado")
 
         await db.commit()
         print("Inicializacao concluida com sucesso!")
-
 
 if __name__ == "__main__":
     asyncio.run(inicializar_banco())

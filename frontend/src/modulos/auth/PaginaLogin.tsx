@@ -136,25 +136,32 @@ export const PaginaLogin: React.FC = () => {
             </button>
           </form>
 
-          {/* Atalhos Rápidos para Demonstração */}
+          {/* Atalhos Rápidos para Lojas Modelo */}
           <div className="mt-8 pt-6 border-t border-white/10 text-center">
-            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-3">
-              Acesso Rápido de Demonstração
+            <p className="text-[11px] font-semibold text-macaonico-dourado uppercase tracking-wider mb-3 font-cinzel">
+              Experimente (Acesso de Demonstração - 30 Minutos)
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-col gap-2">
               <button
                 type="button"
                 onClick={() => preencherCredencialRapida('LOJA2181')}
-                className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[11px] font-semibold text-macaonico-cianoSigma border border-macaonico-cianoSigma/20 transition-all text-center"
+                className="p-3 rounded-xl bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-xs font-semibold text-macaonico-dourado border border-macaonico-dourado/30 transition-all text-center shadow-md flex items-center justify-center gap-2"
               >
-                🏛️ Loja nº 2181
+                🏛️ Acessar Loja Modelo (Rito Brasileiro)
+              </button>
+              <button
+                type="button"
+                onClick={() => alert("Loja Modelo REAA será carregada na próxima carga do script Seed.")}
+                className="p-3 rounded-xl bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-xs font-semibold text-macaonico-dourado border border-macaonico-dourado/30 transition-all text-center shadow-md flex items-center justify-center gap-2"
+              >
+                🏛️ Acessar Loja Modelo (REAA)
               </button>
               <button
                 type="button"
                 onClick={() => preencherCredencialRapida('ADMIN')}
-                className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[11px] font-medium text-slate-300 border border-white/5 transition-all text-center"
+                className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[11px] font-medium text-slate-300 border border-white/5 transition-all text-center mt-2"
               >
-                🛡️ SuperAdmin Sigma
+                🛡️ Personificar como SuperAdmin
               </button>
             </div>
           </div>

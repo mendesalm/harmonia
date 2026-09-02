@@ -59,6 +59,11 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
     e.preventDefault();
     if (!lojaAtiva) return;
 
+    if (eventosSelecionados.length === 0) {
+      alert('Atenção: É obrigatório vincular a música a pelo menos um Momento Ritualístico (checklist sugerido) para que ela funcione no Auto-Fill.');
+      return;
+    }
+
     try {
       setSalvando(true);
 

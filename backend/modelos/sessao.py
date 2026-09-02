@@ -1,81 +1,120 @@
 """
-Modelo ORM de Sessão Ritualística e Sequência de Eventos.
+Modelo ORM de Sessão (Templates e Instâncias da Loja) e Roteiros de Eventos.
 """
 import uuid
 from datetime import datetime
 from typing import Optional, List, TYPE_CHECKING
 from sqlalchemy import String, Text, Boolean, DateTime, ForeignKey, Integer, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.nucleo.banco import Base
 
 if TYPE_CHECKING:
     from backend.modelos.organizacao import Organizacao
     from backend.modelos.evento import Evento
+    from backend.modelos.rito import Rito
+    from backend.modelos.musica import MusicaEvento
 
 
-class Sessao(Base):
+class TipoSessao(Base):
     """
-    Representa um modelo/tipo de Sessão Maçônica (ex: Ordinária no Grau 1, Magna de Iniciação, etc).
-    Contém a sequência ordenada de eventos/playlists para execução pelo Mestre de Harmonia.
+    Template global de uma Sessão para um Rito (ex: Sessão Magna de Iniciação).
     """
-    __tablename__ = "sessoes"
+    __tablename__ = "tipos_sessao"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True
-    )
-    organizacao_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("organizacoes.id", ondelete="CASCADE"), nullable=False, index=True
     )
     nome: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    rito: Mapped[str] = mapped_column(String(50), default="REAA", nullable=False) # REAA, York, Schroeder, etc.
-    grau: Mapped[int] = mapped_column(Integer, default=1, nullable=False) # 1 (Aprendiz), 2 (Companheiro), 3 (Mestre), etc.
-    descricao: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    rito_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("ritos.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     
-    # Configurações operacionais da sessão (ex: fade in/out em segundos, tempo de silêncio)
-    configuracoes: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
-    
-    ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    atualizado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     __table_args__ = (
-        UniqueConstraint("nome", "organizacao_id", name="uq_sessao_nome_org"),
+        UniqueConstraint("nome", "rito_id", name="uq_tiposessao_nome_rito"),
     )
 
     # Relacionamentos
-    organizacao: Mapped["Organizacao"] = relationship("Organizacao", back_populates="sessoes")
-    eventos_associados: Mapped[List["SessaoEvento"]] = relationship(
-        "SessaoEvento",
-        back_populates="sessao",
-        cascade="all, delete-orphan",
-        order_by="SessaoEvento.ordem"
+    # rito: Mapped["Rito"] = relationship("Rito", back_populates="tipos_sessao")
+    eventos: Mapped[List["TipoSessaoEvento"]] = relationship(
+        "TipoSessaoEvento", back_populates="tipo_sessao", cascade="all, delete-orphan", order_by="TipoSessaoEvento.ordem_sequencia"
     )
+    sessoes_loja: Mapped[List["SessaoLoja"]] = relationship("SessaoLoja", back_populates="tipo_sessao")
 
 
-class SessaoEvento(Base):
+class TipoSessaoEvento(Base):
     """
-    Tabela de associação que define a esteira sequencial de eventos dentro de uma sessão.
+    Roteiro padrão do template: Ordem dos eventos em um Tipo de Sessão.
     """
-    __tablename__ = "sessao_eventos"
+    __tablename__ = "tipos_sessao_eventos"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True
     )
-    sessao_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("sessoes.id", ondelete="CASCADE"), nullable=False, index=True
+    tipo_sessao_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tipos_sessao.id", ondelete="CASCADE"), nullable=False, index=True
     )
     evento_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("eventos.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("eventos_ritualisticos.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    ordem: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    obrigatorio: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    observacao_ritual: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    ordem_sequencia: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    momento_silencio: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    
+    # Relacionamentos
+    tipo_sessao: Mapped["TipoSessao"] = relationship("TipoSessao", back_populates="eventos")
+    evento: Mapped["Evento"] = relationship("Evento", back_populates="tipos_sessao_eventos")
 
-    __table_args__ = (
-        UniqueConstraint("sessao_id", "ordem", name="uq_sessao_evento_ordem"),
+
+class SessaoLoja(Base):
+    """
+    Instância customizada de uma sessão adotada por uma Loja.
+    """
+    __tablename__ = "sessoes_loja"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True
     )
+    loja_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizacoes.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    tipo_sessao_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tipos_sessao.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    nome_personalizado: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
+    criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relacionamentos
-    sessao: Mapped["Sessao"] = relationship("Sessao", back_populates="eventos_associados")
-    evento: Mapped["Evento"] = relationship("Evento", back_populates="sessao_eventos")
+    loja: Mapped["Organizacao"] = relationship("Organizacao", back_populates="sessoes_loja")
+    tipo_sessao: Mapped["TipoSessao"] = relationship("TipoSessao", back_populates="sessoes_loja")
+    eventos_customizados: Mapped[List["SessaoLojaEvento"]] = relationship(
+        "SessaoLojaEvento", back_populates="sessao_loja", cascade="all, delete-orphan", order_by="SessaoLojaEvento.ordem_execucao"
+    )
+
+
+class SessaoLojaEvento(Base):
+    """
+    Roteiro customizado pela Loja para sua sessão. 
+    A Loja pode reordenar, suprimir ou editar a observação de um evento.
+    """
+    __tablename__ = "sessoes_loja_eventos"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True
+    )
+    sessao_loja_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("sessoes_loja.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    evento_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("eventos_ritualisticos.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    ordem_execucao: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    suprimido: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    observacao_mestre_harmonia: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Relacionamentos
+    sessao_loja: Mapped["SessaoLoja"] = relationship("SessaoLoja", back_populates="eventos_customizados")
+    evento: Mapped["Evento"] = relationship("Evento", back_populates="sessoes_loja_eventos")
+    playlists: Mapped[List["MusicaEvento"]] = relationship("MusicaEvento", back_populates="sessao_loja_evento", cascade="all, delete-orphan")

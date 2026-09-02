@@ -9,6 +9,7 @@ import { PaginaPlayerHarmonia } from './modulos/player/PaginaPlayerHarmonia';
 import { PaginaSessoes } from './modulos/sessoes/PaginaSessoes';
 import { PaginaEventos } from './modulos/eventos/PaginaEventos';
 import { PaginaMusicas } from './modulos/musicas/PaginaMusicas';
+import { PaginaDashboard } from './modulos/dashboard/PaginaDashboard';
 
 export const App: React.FC = () => {
   return (
@@ -24,6 +25,14 @@ export const App: React.FC = () => {
                 {/* Rotas Protegidas por Autenticação JWT */}
                 <Route
                   path="/"
+                  element={
+                    <RotaProtegida>
+                      <PaginaDashboard />
+                    </RotaProtegida>
+                  }
+                />
+                <Route
+                  path="/player"
                   element={
                     <RotaProtegida>
                       <PaginaPlayerHarmonia />
