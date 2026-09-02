@@ -6,13 +6,13 @@ import { ModalSelecaoSessao } from '../player/ModalSelecaoSessao';
 
 export const PaginaDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { tenant } = useTenant();
+  const { lojaAtiva } = useTenant();
   const [modalSessaoAberto, setModalSessaoAberto] = useState(false);
 
   // Mocks fallback case the tenant isn't fully loaded yet
-  const nomeLoja = tenant?.nome || "Loja Maçônica";
-  const rito = tenant?.rito_padrao || "Rito Indefinido";
-  const validade = tenant?.validade_assinatura ? new Date(tenant.validade_assinatura).toLocaleDateString('pt-BR') : 'Assinatura Vitalícia';
+  const nomeLoja = lojaAtiva?.nome || "Loja Maçônica";
+  const rito = lojaAtiva?.rito_padrao || "Rito Indefinido";
+  const validade = lojaAtiva?.validade_assinatura ? new Date(lojaAtiva.validade_assinatura).toLocaleDateString('pt-BR') : 'Assinatura Vitalícia';
 
   const iniciarSequenciaPlayer = () => {
     setModalSessaoAberto(true);

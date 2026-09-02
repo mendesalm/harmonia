@@ -7,6 +7,8 @@ export interface Organizacao {
   rito_padrao: string;
   dados_especificos: Record<string, any>;
   ativo: boolean;
+  status_assinatura?: string;
+  validade_assinatura?: string;
   criado_em: string;
   atualizado_em: string;
 }
