@@ -133,17 +133,31 @@ async def inicializar_banco():
 
         # 6. Usuários
         print("Verificando usuarios...")
-        stmt_u = select(Pessoa).where(Pessoa.email == "mestre.harmonia@e-sigma.app")
-        u_existente = (await db.execute(stmt_u)).scalar_one_or_none()
-        if not u_existente:
-            novo_u = Pessoa(
-                nome="Mestre de Harmonia", email="mestre.harmonia@e-sigma.app",
+        # Usuário da Loja 2181 (Demo Rito Brasileiro)
+        stmt_u1 = select(Pessoa).where(Pessoa.email == "loja2181@harmonia.sigma.app")
+        u_existente1 = (await db.execute(stmt_u1)).scalar_one_or_none()
+        if not u_existente1:
+            novo_u1 = Pessoa(
+                nome="Demo Loja 2181", email="loja2181@harmonia.sigma.app",
                 senha_hash=gerar_hash_senha("harmonia@2026"), tipo="MESTRE_HARMONIA",
                 organizacao_id=loja_modelo.id, dados_civis={"permissoes_sistema": ["mestre_harmonia"]},
                 dados_especificos={}, status_acesso=True
             )
-            db.add(novo_u)
-            print(f" [+] Usuario Mestre de Harmonia Criado")
+            db.add(novo_u1)
+            print(" [+] Usuário Demo Loja 2181 Criado")
+
+        # Usuário Admin Sigma
+        stmt_u2 = select(Pessoa).where(Pessoa.email == "sistema@e-sigma.app")
+        u_existente2 = (await db.execute(stmt_u2)).scalar_one_or_none()
+        if not u_existente2:
+            novo_u2 = Pessoa(
+                nome="SuperAdmin Sigma", email="sistema@e-sigma.app",
+                senha_hash=gerar_hash_senha("harmonia@2026"), tipo="ADMIN",
+                organizacao_id=None, dados_civis={"permissoes_sistema": ["admin"]},
+                dados_especificos={}, status_acesso=True
+            )
+            db.add(novo_u2)
+            print(" [+] Usuário SuperAdmin Sigma Criado")
 
         await db.commit()
         print("Inicializacao concluida com sucesso!")
