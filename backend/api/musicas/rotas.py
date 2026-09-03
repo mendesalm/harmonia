@@ -27,18 +27,46 @@ roteador_musicas = APIRouter(
 
 
 from sqlalchemy import select
-from backend.modelos.musica import Musica
+from backend.modelos.musica import Musica, MusicaEventoSugerido
+
+from sqlalchemy.orm import selectinload
 
 @roteador_musicas.get(
     "",
-    response_model=List[MusicaResposta],
     summary="Listar Acervo",
     description="Retorna todas as músicas do acervo."
 )
 async def listar_musicas(db: AsyncSession = Depends(obter_banco_de_dados)):
-    stmt = select(Musica).order_by(Musica.titulo)
+    stmt = select(Musica).options(
+        selectinload(Musica.eventos_sugeridos).selectinload(MusicaEventoSugerido.evento)
+    ).order_by(Musica.titulo)
     res = await db.execute(stmt)
-    return res.scalars().all()
+    musicas = res.scalars().all()
+    
+    resultados = []
+    for m in musicas:
+        m_dict = {
+            "id": m.id,
+            "titulo": m.titulo,
+            "autor_artista": m.autor_artista,
+            "upload_por_loja_id": m.upload_por_loja_id,
+            "arquivo_url": m.arquivo_url,
+            "sinalizada_erro": m.sinalizada_erro,
+            "status_uso": m.status_uso,
+            "ativo": m.ativo,
+            "criado_em": m.criado_em,
+            "atualizado_em": m.atualizado_em,
+            "metadados": m.metadados,
+            "eventos": [
+                {
+                    "evento_id": es.evento_id,
+                    "evento_nome": es.evento.nome if es.evento else None
+                } for es in m.eventos_sugeridos
+            ]
+        }
+        resultados.append(m_dict)
+    
+    return resultados
 
 @roteador_musicas.get(
     "/sugeridas/{evento_id}",

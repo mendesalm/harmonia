@@ -61,8 +61,10 @@ export const PaginaMusicas: React.FC = () => {
       audioRef.current.pause();
       setMusicaTocandoId(null);
     } else {
-      if (musica.caminho_arquivo) {
-        audioRef.current.src = musica.caminho_arquivo;
+      const urlArquivo = musica.arquivo_url || (musica as any).caminho_arquivo;
+      if (urlArquivo) {
+        const baseURL = clienteHttp.defaults.baseURL ? clienteHttp.defaults.baseURL.replace('/api/v1', '') : '';
+        audioRef.current.src = `${baseURL}${urlArquivo}`;
         audioRef.current.play().catch((e) => console.error('Erro de reprodução:', e));
         setMusicaTocandoId(musica.id);
       }
@@ -85,16 +87,24 @@ export const PaginaMusicas: React.FC = () => {
     }
   };
 
-  const handleEditarMusica = async (musica: Musica) => {
-    const novoTitulo = window.prompt("Digite o novo título da música:", musica.titulo);
-    if (novoTitulo === null) return;
-    const novoAutor = window.prompt("Digite o novo autor/artista (opcional):", musica.autor_artista || '') || null;
-    
+  const [musicaEmEdicao, setMusicaEmEdicao] = useState<Musica | null>(null);
+  const [tituloEdit, setTituloEdit] = useState('');
+  const [autorEdit, setAutorEdit] = useState('');
+
+  const abrirModalEditar = (musica: Musica) => {
+    setMusicaEmEdicao(musica);
+    setTituloEdit(musica.titulo);
+    setAutorEdit(musica.autor_artista || '');
+  };
+
+  const salvarEdicaoMusica = async () => {
+    if (!musicaEmEdicao) return;
     try {
-      await clienteHttp.put(`/musicas/${musica.id}`, {
-        titulo: novoTitulo,
-        autor_artista: novoAutor
+      await clienteHttp.put(`/musicas/${musicaEmEdicao.id}`, {
+        titulo: tituloEdit,
+        autor_artista: autorEdit || null
       });
+      setMusicaEmEdicao(null);
       carregarDados();
     } catch (err: any) {
       alert("Erro ao editar música: " + (err.response?.data?.detail || err.message));
@@ -186,23 +196,30 @@ export const PaginaMusicas: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-white/5 text-sm">
                 {musicasFiltradas.map((m) => {
-                  const tocandoLocal = musicaTocandoId === m.id;
                   return (
                     <tr key={m.id} className="hover:bg-white/5 transition-colors group">
-                      {/* Botão Play / Pause */}
-                      <td className="py-3.5 px-4 text-center">
-                        <button
-                          onClick={() => alternarPlayerPrevia(m)}
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-                            tocandoLocal
-                              ? 'bg-macaonico-cianoSigma text-black shadow-md shadow-cyan-500/30 animate-pulse'
-                              : 'bg-white/5 hover:bg-white/15 text-white'
-                          }`}
-                        >
-                          {tocandoLocal ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
-                        </button>
+                      {/* Título & Play */}
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          {(m.tipo_midia === 'ARQUIVO_LOCAL' || !m.tipo_midia) && (
+                            <button
+                              onClick={() => alternarPlayerPrevia(m)}
+                              className={`w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full transition-all shadow-lg ${
+                                musicaTocandoId === m.id
+                                  ? 'bg-macaonico-cianoSigma text-black shadow-cyan-500/20'
+                                  : 'bg-primaria-700/80 hover:bg-macaonico-cianoSigma/20 hover:text-macaonico-cianoSigma text-white'
+                              }`}
+                            >
+                              {musicaTocandoId === m.id ? (
+                                <Pause className="w-4 h-4 fill-current" />
+                              ) : (
+                                <Play className="w-4 h-4 fill-current ml-0.5" />
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </td>
-
+                      
                       {/* Título e Artista */}
                       <td className="py-3.5 px-4">
                         <p className="font-bold text-white group-hover:text-macaonico-cianoSigma transition-colors">
@@ -215,7 +232,7 @@ export const PaginaMusicas: React.FC = () => {
 
                       {/* Tipo de Mídia */}
                       <td className="py-3.5 px-4">
-                        {m.tipo_midia === 'ARQUIVO_LOCAL' ? (
+                        {(m.tipo_midia === 'ARQUIVO_LOCAL' || !m.tipo_midia) ? (
                           <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
                             <Disc className="w-3.5 h-3.5" /> Arquivo Local (MP3)
                           </span>
@@ -257,7 +274,7 @@ export const PaginaMusicas: React.FC = () => {
                       {/* Ações */}
                       <td className="py-3.5 px-4 text-right flex justify-end gap-1">
                         <button
-                          onClick={() => handleEditarMusica(m)}
+                          onClick={() => abrirModalEditar(m)}
                           className="p-2 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors cursor-pointer"
                           title="Editar Música"
                         >
@@ -353,7 +370,50 @@ export const PaginaMusicas: React.FC = () => {
         <ModalUploadMusica
           onFechar={() => setModalUploadAberto(false)}
           onSalvo={carregarDados}
+          isGlobalAdmin={!lojaAtiva}
         />
+      )}
+
+      {musicaEmEdicao && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#161616] border border-gray-800 p-6 rounded-2xl shadow-xl w-full max-w-md">
+            <h2 className="text-xl font-bold text-white mb-4">Editar Música</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Título da Música</label>
+                <input
+                  type="text"
+                  value={tituloEdit}
+                  onChange={(e) => setTituloEdit(e.target.value)}
+                  className="w-full bg-black border border-gray-700 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-macaonico-cianoSigma"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Autor / Artista</label>
+                <input
+                  type="text"
+                  value={autorEdit}
+                  onChange={(e) => setAutorEdit(e.target.value)}
+                  className="w-full bg-black border border-gray-700 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-macaonico-cianoSigma"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end mt-6">
+              <button
+                onClick={() => setMusicaEmEdicao(null)}
+                className="px-4 py-2 rounded-xl text-gray-400 hover:text-white transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={salvarEdicaoMusica}
+                className="px-4 py-2 rounded-xl bg-macaonico-cianoSigma text-black font-semibold hover:bg-cyan-400 transition-colors"
+              >
+                Salvar Alterações
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
