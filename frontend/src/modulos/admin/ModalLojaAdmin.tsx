@@ -29,47 +29,61 @@ export const ModalLojaAdmin: React.FC<Props> = ({ lojaId, onClose, onSalvo }) =>
   });
 
   useEffect(() => {
-    // Busca os ritos do banco
-    clienteHttp.get('/admin/ritos').then(resp => {
-      setRitos(resp.data);
-      if (resp.data.length > 0 && !formData.rito_id) {
-        setFormData(prev => ({ ...prev, rito_id: resp.data[0].id }));
-      }
-    });
-
-    if (lojaId) {
+    const carregarDados = async () => {
       setCarregando(true);
-      clienteHttp.get<Organizacao>(`/organizacoes/${lojaId}`)
-        .then(resp => {
+      try {
+        const respRitos = await clienteHttp.get('/admin/ritos');
+        setRitos(respRitos.data);
+
+        if (lojaId) {
+          const respLoja = await clienteHttp.get<Organizacao>(`/organizacoes/${lojaId}`);
           setFormData({
-            nome: resp.data.nome,
-            rito_id: resp.data.rito_id || '',
-            ativo: resp.data.ativo,
-            status_assinatura: resp.data.status_assinatura || 'DEMONSTRACAO',
+            nome: respLoja.data.nome,
+            rito_id: respLoja.data.rito_id || (respRitos.data.length > 0 ? respRitos.data[0].id : ''),
+            ativo: respLoja.data.ativo,
+            status_assinatura: respLoja.data.status_assinatura || 'DEMONSTRACAO',
             dados_especificos: {
-              numero: resp.data.dados_especificos?.numero || '',
-              obediencia: resp.data.dados_especificos?.obediencia || 'GOB',
-              cnpj: resp.data.dados_especificos?.cnpj || '',
-              endereco: resp.data.dados_especificos?.endereco || ''
+              numero: respLoja.data.dados_especificos?.numero || '',
+              obediencia: respLoja.data.dados_especificos?.obediencia || 'GOB',
+              cnpj: respLoja.data.dados_especificos?.cnpj || '',
+              endereco: respLoja.data.dados_especificos?.endereco || ''
             }
           });
-        })
-        .finally(() => setCarregando(false));
-    }
+        } else {
+          if (respRitos.data.length > 0) {
+            setFormData(prev => ({ ...prev, rito_id: respRitos.data[0].id }));
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao carregar dados', err);
+      } finally {
+        setCarregando(false);
+      }
+    };
+
+    carregarDados();
   }, [lojaId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSalvando(true);
+    
+    // Evitar enviar rito_id vazio (UUID inválido)
+    const payload = { ...formData };
+    if (!payload.rito_id) {
+      delete (payload as any).rito_id;
+    }
+
     try {
       if (lojaId) {
-        await clienteHttp.put(`/organizacoes/${lojaId}`, formData);
+        await clienteHttp.put(`/organizacoes/${lojaId}`, payload);
       } else {
-        await clienteHttp.post('/organizacoes', formData);
+        await clienteHttp.post('/organizacoes', payload);
       }
       onSalvo();
     } catch (err) {
-      alert('Erro ao salvar loja');
+      console.error(err);
+      alert('Erro ao salvar loja. Verifique os campos e tente novamente.');
     } finally {
       setSalvando(false);
     }
