@@ -3,26 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit2, Trash2, Shield, Loader2, Plus } from 'lucide-react';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { Organizacao } from '../../compartilhado/tipos';
+import { ModalLojaAdmin } from './ModalLojaAdmin';
 
 export const PaginaLojasAdmin: React.FC = () => {
   const navigate = useNavigate();
   const [lojas, setLojas] = useState<Organizacao[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [modalAberto, setModalAberto] = useState(false);
+  const [lojaEditandoId, setLojaEditandoId] = useState<string | undefined>(undefined);
+
+  const buscarLojas = async () => {
+    try {
+      setCarregando(true);
+      const resp = await clienteHttp.get<Organizacao[]>('/organizacoes?apenas_ativas=false');
+      setLojas(resp.data);
+    } catch (err) {
+      console.error('Erro ao buscar lojas', err);
+    } finally {
+      setCarregando(false);
+    }
+  };
 
   useEffect(() => {
-    const buscarLojas = async () => {
-      try {
-        setCarregando(true);
-        // Em um sistema real, poderíamos ter uma rota admin: /admin/organizacoes
-        // Mas vamos usar a rota global por enquanto
-        const resp = await clienteHttp.get<Organizacao[]>('/organizacoes?apenas_ativas=false');
-        setLojas(resp.data);
-      } catch (err) {
-        console.error('Erro ao buscar lojas', err);
-      } finally {
-        setCarregando(false);
-      }
-    };
     buscarLojas();
   }, []);
 
@@ -44,7 +46,13 @@ export const PaginaLojasAdmin: React.FC = () => {
             </div>
           </div>
           
-          <button className="flex items-center gap-2 bg-macaonico-dourado text-black px-4 py-2 rounded-lg font-bold hover:bg-yellow-500 transition-colors">
+          <button 
+            onClick={() => {
+              setLojaEditandoId(undefined);
+              setModalAberto(true);
+            }}
+            className="flex items-center gap-2 bg-macaonico-dourado text-black px-4 py-2 rounded-lg font-bold hover:bg-yellow-500 transition-colors"
+          >
             <Plus className="w-4 h-4" />
             Nova Loja
           </button>
@@ -115,6 +123,10 @@ export const PaginaLojasAdmin: React.FC = () => {
                           </button>
                           <button 
                             title="Editar Loja"
+                            onClick={() => {
+                              setLojaEditandoId(loja.id);
+                              setModalAberto(true);
+                            }}
                             className="p-2 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-colors"
                           >
                             <Edit2 className="w-4 h-4" />
@@ -136,6 +148,17 @@ export const PaginaLojasAdmin: React.FC = () => {
         </section>
 
       </div>
+
+      {modalAberto && (
+        <ModalLojaAdmin
+          lojaId={lojaEditandoId}
+          onClose={() => setModalAberto(false)}
+          onSalvo={() => {
+            setModalAberto(false);
+            buscarLojas();
+          }}
+        />
+      )}
     </div>
   );
 };
