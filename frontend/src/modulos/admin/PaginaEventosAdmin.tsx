@@ -122,20 +122,26 @@ export const PaginaEventosAdmin: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                          >
-                            <Settings className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                ))}
+                {eventos.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-gray-500">Nenhum evento global cadastrado.</td>
+                  </tr>
                 )}
               </tbody>
             </table>
           </div>
-        </section>
+        )}
 
       </div>
+      
+      {modalAberto && (
+        <ModalEventoGlobal
+          momentoId={eventoSelecionadoId}
+          onClose={() => setModalAberto(false)}
+          onSaved={() => carregar()}
+        />
+      )}
     </div>
   );
 };
