@@ -35,7 +35,7 @@ async def listar_sessoes_canonicas(db: AsyncSession = Depends(obter_banco_de_dad
 @roteador_admin.get("/canonicos/momentos", response_model=List[MomentoCanonicoSchema], summary="Listar Momentos Canônicos")
 async def listar_momentos_canonicos(db: AsyncSession = Depends(obter_banco_de_dados)):
     """Retorna os momentos canônicos globais (gabaritos)."""
-    stmt = select(MomentoCanonico).order_by(MomentoCanonico.nome)
+    stmt = select(MomentoCanonico).options(selectinload(MomentoCanonico.eventos)).order_by(MomentoCanonico.ordem_sugerida)
     resultado = await db.execute(stmt)
     return resultado.scalars().all()
 
@@ -101,4 +101,87 @@ async def salvar_sequencia(rito_id: uuid.UUID, sessao_id: uuid.UUID, payload: Sa
         
     await db.commit()
     return {"status": "ok"}
+
+
+from backend.api.admin.schemas import SalvarEventoGlobalSchema
+from backend.modelos.musica import MusicaEventoSugerido
+
+@roteador_admin.post("/canonicos/momentos", response_model=MomentoCanonicoSchema, summary="Criar Evento Global")
+async def criar_evento_global(payload: SalvarEventoGlobalSchema, db: AsyncSession = Depends(obter_banco_de_dados)):
+    mcan = MomentoCanonico(
+        nome=payload.nome,
+        descricao=payload.descricao,
+        orientacao=payload.orientacao,
+        ordem_sugerida=payload.ordem_sugerida
+    )
+    db.add(mcan)
+    await db.flush()
+
+    for rito in payload.ritos:
+        ev = Evento(
+            nome=rito.nome,
+            rito_id=rito.rito_id,
+            canonico_id=mcan.id,
+            observacao_padrao_mestre_harmonia=rito.observacao_padrao_mestre_harmonia
+        )
+        db.add(ev)
+        await db.flush()
+        
+        # Opcional: Adicionar musicas sugeridas globalmente para CADA evento de rito? 
+        # O schema diz que musica_sugerida aponta pro evento_id. 
+        # Vamos atrelar as musicas a cada evento de rito.
+        for mus_id in payload.musicas_sugeridas_ids:
+            mes = MusicaEventoSugerido(musica_id=mus_id, evento_id=ev.id)
+            db.add(mes)
+
+    await db.commit()
+    
+    # Reload with events
+    stmt = select(MomentoCanonico).options(selectinload(MomentoCanonico.eventos)).where(MomentoCanonico.id == mcan.id)
+    r = await db.execute(stmt)
+    return r.scalar_one()
+
+@roteador_admin.put("/canonicos/momentos/{momento_id}", response_model=MomentoCanonicoSchema, summary="Editar Evento Global")
+async def editar_evento_global(momento_id: uuid.UUID, payload: SalvarEventoGlobalSchema, db: AsyncSession = Depends(obter_banco_de_dados)):
+    mcan = await db.get(MomentoCanonico, momento_id)
+    if not mcan:
+        raise HTTPException(status_code=404, detail="Momento não encontrado")
+        
+    mcan.nome = payload.nome
+    mcan.descricao = payload.descricao
+    mcan.orientacao = payload.orientacao
+    mcan.ordem_sugerida = payload.ordem_sugerida
+    
+    # Clean up old events (and their music suggestions by cascade)
+    await db.execute(text(f"DELETE FROM eventos_ritualisticos WHERE canonico_id = '{momento_id}'"))
+    
+    for rito in payload.ritos:
+        ev = Evento(
+            nome=rito.nome,
+            rito_id=rito.rito_id,
+            canonico_id=mcan.id,
+            observacao_padrao_mestre_harmonia=rito.observacao_padrao_mestre_harmonia
+        )
+        db.add(ev)
+        await db.flush()
+        
+        for mus_id in payload.musicas_sugeridas_ids:
+            mes = MusicaEventoSugerido(musica_id=mus_id, evento_id=ev.id)
+            db.add(mes)
+
+    await db.commit()
+    
+    stmt = select(MomentoCanonico).options(selectinload(MomentoCanonico.eventos)).where(MomentoCanonico.id == mcan.id)
+    r = await db.execute(stmt)
+    return r.scalar_one()
+    
+@roteador_admin.delete("/canonicos/momentos/{momento_id}", summary="Deletar Evento Global")
+async def deletar_evento_global(momento_id: uuid.UUID, db: AsyncSession = Depends(obter_banco_de_dados)):
+    mcan = await db.get(MomentoCanonico, momento_id)
+    if not mcan:
+        raise HTTPException(status_code=404, detail="Momento não encontrado")
+    await db.delete(mcan)
+    await db.commit()
+    return {"status": "ok"}
+
 

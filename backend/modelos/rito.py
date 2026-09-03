@@ -3,11 +3,15 @@ Modelo ORM do Rito.
 """
 import uuid
 from datetime import datetime
-from typing import List
+from typing import List, TYPE_CHECKING
 from sqlalchemy import String, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.nucleo.banco import Base
+
+if TYPE_CHECKING:
+    from backend.modelos.organizacao import Organizacao
+    from backend.modelos.sessao import TipoSessao
 
 
 class Rito(Base):
@@ -27,4 +31,5 @@ class Rito(Base):
     
     # Relacionamentos
     lojas: Mapped[List["Organizacao"]] = relationship("Organizacao", back_populates="rito")
-    # tipos_sessao será importado futuramente
+    tipos_sessao: Mapped[List["TipoSessao"]] = relationship("TipoSessao", back_populates="rito", cascade="all, delete-orphan")
+    eventos: Mapped[List["Evento"]] = relationship("Evento", back_populates="rito", cascade="all, delete-orphan")

@@ -95,7 +95,8 @@ async def inicializar_banco():
             eventos_rito_obj = {}
             for nome_can, mcan in momentos_can_obj.items():
                 ev = Evento(
-                    nome=f"{nome_can} ({nome_rito})", # Evitar unicidade global repetida 
+                    nome=nome_can, 
+                    rito_id=rito.id,
                     canonico_id=mcan.id,
                     observacao_padrao_mestre_harmonia="Aguardar comando do Venerável Mestre."
                 )

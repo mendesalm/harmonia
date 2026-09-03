@@ -2,13 +2,39 @@ from pydantic import BaseModel, ConfigDict
 import uuid
 from typing import List, Optional
 
+class VariacaoRitoSchema(BaseModel):
+    rito_id: uuid.UUID
+    nome: str
+    observacao_padrao_mestre_harmonia: Optional[str] = None
+
+class SalvarEventoGlobalSchema(BaseModel):
+    nome: str
+    descricao: Optional[str] = None
+    orientacao: Optional[str] = None
+    ordem_sugerida: int
+    ritos: List[VariacaoRitoSchema] = []
+    musicas_sugeridas_ids: List[uuid.UUID] = []
+
+class EventoSchema(BaseModel):
+    id: uuid.UUID
+    nome: str
+    rito_id: uuid.UUID
+    observacao_padrao_mestre_harmonia: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 class MomentoCanonicoSchema(BaseModel):
     id: uuid.UUID
     nome: str
     descricao: Optional[str] = None
+    orientacao: Optional[str] = None
     ordem_sugerida: int
     ativo: bool
-    model_config = ConfigDict(from_attributes=True)
+    eventos: List[EventoSchema] = []
+
+    class Config:
+        from_attributes = True
 
 class TipoSessaoCanonicoSchema(BaseModel):
     id: uuid.UUID

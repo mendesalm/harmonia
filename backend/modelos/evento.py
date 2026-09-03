@@ -26,8 +26,13 @@ class Evento(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True
     )
-    nome: Mapped[str] = mapped_column(String(255), nullable=False, index=True, unique=True)
+    # Removido unique=True porque diferentes ritos podem ter um evento com o mesmo nome
+    nome: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     descricao: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
+    rito_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("ritos.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     
     canonico_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("momentos_canonicos.id", ondelete="SET NULL"), nullable=True, index=True
@@ -42,6 +47,7 @@ class Evento(Base):
     atualizado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relacionamentos
+    rito: Mapped["Rito"] = relationship("Rito", back_populates="eventos")
     canonico: Mapped[Optional["MomentoCanonico"]] = relationship("MomentoCanonico", back_populates="eventos")
     tipos_sessao_eventos: Mapped[List["TipoSessaoEvento"]] = relationship("TipoSessaoEvento", back_populates="evento", cascade="all, delete-orphan")
     sessoes_loja_eventos: Mapped[List["SessaoLojaEvento"]] = relationship("SessaoLojaEvento", back_populates="evento", cascade="all, delete-orphan")
