@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
 from backend.modelos.evento import Evento
-from backend.modelos.musica import MusicaEvento
+from backend.modelos.musica import MusicaEventoSugerido
 from backend.api.eventos.schemas import EventoCriacao, EventoAtualizacao, EventoResposta
 from backend.nucleo.formatadores import formatar_titulo_inteligente
 
@@ -30,8 +30,8 @@ class ServicoEvento:
         """
         stmt = select(
             Evento,
-            func.count(MusicaEvento.id).label("total_musicas")
-        ).outerjoin(MusicaEvento, Evento.id == MusicaEvento.evento_id).options(selectinload(Evento.canonico))
+            func.count(MusicaEventoSugerido.id).label("total_musicas")
+        ).outerjoin(MusicaEventoSugerido, Evento.id == MusicaEventoSugerido.evento_id).options(selectinload(Evento.canonico))
 
         filtros = []
         if apenas_ativos:
@@ -72,8 +72,8 @@ class ServicoEvento:
         """Busca um evento específico com contagem de músicas."""
         stmt = select(
             Evento,
-            func.count(MusicaEvento.id).label("total_musicas")
-        ).outerjoin(MusicaEvento, Evento.id == MusicaEvento.evento_id).options(selectinload(Evento.canonico)).where(Evento.id == evento_id).group_by(Evento.id)
+            func.count(MusicaEventoSugerido.id).label("total_musicas")
+        ).outerjoin(MusicaEventoSugerido, Evento.id == MusicaEventoSugerido.evento_id).options(selectinload(Evento.canonico)).where(Evento.id == evento_id).group_by(Evento.id)
         
         resultado = await db.execute(stmt)
         linha = resultado.first()
