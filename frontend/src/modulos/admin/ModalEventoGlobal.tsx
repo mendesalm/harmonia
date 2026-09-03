@@ -44,6 +44,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
   const [abaAtual, setAbaAtual] = useState<'geral' | 'ritos' | 'musicas'>('geral');
   const [modalUploadAberto, setModalUploadAberto] = useState(false);
   const [buscaMusica, setBuscaMusica] = useState('');
+  const [modoMusicas, setModoMusicas] = useState<'LISTA' | 'SELECAO'>('LISTA');
 
   const [formData, setFormData] = useState<FormData>({
     nome: '',
@@ -313,73 +314,148 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
               {/* Aba: Musicas */}
               {abaAtual === 'musicas' && (
                 <div className="space-y-4 animate-in fade-in">
-                  <div className="flex items-center justify-between bg-blue-900/10 border border-blue-900/30 p-4 rounded-xl text-blue-200 text-sm mb-4">
-                    <p>Selecione músicas do <strong>Acervo Global</strong> para formarem a playlist padrão sugerida quando uma loja adicionar este evento ao ritual.</p>
-                    <button 
-                      onClick={() => setModalUploadAberto(true)}
-                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-colors font-semibold whitespace-nowrap"
-                    >
-                      <UploadCloud className="w-4 h-4" />
-                      Upload Nova Música
-                    </button>
-                  </div>
                   
-                  <div className="bg-[#111111] border border-gray-800 rounded-xl p-4 flex flex-col h-[350px]">
-                    <div className="mb-4">
-                      <input 
-                        type="text" 
-                        placeholder="Buscar música no Acervo..." 
-                        value={buscaMusica}
-                        onChange={(e) => setBuscaMusica(e.target.value)}
-                        className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-macaonico-dourado transition-colors"
-                      />
+                  {modoMusicas === 'LISTA' && (
+                    <div className="flex flex-col h-[400px]">
+                      <div className="flex items-center justify-between bg-blue-900/10 border border-blue-900/30 p-4 rounded-xl text-blue-200 text-sm mb-4">
+                        <p>Estas são as músicas vinculadas à playlist deste evento.</p>
+                        <button 
+                          onClick={() => setModoMusicas('SELECAO')}
+                          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-colors font-semibold whitespace-nowrap"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Adicionar Música
+                        </button>
+                      </div>
+
+                      {formData.musicas_sugeridas_ids.length === 0 ? (
+                        <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-gray-800 rounded-xl bg-[#111111]">
+                          <Music className="w-12 h-12 text-gray-600 mb-4" />
+                          <p className="text-gray-400 mb-4">Nenhuma música vinculada a este evento ainda.</p>
+                          <button 
+                            onClick={() => setModoMusicas('SELECAO')}
+                            className="bg-macaonico-dourado text-black font-bold px-6 py-2 rounded-lg hover:brightness-110"
+                          >
+                            Adicionar Músicas
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex-1 overflow-y-auto space-y-2 bg-[#111111] border border-gray-800 rounded-xl p-4">
+                          {musicasAcervo
+                            .filter(m => formData.musicas_sugeridas_ids.includes(m.id))
+                            .map(musica => (
+                              <div key={musica.id} className="flex items-center justify-between p-3 bg-black/40 rounded-lg border border-gray-800 hover:border-gray-600 transition-colors">
+                                <div className="flex items-center gap-3">
+                                  <Music className="w-5 h-5 text-macaonico-dourado" />
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-white">{musica.titulo}</span>
+                                    {musica.autor_artista && <span className="text-xs text-gray-400">{musica.autor_artista}</span>}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  {musica.arquivo_url && (
+                                    <audio 
+                                      controls 
+                                      src={`http://localhost:8000${musica.arquivo_url}`} 
+                                      className="h-8 w-48 opacity-70 hover:opacity-100 transition-opacity" 
+                                      controlsList="nodownload noplaybackrate"
+                                    />
+                                  )}
+                                  <button
+                                    onClick={() => setFormData({...formData, musicas_sugeridas_ids: formData.musicas_sugeridas_ids.filter(id => id !== musica.id)})}
+                                    className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                                    title="Remover da Playlist"
+                                  >
+                                    <Trash2 className="w-5 h-5" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      )}
                     </div>
-                    
-                    <div className="flex-1 overflow-y-auto space-y-2 pr-2">
-                      {musicasAcervo
-                        .filter(m => !m.autor_artista?.includes('Loja'))
-                        .filter(m => m.titulo.toLowerCase().includes(buscaMusica.toLowerCase()) || m.autor_artista?.toLowerCase().includes(buscaMusica.toLowerCase()))
-                        .map(musica => (
-                        <div key={musica.id} className="flex items-center justify-between p-2 hover:bg-black/50 rounded-lg border border-transparent hover:border-gray-800 transition-colors">
-                          <label className="flex items-center gap-3 cursor-pointer flex-1">
-                            <input 
-                              type="checkbox"
-                              className="w-4 h-4 rounded border-gray-600 text-macaonico-dourado focus:ring-macaonico-dourado bg-black"
-                              checked={formData.musicas_sugeridas_ids.includes(musica.id)}
-                              onChange={(e) => {
-                                if(e.target.checked) {
-                                  setFormData({...formData, musicas_sugeridas_ids: [...formData.musicas_sugeridas_ids, musica.id]});
-                                } else {
-                                  setFormData({...formData, musicas_sugeridas_ids: formData.musicas_sugeridas_ids.filter(id => id !== musica.id)});
-                                }
-                              }}
-                            />
-                            <Music className="w-4 h-4 text-gray-500" />
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium text-gray-300">{musica.titulo}</span>
-                              {musica.autor_artista && <span className="text-xs text-gray-500">{musica.autor_artista}</span>}
+                  )}
+
+                  {modoMusicas === 'SELECAO' && (
+                    <div className="flex flex-col h-[450px]">
+                      <div className="flex items-center justify-between bg-blue-900/10 border border-blue-900/30 p-4 rounded-xl text-blue-200 text-sm mb-4">
+                        <p>Selecione músicas do Acervo ou faça um novo upload.</p>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => setModalUploadAberto(true)}
+                            className="flex items-center gap-2 bg-[#1c1c1c] border border-gray-600 hover:border-gray-400 text-white px-4 py-2 rounded-lg transition-colors font-semibold"
+                          >
+                            <UploadCloud className="w-4 h-4" />
+                            Novo Upload
+                          </button>
+                          <button 
+                            onClick={() => setModoMusicas('LISTA')}
+                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-colors font-semibold"
+                          >
+                            Concluir Seleção
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-[#111111] border border-gray-800 rounded-xl p-4 flex flex-col flex-1">
+                        <div className="mb-4">
+                          <input 
+                            type="text" 
+                            placeholder="Buscar música no Acervo..." 
+                            value={buscaMusica}
+                            onChange={(e) => setBuscaMusica(e.target.value)}
+                            className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-macaonico-dourado transition-colors"
+                          />
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+                          {musicasAcervo
+                            .filter(m => !m.autor_artista?.includes('Loja'))
+                            .filter(m => m.titulo.toLowerCase().includes(buscaMusica.toLowerCase()) || m.autor_artista?.toLowerCase().includes(buscaMusica.toLowerCase()))
+                            .map(musica => (
+                            <div key={musica.id} className="flex items-center justify-between p-2 hover:bg-black/50 rounded-lg border border-transparent hover:border-gray-800 transition-colors">
+                              <label className="flex items-center gap-3 cursor-pointer flex-1">
+                                <input 
+                                  type="checkbox"
+                                  className="w-4 h-4 rounded border-gray-600 text-macaonico-dourado focus:ring-macaonico-dourado bg-black"
+                                  checked={formData.musicas_sugeridas_ids.includes(musica.id)}
+                                  onChange={(e) => {
+                                    if(e.target.checked) {
+                                      setFormData({...formData, musicas_sugeridas_ids: [...formData.musicas_sugeridas_ids, musica.id]});
+                                    } else {
+                                      setFormData({...formData, musicas_sugeridas_ids: formData.musicas_sugeridas_ids.filter(id => id !== musica.id)});
+                                    }
+                                  }}
+                                />
+                                <Music className="w-4 h-4 text-gray-500" />
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-medium text-gray-300">{musica.titulo}</span>
+                                  {musica.autor_artista && <span className="text-xs text-gray-500">{musica.autor_artista}</span>}
+                                </div>
+                              </label>
+                              {musica.arquivo_url && (
+                                <audio 
+                                  controls 
+                                  src={`http://localhost:8000${musica.arquivo_url}`} 
+                                  className="h-8 w-48 opacity-70 hover:opacity-100 transition-opacity" 
+                                  controlsList="nodownload noplaybackrate"
+                                />
+                              )}
                             </div>
-                          </label>
-                          {musica.arquivo_url && (
-                            <audio 
-                              controls 
-                              src={`http://localhost:8000${musica.arquivo_url}`} 
-                              className="h-8 w-48 opacity-70 hover:opacity-100 transition-opacity" 
-                              controlsList="nodownload noplaybackrate"
-                            />
+                          ))}
+                          
+                          {musicasAcervo.length > 0 && musicasAcervo.filter(m => m.titulo.toLowerCase().includes(buscaMusica.toLowerCase())).length === 0 && (
+                            <p className="text-sm text-gray-600 text-center py-8">Nenhuma música encontrada com esse nome.</p>
+                          )}
+                          
+                          {musicasAcervo.length === 0 && (
+                            <p className="text-sm text-gray-600 text-center py-8">Acervo global vazio.</p>
                           )}
                         </div>
-                      ))}
-                      
-                      {musicasAcervo.length > 0 && musicasAcervo.filter(m => m.titulo.toLowerCase().includes(buscaMusica.toLowerCase())).length === 0 && (
-                        <p className="text-sm text-gray-600 text-center py-8">Nenhuma música encontrada com esse nome.</p>
-                      )}
-                      
-                      {musicasAcervo.length === 0 && (
-                        <p className="text-sm text-gray-600 text-center py-8">Acervo global vazio.</p>
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  )}
+
                 </div>
               )}
 
