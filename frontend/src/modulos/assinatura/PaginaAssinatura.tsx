@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import api from '../../compartilhado/api';
+import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useAutenticacao } from '../../compartilhado/contextos/ContextoAutenticacao';
 import { CreditCard, CheckCircle, AlertTriangle, XCircle, ArrowRight } from 'lucide-react';
 
@@ -24,7 +24,7 @@ const PaginaAssinatura: React.FC = () => {
 
   const carregarDados = async () => {
     try {
-      const res = await api.get('/assinaturas/minha-loja');
+      const res = await clienteHttp.get('/assinaturas/minha-loja');
       setDados(res.data);
     } catch (error) {
       console.error(error);
@@ -36,7 +36,7 @@ const PaginaAssinatura: React.FC = () => {
   const iniciarCheckout = async (ciclo: 'MENSAL' | 'ANUAL') => {
     setLoadingCheckout(true);
     try {
-      await api.post('/assinaturas/checkout', { ciclo });
+      await clienteHttp.post('/assinaturas/checkout', { ciclo });
       alert('Assinatura gerada com sucesso! Verifique o painel para realizar o pagamento inicial.');
       carregarDados();
     } catch (error: any) {
