@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import clienteHttp from '../../compartilhado/api/cliente_http';
-import { useAutenticacao } from '../../compartilhado/contextos/ContextoAutenticacao';
+import { useAuth } from '../../compartilhado/contextos/ContextoAutenticacao';
 import { CreditCard, CheckCircle, AlertTriangle, XCircle, ArrowRight } from 'lucide-react';
 
 interface StatusAssinatura {
@@ -13,7 +13,7 @@ interface StatusAssinatura {
 }
 
 const PaginaAssinatura: React.FC = () => {
-  const { usuario } = useAutenticacao();
+  const { usuario } = useAuth();
   const [dados, setDados] = useState<StatusAssinatura | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingCheckout, setLoadingCheckout] = useState(false);
