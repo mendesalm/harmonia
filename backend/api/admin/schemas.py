@@ -83,3 +83,9 @@ class CriarSessaoSchema(BaseModel):
 
 class SalvarSequenciaSchema(BaseModel):
     canonicos_ids: List[uuid.UUID]
+
+class EstatisticasDashboardSchema(BaseModel):
+    total_lojas: int
+    total_templates: int
+    total_eventos: int
+    total_musicas: int

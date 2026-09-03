@@ -183,3 +183,30 @@ async def deletar_evento_global(momento_id: uuid.UUID, db: AsyncSession = Depend
     return {"status": "ok"}
 
 
+from sqlalchemy import func
+from backend.modelos.organizacao import Organizacao
+from backend.modelos.musica import Musica
+from backend.api.admin.schemas import EstatisticasDashboardSchema
+
+@roteador_admin.get("/estatisticas", response_model=EstatisticasDashboardSchema, summary="Estatisticas do Dashboard")
+async def obter_estatisticas(db: AsyncSession = Depends(obter_banco_de_dados)):
+    r_lojas = await db.execute(select(func.count(Organizacao.id)))
+    total_lojas = r_lojas.scalar() or 0
+    
+    r_templates = await db.execute(select(func.count(Rito.id)))
+    total_templates = r_templates.scalar() or 0
+    
+    r_eventos = await db.execute(select(func.count(MomentoCanonico.id)))
+    total_eventos = r_eventos.scalar() or 0
+    
+    r_musicas = await db.execute(select(func.count(Musica.id)))
+    total_musicas = r_musicas.scalar() or 0
+    
+    return {
+        "total_lojas": total_lojas,
+        "total_templates": total_templates,
+        "total_eventos": total_eventos,
+        "total_musicas": total_musicas
+    }
+
+

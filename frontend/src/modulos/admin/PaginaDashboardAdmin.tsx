@@ -2,16 +2,30 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Library, Activity, Music, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../compartilhado/contextos/ContextoAutenticacao';
+import clienteHttp from '../../compartilhado/api/cliente_http';
 
 export const PaginaDashboardAdmin: React.FC = () => {
   const navigate = useNavigate();
   const { usuario } = useAuth();
 
+  const [stats, setStats] = React.useState({
+    total_lojas: 0,
+    total_templates: 0,
+    total_eventos: 0,
+    total_musicas: 0
+  });
+
+  React.useEffect(() => {
+    clienteHttp.get('/admin/estatisticas')
+      .then(res => setStats(res.data))
+      .catch(err => console.error(err));
+  }, []);
+
   const estatisticas = [
     {
       id: 'lojas',
       titulo: 'Lojas Cadastradas',
-      valor: '15', // Mock para demo
+      valor: stats.total_lojas.toString(),
       icone: <Users className="w-8 h-8 text-cyan-400" />,
       corBg: 'bg-cyan-900/20',
       corBorda: 'border-cyan-800',
@@ -20,7 +34,7 @@ export const PaginaDashboardAdmin: React.FC = () => {
     {
       id: 'templates',
       titulo: 'Tipos Globais de Sessão',
-      valor: '8', // Mock para demo
+      valor: stats.total_templates.toString(),
       icone: <Activity className="w-8 h-8 text-purple-400" />,
       corBg: 'bg-purple-900/20',
       corBorda: 'border-purple-800',
@@ -29,7 +43,7 @@ export const PaginaDashboardAdmin: React.FC = () => {
     {
       id: 'eventos',
       titulo: 'Tipos de Eventos (Por Rito)',
-      valor: '45', // Mock para demo
+      valor: stats.total_eventos.toString(),
       icone: <Library className="w-8 h-8 text-emerald-400" />,
       corBg: 'bg-emerald-900/20',
       corBorda: 'border-emerald-800',
@@ -38,7 +52,7 @@ export const PaginaDashboardAdmin: React.FC = () => {
     {
       id: 'acervo',
       titulo: 'Acervo Global de Músicas',
-      valor: '234', // Mock para demo
+      valor: stats.total_musicas.toString(),
       icone: <Music className="w-8 h-8 text-rose-400" />,
       corBg: 'bg-rose-900/20',
       corBorda: 'border-rose-800',
