@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Plus, Trash2, Loader2, Music, UploadCloud } from 'lucide-react';
+import { X, Save, Plus, Trash2, Loader2, Music, UploadCloud, Edit2 } from 'lucide-react';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { ModalUploadMusica } from '../musicas/ModalUploadMusica';
 
@@ -45,6 +45,37 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
   const [modalUploadAberto, setModalUploadAberto] = useState(false);
   const [buscaMusica, setBuscaMusica] = useState('');
   const [modoMusicas, setModoMusicas] = useState<'LISTA' | 'SELECAO'>('LISTA');
+
+  const handleEditarMusica = async (musicaId: string, tituloAtual: string, autorAtual: string | null) => {
+    const novoTitulo = window.prompt("Digite o novo título da música:", tituloAtual);
+    if (novoTitulo === null) return;
+    const novoAutor = window.prompt("Digite o novo autor/artista (opcional):", autorAtual || '') || null;
+    
+    try {
+      await clienteHttp.put(`/musicas/${musicaId}`, {
+        titulo: novoTitulo,
+        autor_artista: novoAutor
+      });
+      carregarMusicas();
+    } catch (err: any) {
+      alert("Erro ao editar música: " + (err.response?.data?.detail || err.message));
+    }
+  };
+
+  const handleDeletarMusica = async (musicaId: string) => {
+    if (!window.confirm("ATENÇÃO: Deseja realmente excluir esta música permanentemente do Acervo Global?")) return;
+    
+    try {
+      await clienteHttp.delete(`/musicas/${musicaId}`);
+      setFormData(prev => ({
+        ...prev,
+        musicas_sugeridas_ids: prev.musicas_sugeridas_ids.filter(id => id !== musicaId)
+      }));
+      carregarMusicas();
+    } catch (err: any) {
+      alert("Erro ao deletar música: " + (err.response?.data?.detail || err.message));
+    }
+  };
 
   const [formData, setFormData] = useState<FormData>({
     nome: '',
@@ -441,6 +472,24 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                                   controlsList="nodownload noplaybackrate"
                                 />
                               )}
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.preventDefault(); handleEditarMusica(musica.id, musica.titulo, musica.autor_artista); }}
+                                  className="p-2 text-gray-500 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors"
+                                  title="Editar Música"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.preventDefault(); handleDeletarMusica(musica.id); }}
+                                  className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                                  title="Excluir do Acervo"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
                             </div>
                           ))}
                           

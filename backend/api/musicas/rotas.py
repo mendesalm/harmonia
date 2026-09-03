@@ -112,3 +112,41 @@ async def obter_orfaos(
     db: AsyncSession = Depends(obter_banco_de_dados)
 ):
     return await listar_arquivos_orfaos(db=db)
+
+from fastapi import HTTPException
+
+@roteador_musicas.put("/{musica_id}", response_model=MusicaResposta)
+async def atualizar_musica(
+    musica_id: uuid.UUID,
+    dados: MusicaAtualizacao,
+    db: AsyncSession = Depends(obter_banco_de_dados)
+):
+    stmt = select(Musica).where(Musica.id == musica_id)
+    res = await db.execute(stmt)
+    musica = res.scalars().first()
+    if not musica:
+        raise HTTPException(status_code=404, detail="Música não encontrada")
+    
+    if dados.titulo is not None:
+        musica.titulo = dados.titulo
+    if dados.autor_artista is not None:
+        musica.autor_artista = dados.autor_artista
+    
+    await db.commit()
+    await db.refresh(musica)
+    return musica
+
+@roteador_musicas.delete("/{musica_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def deletar_musica(
+    musica_id: uuid.UUID,
+    db: AsyncSession = Depends(obter_banco_de_dados)
+):
+    stmt = select(Musica).where(Musica.id == musica_id)
+    res = await db.execute(stmt)
+    musica = res.scalars().first()
+    if not musica:
+        raise HTTPException(status_code=404, detail="Música não encontrada")
+    
+    await db.delete(musica)
+    await db.commit()
+    return None
