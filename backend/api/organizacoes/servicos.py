@@ -97,7 +97,7 @@ class ServicoOrganizacao:
             sigla=dados.sigla.upper() if dados.sigla else None,
             tipo=dados.tipo.upper(),
             slug_armazenamento=slug,
-            rito_padrao=dados.rito_padrao.upper(),
+            rito_id=dados.rito_id,
             status_assinatura="ATIVO",
             plano_assinatura="MENSAL_HARMONIA",
             dados_especificos=dados_especificos,
@@ -154,8 +154,8 @@ class ServicoOrganizacao:
             org.sigla = dados.sigla.upper() if dados.sigla else None
         if dados.tipo is not None:
             org.tipo = dados.tipo.upper()
-        if dados.rito_padrao is not None:
-            org.rito_padrao = dados.rito_padrao.upper()
+        if dados.rito_id is not None:
+            org.rito_id = dados.rito_id
         if dados.dados_especificos is not None:
             org.dados_especificos = {**org.dados_especificos, **dados.dados_especificos}
         if dados.ativo is not None:

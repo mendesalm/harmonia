@@ -8,24 +8,29 @@ import { ModalLojaAdmin } from './ModalLojaAdmin';
 export const PaginaLojasAdmin: React.FC = () => {
   const navigate = useNavigate();
   const [lojas, setLojas] = useState<Organizacao[]>([]);
+  const [ritos, setRitos] = useState<{id: string, nome: string}[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [lojaEditandoId, setLojaEditandoId] = useState<string | undefined>(undefined);
 
-  const buscarLojas = async () => {
+  const buscarLojasERitos = async () => {
     try {
       setCarregando(true);
-      const resp = await clienteHttp.get<Organizacao[]>('/organizacoes?apenas_ativas=false');
-      setLojas(resp.data);
+      const [respLojas, respRitos] = await Promise.all([
+        clienteHttp.get<Organizacao[]>('/organizacoes?apenas_ativas=false'),
+        clienteHttp.get('/admin/ritos')
+      ]);
+      setLojas(respLojas.data);
+      setRitos(respRitos.data);
     } catch (err) {
-      console.error('Erro ao buscar lojas', err);
+      console.error('Erro ao buscar dados', err);
     } finally {
       setCarregando(false);
     }
   };
 
   useEffect(() => {
-    buscarLojas();
+    buscarLojasERitos();
   }, []);
 
   return (
@@ -93,7 +98,7 @@ export const PaginaLojasAdmin: React.FC = () => {
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-900/30 text-cyan-400 border border-cyan-800">
-                          {loja.rito_padrao}
+                          {ritos.find(r => r.id === loja.rito_id)?.nome || 'Não definido'}
                         </span>
                       </td>
                       <td className="p-4 text-sm text-gray-300">

@@ -13,21 +13,31 @@ export const ModalLojaAdmin: React.FC<Props> = ({ lojaId, onClose, onSalvo }) =>
   const [carregando, setCarregando] = useState(false);
   const [salvando, setSalvando] = useState(false);
   
+  const [ritos, setRitos] = useState<{id: string, nome: string}[]>([]);
+
   const [formData, setFormData] = useState({
     nome: '',
-    rito_padrao: 'REAA',
+    rito_id: '',
     ativo: true,
     status_assinatura: 'TESTE',
   });
 
   useEffect(() => {
+    // Busca os ritos do banco
+    clienteHttp.get('/admin/ritos').then(resp => {
+      setRitos(resp.data);
+      if (resp.data.length > 0 && !formData.rito_id) {
+        setFormData(prev => ({ ...prev, rito_id: resp.data[0].id }));
+      }
+    });
+
     if (lojaId) {
       setCarregando(true);
       clienteHttp.get<Organizacao>(`/organizacoes/${lojaId}`)
         .then(resp => {
           setFormData({
             nome: resp.data.nome,
-            rito_padrao: resp.data.rito_padrao,
+            rito_id: resp.data.rito_id || '',
             ativo: resp.data.ativo,
             status_assinatura: resp.data.status_assinatura || 'TESTE'
           });
@@ -83,15 +93,14 @@ export const ModalLojaAdmin: React.FC<Props> = ({ lojaId, onClose, onSalvo }) =>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1">Rito Padrão</label>
               <select
-                value={formData.rito_padrao}
-                onChange={e => setFormData({ ...formData, rito_padrao: e.target.value })}
+                required
+                value={formData.rito_id}
+                onChange={e => setFormData({ ...formData, rito_id: e.target.value })}
                 className="w-full bg-[#161616] border border-gray-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-macaonico-dourado"
               >
-                <option value="REAA">REAA</option>
-                <option value="York">York</option>
-                <option value="Adonhiramita">Adonhiramita</option>
-                <option value="Moderno">Moderno</option>
-                <option value="Brasileiro">Brasileiro</option>
+                {ritos.map(rito => (
+                  <option key={rito.id} value={rito.id}>{rito.nome}</option>
+                ))}
               </select>
             </div>
 

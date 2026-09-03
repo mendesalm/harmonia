@@ -4,7 +4,8 @@ export interface Organizacao {
   sigla?: string;
   tipo: string;
   slug_armazenamento: string;
-  rito_padrao: string;
+  rito_padrao?: string;
+  rito_id?: string;
   dados_especificos: Record<string, any>;
   ativo: boolean;
   status_assinatura?: string;
