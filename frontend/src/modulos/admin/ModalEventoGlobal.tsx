@@ -24,6 +24,7 @@ interface FormData {
   descricao: string;
   orientacao: string;
   ordem_sugerida: number;
+  grau_aplicado: number;
   ritos: VariacaoRito[];
   musicas_sugeridas_ids: string[];
 }
@@ -46,6 +47,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
     descricao: '',
     orientacao: '',
     ordem_sugerida: 999,
+    grau_aplicado: 0,
     ritos: [],
     musicas_sugeridas_ids: []
   });
@@ -81,6 +83,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
               descricao: momento.descricao || '',
               orientacao: momento.orientacao || '',
               ordem_sugerida: momento.ordem_sugerida || 999,
+              grau_aplicado: momento.grau_aplicado || 0,
               ritos: momento.eventos ? momento.eventos.map((ev: any) => ({
                 rito_id: ev.rito_id,
                 nome: ev.nome,
@@ -210,6 +213,19 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                       className="w-full bg-[#111111] border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-macaonico-dourado transition-colors"
                       placeholder="Ex: 10, 20, 150..."
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Grau Aplicado</label>
+                    <select 
+                      value={formData.grau_aplicado}
+                      onChange={e => setFormData({...formData, grau_aplicado: parseInt(e.target.value) || 0})}
+                      className="w-full bg-[#111111] border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-macaonico-dourado transition-colors"
+                    >
+                      <option value={0}>0 - Universal (Qualquer Grau)</option>
+                      <option value={1}>1 - Aprendiz Maçom</option>
+                      <option value={2}>2 - Companheiro Maçom</option>
+                      <option value={3}>3 - Mestre Maçom</option>
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">Descrição Breve (O que é?)</label>

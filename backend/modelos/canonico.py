@@ -49,6 +49,7 @@ class MomentoCanonico(Base):
     descricao: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     orientacao: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     ordem_sugerida: Mapped[int] = mapped_column(Integer, nullable=False, default=999)
+    grau_aplicado: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="0=Todos, 1=Aprendiz, 2=Companheiro, 3=Mestre")
     ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 

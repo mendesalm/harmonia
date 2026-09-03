@@ -112,7 +112,8 @@ async def criar_evento_global(payload: SalvarEventoGlobalSchema, db: AsyncSessio
         nome=payload.nome,
         descricao=payload.descricao,
         orientacao=payload.orientacao,
-        ordem_sugerida=payload.ordem_sugerida
+        ordem_sugerida=payload.ordem_sugerida,
+        grau_aplicado=payload.grau_aplicado
     )
     db.add(mcan)
     await db.flush()
@@ -127,16 +128,12 @@ async def criar_evento_global(payload: SalvarEventoGlobalSchema, db: AsyncSessio
         db.add(ev)
         await db.flush()
         
-        # Opcional: Adicionar musicas sugeridas globalmente para CADA evento de rito? 
-        # O schema diz que musica_sugerida aponta pro evento_id. 
-        # Vamos atrelar as musicas a cada evento de rito.
         for mus_id in payload.musicas_sugeridas_ids:
             mes = MusicaEventoSugerido(musica_id=mus_id, evento_id=ev.id)
             db.add(mes)
 
     await db.commit()
     
-    # Reload with events
     stmt = select(MomentoCanonico).options(selectinload(MomentoCanonico.eventos)).where(MomentoCanonico.id == mcan.id)
     r = await db.execute(stmt)
     return r.scalar_one()
@@ -151,6 +148,7 @@ async def editar_evento_global(momento_id: uuid.UUID, payload: SalvarEventoGloba
     mcan.descricao = payload.descricao
     mcan.orientacao = payload.orientacao
     mcan.ordem_sugerida = payload.ordem_sugerida
+    mcan.grau_aplicado = payload.grau_aplicado
     
     # Clean up old events (and their music suggestions by cascade)
     await db.execute(text(f"DELETE FROM eventos_ritualisticos WHERE canonico_id = '{momento_id}'"))

@@ -12,6 +12,7 @@ class SalvarEventoGlobalSchema(BaseModel):
     descricao: Optional[str] = None
     orientacao: Optional[str] = None
     ordem_sugerida: int
+    grau_aplicado: int = 0
     ritos: List[VariacaoRitoSchema] = []
     musicas_sugeridas_ids: List[uuid.UUID] = []
 
@@ -30,6 +31,7 @@ class MomentoCanonicoSchema(BaseModel):
     descricao: Optional[str] = None
     orientacao: Optional[str] = None
     ordem_sugerida: int
+    grau_aplicado: int = 0
     ativo: bool
     eventos: List[EventoSchema] = []
 

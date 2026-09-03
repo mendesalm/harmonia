@@ -10,6 +10,7 @@ interface EventoCanonico {
   descricao: string;
   orientacao: string;
   ordem_sugerida: number;
+  grau_aplicado: number;
 }
 
 export const PaginaEventosAdmin: React.FC = () => {
@@ -86,6 +87,7 @@ export const PaginaEventosAdmin: React.FC = () => {
               <thead>
                 <tr className="bg-black/50 border-b border-gray-800 text-gray-400 text-sm">
                   <th className="p-4 font-medium">Ordem</th>
+                  <th className="p-4 font-medium">Grau</th>
                   <th className="p-4 font-medium">Nome (Matriz)</th>
                   <th className="p-4 font-medium">Descrição</th>
                   <th className="p-4 font-medium text-right">Ações</th>
@@ -95,6 +97,12 @@ export const PaginaEventosAdmin: React.FC = () => {
                 {eventos.map(ev => (
                   <tr key={ev.id} className="border-b border-gray-800/50 hover:bg-white/5 transition-colors group">
                     <td className="p-4 text-gray-500 font-mono text-sm">{ev.ordem_sugerida}</td>
+                    <td className="p-4 text-gray-400 text-sm">
+                      {ev.grau_aplicado === 0 && <span className="px-2 py-0.5 bg-gray-800 text-gray-300 rounded-md text-xs">Universal</span>}
+                      {ev.grau_aplicado === 1 && <span className="px-2 py-0.5 bg-blue-900/40 text-blue-300 rounded-md text-xs">1º - Aprendiz</span>}
+                      {ev.grau_aplicado === 2 && <span className="px-2 py-0.5 bg-purple-900/40 text-purple-300 rounded-md text-xs">2º - Companheiro</span>}
+                      {ev.grau_aplicado === 3 && <span className="px-2 py-0.5 bg-red-900/40 text-red-300 rounded-md text-xs">3º - Mestre</span>}
+                    </td>
                     <td className="p-4 text-gray-200 font-medium">{ev.nome}</td>
                     <td className="p-4 text-gray-500 text-sm truncate max-w-xs">{ev.descricao || '-'}</td>
                     <td className="p-4 text-right">
