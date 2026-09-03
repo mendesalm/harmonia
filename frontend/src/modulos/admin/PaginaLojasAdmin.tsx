@@ -164,7 +164,7 @@ export const PaginaLojasAdmin: React.FC = () => {
           onClose={() => setModalAberto(false)}
           onSalvo={() => {
             setModalAberto(false);
-            buscarLojas();
+            buscarLojasERitos();
           }}
         />
       )}
