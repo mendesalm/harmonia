@@ -160,6 +160,12 @@ class ServicoOrganizacao:
             org.dados_especificos = {**org.dados_especificos, **dados.dados_especificos}
         if dados.ativo is not None:
             org.ativo = dados.ativo
+        if dados.status_assinatura is not None:
+            org.status_assinatura = dados.status_assinatura.upper()
+        if dados.plano_assinatura is not None:
+            org.plano_assinatura = dados.plano_assinatura.upper()
+        if dados.validade_assinatura is not None:
+            org.validade_assinatura = dados.validade_assinatura
 
         await db.commit()
         await db.refresh(org)
