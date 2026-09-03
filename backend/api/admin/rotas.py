@@ -20,7 +20,7 @@ roteador_admin = APIRouter(prefix="/admin", tags=["Administração Global"])
 async def listar_ritos(db: AsyncSession = Depends(obter_banco_de_dados)):
     """Retorna todos os ritos com seus templates (tipos de sessão) atrelados."""
     stmt = select(Rito).options(
-        selectinload(Rito.tipos_sessao).selectinload("canonico")
+        selectinload(Rito.tipos_sessao).selectinload(TipoSessao.canonico)
     ).order_by(Rito.nome)
     resultado = await db.execute(stmt)
     return resultado.scalars().all()
@@ -59,6 +59,14 @@ async def criar_sessao(rito_id: uuid.UUID, sessao_in: CriarSessaoSchema, db: Asy
     stmt = select(TipoSessao).options(selectinload(TipoSessao.canonico)).where(TipoSessao.id == nova_sessao.id)
     r = await db.execute(stmt)
     return r.scalar_one()
+
+@roteador_admin.get("/ritos/sessoes/{sessao_id}/sequencia", response_model=List[uuid.UUID], summary="Obter Sequência do Ritual")
+async def obter_sequencia(sessao_id: uuid.UUID, db: AsyncSession = Depends(obter_banco_de_dados)):
+    stmt = select(TipoSessaoEvento).where(TipoSessaoEvento.tipo_sessao_id == sessao_id).order_by(TipoSessaoEvento.ordem_sequencia).options(selectinload(TipoSessaoEvento.evento))
+    resultado = await db.execute(stmt)
+    eventos = resultado.scalars().all()
+    # Retornamos os UUIDs dos Momentos Canonicos
+    return [ev.evento.canonico_id for ev in eventos if ev.evento.canonico_id]
 
 @roteador_admin.put("/ritos/{rito_id}/sessoes/{sessao_id}/sequencia", summary="Salvar Sequência do Ritual")
 async def salvar_sequencia(rito_id: uuid.UUID, sessao_id: uuid.UUID, payload: SalvarSequenciaSchema, db: AsyncSession = Depends(obter_banco_de_dados)):
