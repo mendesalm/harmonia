@@ -6,12 +6,13 @@ import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
 
 interface Props {
   onFechar: () => void;
-  onSalvo: () => void;
+  onSalvo: (novaMusicaId?: string) => void;
   eventoIdPreSelecionado?: string;
   isGlobalAdmin?: boolean;
+  esconderEventos?: boolean;
 }
 
-export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoIdPreSelecionado, isGlobalAdmin }) => {
+export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoIdPreSelecionado, isGlobalAdmin, esconderEventos }) => {
   const { lojaAtiva } = useTenant();
   const [abaAtiva, setAbaAtiva] = useState<'ARQUIVO' | 'YOUTUBE'>('ARQUIVO');
   const [eventosDisponiveis, setEventosDisponiveis] = useState<Evento[]>([]);
@@ -63,13 +64,14 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
     e.preventDefault();
     if (!isGlobalAdmin && !lojaAtiva) return;
 
-    if (eventosSelecionados.length === 0) {
+    if (!esconderEventos && eventosSelecionados.length === 0) {
       alert('Atenção: É obrigatório vincular a música a pelo menos um Momento Ritualístico (checklist sugerido) para que ela funcione no Auto-Fill.');
       return;
     }
 
     try {
       setSalvando(true);
+      let novaMusicaId = undefined;
 
       if (abaAtiva === 'ARQUIVO') {
         if (!arquivo) {
@@ -85,9 +87,10 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
         if (autor.trim()) formData.append('autor_artista', autor.trim());
         formData.append('evento_ids', JSON.stringify(eventosSelecionados));
 
-        await clienteHttp.post('/musicas/upload', formData, {
+        const resp = await clienteHttp.post('/musicas/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
+        novaMusicaId = resp.data?.id;
       } else {
         if (!linkStreaming.trim()) {
           alert('Por favor, informe a URL do YouTube.');
@@ -96,7 +99,7 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
 
         if (converterParaMp3) {
           setMensagemStatus('Baixando áudio e convertendo para MP3 320 kbps no servidor da Loja...');
-          await clienteHttp.post('/musicas/converter-youtube', {
+          const resp = await clienteHttp.post('/musicas/converter-youtube', {
             organizacao_id: lojaAtiva ? lojaAtiva.id : undefined,
             link_youtube: linkStreaming.trim(),
             titulo: titulo.trim() || undefined,
@@ -104,9 +107,10 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
             bitrate_kbps: 320,
             evento_ids: eventosSelecionados,
           });
+          novaMusicaId = resp.data?.id;
         } else {
           setMensagemStatus('Cadastrando link de streaming...');
-          await clienteHttp.post('/musicas/streaming', {
+          const resp = await clienteHttp.post('/musicas/streaming', {
             organizacao_id: lojaAtiva ? lojaAtiva.id : undefined,
             titulo: titulo.trim() || 'Música do YouTube',
             autor_artista: autor.trim() || null,
@@ -114,10 +118,11 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
             link_externo: linkStreaming.trim(),
             evento_ids: eventosSelecionados,
           });
+          novaMusicaId = resp.data?.id;
         }
       }
 
-      onSalvo();
+      onSalvo(novaMusicaId);
       onFechar();
     } catch (err: any) {
       alert(err.response?.data?.detail || 'Erro ao processar música.');
@@ -285,45 +290,47 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
           </div>
 
           {/* Vínculo de Eventos Litúrgicos (Playlists) */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold text-slate-300">
-                Vincular aos Momentos Ritualísticos (Playlists):
-              </label>
-              <span className="text-[11px] text-macaonico-cianoSigma font-bold">
-                {eventosSelecionados.length} selecionado(s)
-              </span>
-            </div>
+          {!esconderEventos && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-semibold text-slate-300">
+                  Vincular aos Momentos Ritualísticos (Playlists):
+                </label>
+                <span className="text-[11px] text-macaonico-cianoSigma font-bold">
+                  {eventosSelecionados.length} selecionado(s)
+                </span>
+              </div>
 
-            <p className="text-[11px] text-slate-400 mb-2">
-              Marque os momentos litúrgicos em que esta música poderá ser sorteada ou selecionada pelo Mestre.
-            </p>
+              <p className="text-[11px] text-slate-400 mb-2">
+                Marque os momentos litúrgicos em que esta música poderá ser sorteada ou selecionada pelo Mestre.
+              </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1 bg-primaria-800/40 rounded-2xl border border-white/5">
-              {eventosDisponiveis.map((ev) => {
-                const selecionado = eventosSelecionados.includes(ev.id);
-                return (
-                  <button
-                    key={ev.id}
-                    type="button"
-                    onClick={() => toggleEvento(ev.id)}
-                    className={`flex items-center justify-between p-2.5 rounded-xl text-left border transition-all text-xs ${
-                      selecionado
-                        ? 'bg-macaonico-cianoSigma/15 border-macaonico-cianoSigma/40 text-white font-bold shadow-sm'
-                        : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    <span className="truncate mr-2">{ev.nome}</span>
-                    <span className={`w-4 h-4 rounded-md flex items-center justify-center border text-[10px] ${
-                      selecionado ? 'bg-macaonico-cianoSigma text-black border-transparent font-black' : 'border-white/20'
-                    }`}>
-                      {selecionado ? '✓' : ''}
-                    </span>
-                  </button>
-                );
-              })}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1 bg-primaria-800/40 rounded-2xl border border-white/5">
+                {eventosDisponiveis.map((ev) => {
+                  const selecionado = eventosSelecionados.includes(ev.id);
+                  return (
+                    <button
+                      key={ev.id}
+                      type="button"
+                      onClick={() => toggleEvento(ev.id)}
+                      className={`flex items-center justify-between p-2.5 rounded-xl text-left border transition-all text-xs ${
+                        selecionado
+                          ? 'bg-macaonico-cianoSigma/15 border-macaonico-cianoSigma/40 text-white font-bold shadow-sm'
+                          : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      <span className="truncate mr-2">{ev.nome}</span>
+                      <span className={`w-4 h-4 rounded-md flex items-center justify-center border text-[10px] ${
+                        selecionado ? 'bg-macaonico-cianoSigma text-black border-transparent font-black' : 'border-white/20'
+                      }`}>
+                        {selecionado ? '✓' : ''}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Barra de Status durante Download/Conversão */}
           {salvando && mensagemStatus && (

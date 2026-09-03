@@ -18,8 +18,8 @@ async def registrar_upload_musica(
     Registra uma nova música no acervo global, associando obrigatoriamente os
     eventos sugeridos para o algoritmo de Auto-Fill.
     """
-    if not dados.eventos_sugeridos_ids:
-        raise HTTPException(status_code=400, detail="É obrigatório sugerir pelo menos um evento ritualístico.")
+    if not dados.eventos_sugeridos_ids and dados.upload_por_loja_id:
+        raise HTTPException(status_code=400, detail="Lojas devem sugerir pelo menos um evento ritualístico. Apenas o Acervo Global pode subir músicas avulsas.")
 
     nova_musica = Musica(
         titulo=dados.titulo,

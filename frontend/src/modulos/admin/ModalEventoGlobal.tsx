@@ -43,6 +43,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
   const [musicasAcervo, setMusicasAcervo] = useState<Musica[]>([]);
   const [abaAtual, setAbaAtual] = useState<'geral' | 'ritos' | 'musicas'>('geral');
   const [modalUploadAberto, setModalUploadAberto] = useState(false);
+  const [buscaMusica, setBuscaMusica] = useState('');
 
   const [formData, setFormData] = useState<FormData>({
     nome: '',
@@ -316,36 +317,66 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                     <p>Selecione músicas do <strong>Acervo Global</strong> para formarem a playlist padrão sugerida quando uma loja adicionar este evento ao ritual.</p>
                     <button 
                       onClick={() => setModalUploadAberto(true)}
-                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-colors font-semibold"
+                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-colors font-semibold whitespace-nowrap"
                     >
                       <UploadCloud className="w-4 h-4" />
-                      Fazer Upload Global
+                      Upload Nova Música
                     </button>
                   </div>
                   
-                  <div className="bg-[#111111] border border-gray-800 rounded-xl p-4">
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Músicas do Acervo</label>
-                    <div className="max-h-64 overflow-y-auto space-y-1">
-                      {musicasAcervo.filter(m => !m.autor_artista?.includes('Loja')).map(musica => (
-                        <label key={musica.id} className="flex items-center gap-3 p-2 hover:bg-black/50 rounded-lg cursor-pointer">
-                          <input 
-                            type="checkbox"
-                            className="w-4 h-4 rounded border-gray-600 text-macaonico-dourado focus:ring-macaonico-dourado bg-black"
-                            checked={formData.musicas_sugeridas_ids.includes(musica.id)}
-                            onChange={(e) => {
-                              if(e.target.checked) {
-                                setFormData({...formData, musicas_sugeridas_ids: [...formData.musicas_sugeridas_ids, musica.id]});
-                              } else {
-                                setFormData({...formData, musicas_sugeridas_ids: formData.musicas_sugeridas_ids.filter(id => id !== musica.id)});
-                              }
-                            }}
-                          />
-                          <Music className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm text-gray-300">{musica.titulo} <span className="text-gray-600">({musica.autor_artista || 'Desconhecido'})</span></span>
-                        </label>
+                  <div className="bg-[#111111] border border-gray-800 rounded-xl p-4 flex flex-col h-[350px]">
+                    <div className="mb-4">
+                      <input 
+                        type="text" 
+                        placeholder="Buscar música no Acervo..." 
+                        value={buscaMusica}
+                        onChange={(e) => setBuscaMusica(e.target.value)}
+                        className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-macaonico-dourado transition-colors"
+                      />
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+                      {musicasAcervo
+                        .filter(m => !m.autor_artista?.includes('Loja'))
+                        .filter(m => m.titulo.toLowerCase().includes(buscaMusica.toLowerCase()) || m.autor_artista?.toLowerCase().includes(buscaMusica.toLowerCase()))
+                        .map(musica => (
+                        <div key={musica.id} className="flex items-center justify-between p-2 hover:bg-black/50 rounded-lg border border-transparent hover:border-gray-800 transition-colors">
+                          <label className="flex items-center gap-3 cursor-pointer flex-1">
+                            <input 
+                              type="checkbox"
+                              className="w-4 h-4 rounded border-gray-600 text-macaonico-dourado focus:ring-macaonico-dourado bg-black"
+                              checked={formData.musicas_sugeridas_ids.includes(musica.id)}
+                              onChange={(e) => {
+                                if(e.target.checked) {
+                                  setFormData({...formData, musicas_sugeridas_ids: [...formData.musicas_sugeridas_ids, musica.id]});
+                                } else {
+                                  setFormData({...formData, musicas_sugeridas_ids: formData.musicas_sugeridas_ids.filter(id => id !== musica.id)});
+                                }
+                              }}
+                            />
+                            <Music className="w-4 h-4 text-gray-500" />
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-gray-300">{musica.titulo}</span>
+                              {musica.autor_artista && <span className="text-xs text-gray-500">{musica.autor_artista}</span>}
+                            </div>
+                          </label>
+                          {musica.arquivo_url && (
+                            <audio 
+                              controls 
+                              src={`http://localhost:8000${musica.arquivo_url}`} 
+                              className="h-8 w-48 opacity-70 hover:opacity-100 transition-opacity" 
+                              controlsList="nodownload noplaybackrate"
+                            />
+                          )}
+                        </div>
                       ))}
+                      
+                      {musicasAcervo.length > 0 && musicasAcervo.filter(m => m.titulo.toLowerCase().includes(buscaMusica.toLowerCase())).length === 0 && (
+                        <p className="text-sm text-gray-600 text-center py-8">Nenhuma música encontrada com esse nome.</p>
+                      )}
+                      
                       {musicasAcervo.length === 0 && (
-                        <p className="text-sm text-gray-600 text-center py-4">Nenhuma música global encontrada no acervo.</p>
+                        <p className="text-sm text-gray-600 text-center py-8">Acervo global vazio.</p>
                       )}
                     </div>
                   </div>
@@ -379,9 +410,16 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
       {modalUploadAberto && (
         <ModalUploadMusica 
           isGlobalAdmin={true}
+          esconderEventos={true}
           onFechar={() => setModalUploadAberto(false)}
-          onSalvo={() => {
+          onSalvo={(novaMusicaId) => {
             carregarMusicas();
+            if (novaMusicaId) {
+              setFormData(prev => ({
+                ...prev,
+                musicas_sugeridas_ids: [...prev.musicas_sugeridas_ids, novaMusicaId]
+              }));
+            }
             setModalUploadAberto(false);
           }}
         />
