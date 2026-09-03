@@ -70,6 +70,16 @@ export const App: React.FC = () => {
                     </RotaProtegida>
                   }
                 />
+                <Route
+                  path="/admin/musicas"
+                  element={
+                    <RotaProtegida>
+                      <div className="h-full overflow-y-auto pb-16">
+                        <PaginaMusicas />
+                      </div>
+                    </RotaProtegida>
+                  }
+                />
 
                 {/* Área do Mestre de Harmonia (Tenant) */}
                 <Route
