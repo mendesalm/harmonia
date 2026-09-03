@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from backend.modelos.evento import Evento
     from backend.modelos.rito import Rito
     from backend.modelos.musica import MusicaEvento
+    from backend.modelos.canonico import TipoSessaoCanonico
 
 
 class TipoSessao(Base):
@@ -29,6 +30,9 @@ class TipoSessao(Base):
     rito_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("ritos.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    canonico_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tipos_sessao_canonicos.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     
     criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -38,6 +42,7 @@ class TipoSessao(Base):
 
     # Relacionamentos
     # rito: Mapped["Rito"] = relationship("Rito", back_populates="tipos_sessao")
+    canonico: Mapped[Optional["TipoSessaoCanonico"]] = relationship("TipoSessaoCanonico", back_populates="sessoes_rito")
     eventos: Mapped[List["TipoSessaoEvento"]] = relationship(
         "TipoSessaoEvento", back_populates="tipo_sessao", cascade="all, delete-orphan", order_by="TipoSessaoEvento.ordem_sequencia"
     )

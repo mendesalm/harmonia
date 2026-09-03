@@ -4,7 +4,7 @@ Modelo ORM de Evento Ritualístico (Momento da Sessão / Playlist).
 import uuid
 from datetime import datetime
 from typing import Optional, List, TYPE_CHECKING
-from sqlalchemy import String, Text, Boolean, DateTime
+from sqlalchemy import String, Text, Boolean, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.nucleo.banco import Base
@@ -12,6 +12,7 @@ from backend.nucleo.banco import Base
 if TYPE_CHECKING:
     from backend.modelos.sessao import TipoSessaoEvento, SessaoLojaEvento
     from backend.modelos.musica import MusicaEvento, MusicaEventoSugerido
+    from backend.modelos.canonico import MomentoCanonico
 
 
 class Evento(Base):
@@ -28,6 +29,10 @@ class Evento(Base):
     nome: Mapped[str] = mapped_column(String(255), nullable=False, index=True, unique=True)
     descricao: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
+    canonico_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("momentos_canonicos.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    
     observacao_padrao_mestre_harmonia: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True, comment="Orientação sugerida globalmente para o evento"
     )
@@ -37,6 +42,7 @@ class Evento(Base):
     atualizado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relacionamentos
+    canonico: Mapped[Optional["MomentoCanonico"]] = relationship("MomentoCanonico", back_populates="eventos")
     tipos_sessao_eventos: Mapped[List["TipoSessaoEvento"]] = relationship("TipoSessaoEvento", back_populates="evento", cascade="all, delete-orphan")
     sessoes_loja_eventos: Mapped[List["SessaoLojaEvento"]] = relationship("SessaoLojaEvento", back_populates="evento", cascade="all, delete-orphan")
     musicas_sugeridas: Mapped[List["MusicaEventoSugerido"]] = relationship("MusicaEventoSugerido", back_populates="evento", cascade="all, delete-orphan")
