@@ -21,6 +21,20 @@ from backend.api.musicas.servicos import (
 roteador_musicas = APIRouter(prefix="/musicas", tags=["Acervo Global e Músicas"])
 
 
+from sqlalchemy import select
+from backend.modelos.musica import Musica
+
+@roteador_musicas.get(
+    "",
+    response_model=List[MusicaResposta],
+    summary="Listar Acervo",
+    description="Retorna todas as músicas do acervo."
+)
+async def listar_musicas(db: AsyncSession = Depends(obter_banco_de_dados)):
+    stmt = select(Musica).order_by(Musica.titulo)
+    res = await db.execute(stmt)
+    return res.scalars().all()
+
 @roteador_musicas.get(
     "/sugeridas/{evento_id}",
     response_model=List[MusicaResposta],

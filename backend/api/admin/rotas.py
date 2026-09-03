@@ -35,7 +35,7 @@ async def listar_sessoes_canonicas(db: AsyncSession = Depends(obter_banco_de_dad
 @roteador_admin.get("/canonicos/momentos", response_model=List[MomentoCanonicoSchema], summary="Listar Momentos Canônicos")
 async def listar_momentos_canonicos(db: AsyncSession = Depends(obter_banco_de_dados)):
     """Retorna os momentos canônicos globais (gabaritos)."""
-    stmt = select(MomentoCanonico).options(selectinload(MomentoCanonico.eventos)).order_by(MomentoCanonico.ordem_sugerida)
+    stmt = select(MomentoCanonico).options(selectinload(MomentoCanonico.eventos).selectinload(Evento.musicas_sugeridas)).order_by(MomentoCanonico.ordem_sugerida)
     resultado = await db.execute(stmt)
     return resultado.scalars().all()
 
@@ -134,7 +134,7 @@ async def criar_evento_global(payload: SalvarEventoGlobalSchema, db: AsyncSessio
 
     await db.commit()
     
-    stmt = select(MomentoCanonico).options(selectinload(MomentoCanonico.eventos)).where(MomentoCanonico.id == mcan.id)
+    stmt = select(MomentoCanonico).options(selectinload(MomentoCanonico.eventos).selectinload(Evento.musicas_sugeridas)).where(MomentoCanonico.id == mcan.id)
     r = await db.execute(stmt)
     return r.scalar_one()
 
@@ -169,7 +169,7 @@ async def editar_evento_global(momento_id: uuid.UUID, payload: SalvarEventoGloba
 
     await db.commit()
     
-    stmt = select(MomentoCanonico).options(selectinload(MomentoCanonico.eventos)).where(MomentoCanonico.id == mcan.id)
+    stmt = select(MomentoCanonico).options(selectinload(MomentoCanonico.eventos).selectinload(Evento.musicas_sugeridas)).where(MomentoCanonico.id == mcan.id)
     r = await db.execute(stmt)
     return r.scalar_one()
     

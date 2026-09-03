@@ -70,12 +70,9 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
           if (momento) {
             
             // Buscar musicas sugeridas
-            // OBS: O schema do momento atual não retorna as musicas_sugeridas.
-            // Para simplificar no MVP, vamos buscar as musicas vinculadas ao primeiro evento do rito
             let musicasIds: string[] = [];
-            if (momento.eventos && momento.eventos.length > 0) {
-              const respEv = await clienteHttp.get<any>(`/eventos/${momento.eventos[0].id}`); // Requer endpoint ou injetar no schema
-              // Vamos ignorar a pre-carga das musicas neste MVP se não houver endpoint facil.
+            if (momento.eventos && momento.eventos.length > 0 && momento.eventos[0].musicas_sugeridas) {
+              musicasIds = momento.eventos[0].musicas_sugeridas.map((m: any) => m.musica_id);
             }
 
             setFormData({

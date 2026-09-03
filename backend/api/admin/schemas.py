@@ -16,11 +16,17 @@ class SalvarEventoGlobalSchema(BaseModel):
     ritos: List[VariacaoRitoSchema] = []
     musicas_sugeridas_ids: List[uuid.UUID] = []
 
+class MusicaSugeridaRefSchema(BaseModel):
+    musica_id: uuid.UUID
+    class Config:
+        from_attributes = True
+
 class EventoSchema(BaseModel):
     id: uuid.UUID
     nome: str
     rito_id: uuid.UUID
     observacao_padrao_mestre_harmonia: Optional[str] = None
+    musicas_sugeridas: List[MusicaSugeridaRefSchema] = []
 
     class Config:
         from_attributes = True
