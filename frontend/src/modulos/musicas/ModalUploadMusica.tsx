@@ -8,9 +8,10 @@ interface Props {
   onFechar: () => void;
   onSalvo: () => void;
   eventoIdPreSelecionado?: string;
+  isGlobalAdmin?: boolean;
 }
 
-export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoIdPreSelecionado }) => {
+export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoIdPreSelecionado, isGlobalAdmin }) => {
   const { lojaAtiva } = useTenant();
   const [abaAtiva, setAbaAtiva] = useState<'ARQUIVO' | 'YOUTUBE'>('ARQUIVO');
   const [eventosDisponiveis, setEventosDisponiveis] = useState<Evento[]>([]);
@@ -36,16 +37,19 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
   useEffect(() => {
     const carregarEventos = async () => {
       try {
+        const orgId = isGlobalAdmin ? null : lojaAtiva?.id;
         const resp = await clienteHttp.get<Evento[]>('/eventos', {
-          params: { organizacao_id: lojaAtiva?.id, incluir_globais: true }
+          params: { organizacao_id: orgId, incluir_globais: true }
         });
         setEventosDisponiveis(resp.data);
       } catch (err) {
         console.error('Erro ao carregar eventos para seleção:', err);
       }
     };
-    carregarEventos();
-  }, [lojaAtiva]);
+    if (lojaAtiva || isGlobalAdmin) {
+      carregarEventos();
+    }
+  }, [lojaAtiva, isGlobalAdmin]);
 
   const toggleEvento = (id: string) => {
     if (eventosSelecionados.includes(id)) {
@@ -57,7 +61,7 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
 
   const handleSalvar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!lojaAtiva) return;
+    if (!isGlobalAdmin && !lojaAtiva) return;
 
     if (eventosSelecionados.length === 0) {
       alert('Atenção: É obrigatório vincular a música a pelo menos um Momento Ritualístico (checklist sugerido) para que ela funcione no Auto-Fill.');
@@ -75,7 +79,7 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
 
         setMensagemStatus('Fazendo upload e processando metadados...');
         const formData = new FormData();
-        formData.append('organizacao_id', lojaAtiva.id);
+        if (lojaAtiva) formData.append('organizacao_id', lojaAtiva.id);
         formData.append('arquivo', arquivo);
         if (titulo.trim()) formData.append('titulo', titulo.trim());
         if (autor.trim()) formData.append('autor_artista', autor.trim());
@@ -93,7 +97,7 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
         if (converterParaMp3) {
           setMensagemStatus('Baixando áudio e convertendo para MP3 320 kbps no servidor da Loja...');
           await clienteHttp.post('/musicas/converter-youtube', {
-            organizacao_id: lojaAtiva.id,
+            organizacao_id: lojaAtiva ? lojaAtiva.id : undefined,
             link_youtube: linkStreaming.trim(),
             titulo: titulo.trim() || undefined,
             autor_artista: autor.trim() || undefined,
@@ -103,7 +107,7 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
         } else {
           setMensagemStatus('Cadastrando link de streaming...');
           await clienteHttp.post('/musicas/streaming', {
-            organizacao_id: lojaAtiva.id,
+            organizacao_id: lojaAtiva ? lojaAtiva.id : undefined,
             titulo: titulo.trim() || 'Música do YouTube',
             autor_artista: autor.trim() || null,
             tipo_midia: 'YOUTUBE',

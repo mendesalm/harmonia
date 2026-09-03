@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Plus, Trash2, Loader2, Music } from 'lucide-react';
+import { X, Save, Plus, Trash2, Loader2, Music, UploadCloud } from 'lucide-react';
 import clienteHttp from '../../compartilhado/api/cliente_http';
+import { ModalUploadMusica } from '../musicas/ModalUploadMusica';
 
 interface Rito {
   id: string;
@@ -41,6 +42,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
   const [ritos, setRitos] = useState<Rito[]>([]);
   const [musicasAcervo, setMusicasAcervo] = useState<Musica[]>([]);
   const [abaAtual, setAbaAtual] = useState<'geral' | 'ritos' | 'musicas'>('geral');
+  const [modalUploadAberto, setModalUploadAberto] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     nome: '',
@@ -52,16 +54,22 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
     musicas_sugeridas_ids: []
   });
 
+  const carregarMusicas = async () => {
+    try {
+      const resp = await clienteHttp.get<Musica[]>('/musicas');
+      setMusicasAcervo(resp.data);
+    } catch(err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     const carregarDados = async () => {
       try {
         // Carrega dependências
-        const [respRitos, respMusicas] = await Promise.all([
-          clienteHttp.get<Rito[]>('/admin/ritos'),
-          clienteHttp.get<Musica[]>('/musicas') // Assumindo que existe endpoint para listar acervo
-        ]);
+        const respRitos = await clienteHttp.get<Rito[]>('/admin/ritos');
         setRitos(respRitos.data);
-        setMusicasAcervo(respMusicas.data);
+        await carregarMusicas();
 
         // Se for edição, carrega o momento
         if (momentoId) {
@@ -306,6 +314,13 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                 <div className="space-y-4 animate-in fade-in">
                   <div className="flex items-center justify-between bg-blue-900/10 border border-blue-900/30 p-4 rounded-xl text-blue-200 text-sm mb-4">
                     <p>Selecione músicas do <strong>Acervo Global</strong> para formarem a playlist padrão sugerida quando uma loja adicionar este evento ao ritual.</p>
+                    <button 
+                      onClick={() => setModalUploadAberto(true)}
+                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-colors font-semibold"
+                    >
+                      <UploadCloud className="w-4 h-4" />
+                      Fazer Upload Global
+                    </button>
                   </div>
                   
                   <div className="bg-[#111111] border border-gray-800 rounded-xl p-4">
@@ -360,6 +375,17 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
         </div>
 
       </div>
+
+      {modalUploadAberto && (
+        <ModalUploadMusica 
+          isGlobalAdmin={true}
+          onFechar={() => setModalUploadAberto(false)}
+          onSalvo={() => {
+            carregarMusicas();
+            setModalUploadAberto(false);
+          }}
+        />
+      )}
     </div>
   );
 };
