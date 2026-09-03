@@ -356,7 +356,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                                   {musica.arquivo_url && (
                                     <audio 
                                       controls 
-                                      src={`http://localhost:8000${musica.arquivo_url}`} 
+                                      src={clienteHttp.defaults.baseURL ? `${clienteHttp.defaults.baseURL.replace('/api/v1', '')}${musica.arquivo_url}` : musica.arquivo_url} 
                                       className="h-8 w-48 opacity-70 hover:opacity-100 transition-opacity" 
                                       controlsList="nodownload noplaybackrate"
                                     />
@@ -436,7 +436,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                               {musica.arquivo_url && (
                                 <audio 
                                   controls 
-                                  src={`http://localhost:8000${musica.arquivo_url}`} 
+                                  src={clienteHttp.defaults.baseURL ? `${clienteHttp.defaults.baseURL.replace('/api/v1', '')}${musica.arquivo_url}` : musica.arquivo_url} 
                                   className="h-8 w-48 opacity-70 hover:opacity-100 transition-opacity" 
                                   controlsList="nodownload noplaybackrate"
                                 />

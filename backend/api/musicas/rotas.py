@@ -75,9 +75,23 @@ async def upload_musica(
     except Exception:
         lista_eventos = []
 
-    # Aqui teríamos a lógica real de salvar o arquivo no ServicoArmazenamentoTenant
-    # Simulando o caminho salvo:
-    caminho_salvo = f"/storage/global/{arquivo.filename}"
+    from backend.nucleo.configuracoes import configuracoes
+    import shutil
+    import os
+    
+    # Define o diretório de destino
+    diretorio_destino = configuracoes.DIRETORIO_INSTANCIAS_PUBLIC / "musicas"
+    diretorio_destino.mkdir(parents=True, exist_ok=True)
+    
+    # Gera nome unico para evitar colisoes
+    nome_arquivo_seguro = f"{uuid.uuid4().hex}_{arquivo.filename}"
+    caminho_completo = diretorio_destino / nome_arquivo_seguro
+    
+    # Salva o arquivo no disco
+    with open(caminho_completo, "wb") as buffer:
+        shutil.copyfileobj(arquivo.file, buffer)
+        
+    caminho_salvo = f"/storage/instancias/public/musicas/{nome_arquivo_seguro}"
 
     dados_upload = MusicaUpload(
         titulo=titulo,
