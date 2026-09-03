@@ -7,6 +7,7 @@ interface MomentoCanonico {
   id: string;
   nome: string;
   descricao: string;
+  ordem_sugerida: number;
 }
 
 interface ModalConstrutorRitualProps {
@@ -33,7 +34,8 @@ export const ModalConstrutorRitual: React.FC<ModalConstrutorRitualProps> = ({ ri
       try {
         const respDic = await clienteHttp.get<MomentoCanonico[]>('/admin/canonicos/momentos');
         const todosMomentos = respDic.data;
-        setDicMomentos(todosMomentos);
+        // Opcional: ordenar o dicionário por nome
+        setDicMomentos(todosMomentos.sort((a, b) => a.nome.localeCompare(b.nome)));
 
         const respSeq = await clienteHttp.get<string[]>(`/admin/ritos/sessoes/${sessaoId}/sequencia`);
         const seqIds = respSeq.data;
@@ -73,7 +75,9 @@ export const ModalConstrutorRitual: React.FC<ModalConstrutorRitualProps> = ({ ri
     if (!momentoSelecionado) return;
     const momento = dicMomentos.find(m => m.id === momentoSelecionado);
     if (momento) {
-      setPlaylist([...playlist, momento]);
+      const novaPlaylist = [...playlist, momento];
+      novaPlaylist.sort((a, b) => a.ordem_sugerida - b.ordem_sugerida);
+      setPlaylist(novaPlaylist);
     }
     setMomentoSelecionado('');
     setModoAdicao(false);

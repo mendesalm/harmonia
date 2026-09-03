@@ -31,22 +31,22 @@ SESSOES_CANONICAS = [
     "Sessão Magna de Exaltação"
 ]
 
-MOMENTOS_ORDINARIA = [
-    "Ingresso no Templo - Irmãos", "Ingresso no Templo - Cortejo", "Verificações Iniciais",
-    "Cerimônia das Luzes", "Transmissão da Palavra Sagrada", "Abertura do Livro da Lei",
-    "Leitura e Aprovação da Ata", "Expediente", "Saco de Propostas e Informação",
-    "Ordem do Dia", "Entrada de Visitantes - Autoridades", "Escrutínio Secreto",
-    "Tempo de Instrução", "Tronco de Beneficência", "Palavra a Bem Geral da Ordem e do Quadro em Particular",
-    "Retirada das Autoridades", "Verificações Finais", "Retorno da Palavra",
-    "Fechamento do Livro da Lei", "Amortização das Luzes", "Conclusão do Trabalhos", "Retirada dos Irmãos"
-]
+MOMENTOS_ORDINARIA = {
+    "Ingresso no Templo - Irmãos": 10, "Ingresso no Templo - Cortejo": 20, "Verificações Iniciais": 30,
+    "Cerimônia das Luzes": 40, "Transmissão da Palavra Sagrada": 50, "Abertura do Livro da Lei": 60,
+    "Leitura e Aprovação da Ata": 70, "Expediente": 80, "Saco de Propostas e Informação": 90,
+    "Ordem do Dia": 100, "Entrada de Visitantes - Autoridades": 110, "Escrutínio Secreto": 120,
+    "Tempo de Instrução": 300, "Tronco de Beneficência": 310, "Palavra a Bem Geral da Ordem e do Quadro em Particular": 320,
+    "Retirada das Autoridades": 330, "Verificações Finais": 340, "Retorno da Palavra": 350,
+    "Fechamento do Livro da Lei": 360, "Amortização das Luzes": 370, "Conclusão do Trabalhos": 380, "Retirada dos Irmãos": 390
+}
 
-MOMENTOS_INICIACAO = [
-    "Entrada do Pavilhão Nacional", "Preparo do Candidato", "Ingresso do Candidato no Templo",
-    "Taça Sagrada", "Primeira Viagem Iniciação", "Segunda Viagem Iniciação", "Terceira Viagem Iniciação",
-    "Compromisso de Adesão", "Decisão Final da Loja", "Retorno do Candidato",
-    "Solene Juramento", "A Luz", "Consagração", "Investidura", "Assinatura do Livro de Presenças", "Distribuição de Flores"
-]
+MOMENTOS_INICIACAO = {
+    "Entrada do Pavilhão Nacional": 130, "Preparo do Candidato": 140, "Ingresso do Candidato no Templo": 150,
+    "Taça Sagrada": 160, "Primeira Viagem Iniciação": 170, "Segunda Viagem Iniciação": 180, "Terceira Viagem Iniciação": 190,
+    "Compromisso de Adesão": 200, "Decisão Final da Loja": 210, "Retorno do Candidato": 220,
+    "Solene Juramento": 230, "A Luz": 240, "Consagração": 250, "Investidura": 260, "Assinatura do Livro de Presenças": 270, "Distribuição de Flores": 280
+}
 
 async def inicializar_banco():
     print("Iniciando criacao de tabelas no PostgreSQL...")
@@ -73,8 +73,9 @@ async def inicializar_banco():
         # 2. Momentos Canônicos
         print("Criando Momentos Canônicos...")
         momentos_can_obj = {}
-        for nome in MOMENTOS_ORDINARIA + MOMENTOS_INICIACAO:
-            mcan = MomentoCanonico(nome=nome)
+        todos_momentos = {**MOMENTOS_ORDINARIA, **MOMENTOS_INICIACAO}
+        for nome, ordem_sug in todos_momentos.items():
+            mcan = MomentoCanonico(nome=nome, ordem_sugerida=ordem_sug)
             db.add(mcan)
             momentos_can_obj[nome] = mcan
         await db.flush()
@@ -108,7 +109,7 @@ async def inicializar_banco():
             await db.flush()
             
             ordem = 1
-            for nome_can in MOMENTOS_ORDINARIA:
+            for nome_can in MOMENTOS_ORDINARIA.keys():
                 db.add(TipoSessaoEvento(tipo_sessao_id=ts_ord.id, evento_id=eventos_rito_obj[nome_can].id, ordem_sequencia=ordem))
                 ordem += 1
                 
@@ -118,18 +119,19 @@ async def inicializar_banco():
             await db.flush()
             
             ordem = 1
+            nomes_ord = list(MOMENTOS_ORDINARIA.keys())
             # Inserir eventos antes da Ordem do Dia (1 a 9)
-            for nome_can in MOMENTOS_ORDINARIA[:9]:
+            for nome_can in nomes_ord[:9]:
                 db.add(TipoSessaoEvento(tipo_sessao_id=ts_ini.id, evento_id=eventos_rito_obj[nome_can].id, ordem_sequencia=ordem))
                 ordem += 1
                 
             # Inserir eventos de Iniciação (substituindo Ordem do Dia)
-            for nome_can in MOMENTOS_INICIACAO:
+            for nome_can in MOMENTOS_INICIACAO.keys():
                 db.add(TipoSessaoEvento(tipo_sessao_id=ts_ini.id, evento_id=eventos_rito_obj[nome_can].id, ordem_sequencia=ordem))
                 ordem += 1
                 
             # Inserir resto dos eventos (11 a 22)
-            for nome_can in MOMENTOS_ORDINARIA[10:]:
+            for nome_can in nomes_ord[10:]:
                 db.add(TipoSessaoEvento(tipo_sessao_id=ts_ini.id, evento_id=eventos_rito_obj[nome_can].id, ordem_sequencia=ordem))
                 ordem += 1
 

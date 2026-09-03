@@ -5,7 +5,7 @@ Usados para unificar equivalências entre diversos Ritos.
 import uuid
 from datetime import datetime
 from typing import Optional, List, TYPE_CHECKING
-from sqlalchemy import String, Text, Boolean, DateTime
+from sqlalchemy import String, Text, Boolean, DateTime, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.nucleo.banco import Base
@@ -47,6 +47,7 @@ class MomentoCanonico(Base):
     )
     nome: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
     descricao: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    ordem_sugerida: Mapped[int] = mapped_column(Integer, nullable=False, default=999)
     ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 

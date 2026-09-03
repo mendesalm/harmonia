@@ -6,6 +6,7 @@ class MomentoCanonicoSchema(BaseModel):
     id: uuid.UUID
     nome: str
     descricao: Optional[str] = None
+    ordem_sugerida: int
     ativo: bool
     model_config = ConfigDict(from_attributes=True)
 
