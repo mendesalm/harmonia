@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, Save, GripVertical, Copy } from 'lucide-react';
+import { X, Loader2, Save, GripVertical, Copy, Trash2, Plus } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 
@@ -22,28 +22,27 @@ export const ModalConstrutorRitual: React.FC<ModalConstrutorRitualProps> = ({ ri
   const [playlist, setPlaylist] = useState<MomentoCanonico[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [ritosData, setRitosData] = useState<any[]>([]); // Para achar a sessão ordinária
+  const [ritosData, setRitosData] = useState<any[]>([]);
   
+  // Estado para o combobox de adição
+  const [modoAdicao, setModoAdicao] = useState(false);
+  const [momentoSelecionado, setMomentoSelecionado] = useState('');
+
   useEffect(() => {
     const carregar = async () => {
       try {
-        // 1. Busca Dicionario
         const respDic = await clienteHttp.get<MomentoCanonico[]>('/admin/canonicos/momentos');
         const todosMomentos = respDic.data;
         setDicMomentos(todosMomentos);
 
-        // 2. Busca a Sequencia Atual desta sessao
         const respSeq = await clienteHttp.get<string[]>(`/admin/ritos/sessoes/${sessaoId}/sequencia`);
         const seqIds = respSeq.data;
         
-        // Popula a playlist
         const atuais = seqIds.map(id => todosMomentos.find(m => m.id === id)).filter(Boolean) as MomentoCanonico[];
         setPlaylist(atuais);
 
-        // 3. Busca ritos para o botao de clonar
         const respRitos = await clienteHttp.get('/admin/ritos');
         setRitosData(respRitos.data);
-
       } catch (err) {
         console.error(err);
       } finally {
@@ -55,32 +54,29 @@ export const ModalConstrutorRitual: React.FC<ModalConstrutorRitualProps> = ({ ri
 
   const onDragEnd = (result: DropResult) => {
     const { source, destination } = result;
-    
-    // Caiu fora
     if (!destination) return;
+    if (source.index === destination.index) return;
 
-    // Dicionario -> Playlist
-    if (source.droppableId === 'dicionario' && destination.droppableId === 'playlist') {
-      const draggedItem = dicMomentos[source.index];
-      const novaPlaylist = Array.from(playlist);
-      novaPlaylist.splice(destination.index, 0, draggedItem);
-      setPlaylist(novaPlaylist);
-    }
-    
-    // Playlist -> Playlist (Reordenar)
-    if (source.droppableId === 'playlist' && destination.droppableId === 'playlist') {
-      const novaPlaylist = Array.from(playlist);
-      const [reorderedItem] = novaPlaylist.splice(source.index, 1);
-      novaPlaylist.splice(destination.index, 0, reorderedItem);
-      setPlaylist(novaPlaylist);
-    }
+    const novaPlaylist = Array.from(playlist);
+    const [reorderedItem] = novaPlaylist.splice(source.index, 1);
+    novaPlaylist.splice(destination.index, 0, reorderedItem);
+    setPlaylist(novaPlaylist);
+  };
 
-    // Playlist -> Lixo (Remover)
-    if (source.droppableId === 'playlist' && destination.droppableId === 'dicionario') {
-      const novaPlaylist = Array.from(playlist);
-      novaPlaylist.splice(source.index, 1);
-      setPlaylist(novaPlaylist);
+  const removerMomento = (index: number) => {
+    const novaPlaylist = Array.from(playlist);
+    novaPlaylist.splice(index, 1);
+    setPlaylist(novaPlaylist);
+  };
+
+  const adicionarMomento = () => {
+    if (!momentoSelecionado) return;
+    const momento = dicMomentos.find(m => m.id === momentoSelecionado);
+    if (momento) {
+      setPlaylist([...playlist, momento]);
     }
+    setMomentoSelecionado('');
+    setModoAdicao(false);
   };
 
   const clonarOrdinaria = async () => {
@@ -121,21 +117,22 @@ export const ModalConstrutorRitual: React.FC<ModalConstrutorRitualProps> = ({ ri
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-[#111111] border border-gray-800 rounded-2xl w-full max-w-6xl h-[90vh] flex flex-col shadow-2xl">
+      <div className="bg-[#111111] border border-gray-800 rounded-2xl w-full max-w-3xl h-[85vh] flex flex-col shadow-2xl">
         
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-800">
           <div>
-            <h2 className="text-2xl font-bold text-white font-cinzel">Construtor de Ritual (Lego)</h2>
-            <p className="text-sm text-gray-400 mt-1">Sessão: {sessaoNome}</p>
+            <h2 className="text-2xl font-bold text-white font-cinzel">Editor de Rituais</h2>
+            <p className="text-sm text-gray-400 mt-1">Sessão: <span className="text-macaonico-dourado">{sessaoNome}</span></p>
           </div>
           <div className="flex items-center gap-4">
             <button 
               onClick={clonarOrdinaria}
+              title="Sobrescrever esta sessão com a estrutura da Sessão Ordinária"
               className="flex items-center gap-2 text-sm text-purple-400 hover:text-purple-300 bg-purple-900/20 px-3 py-1.5 rounded-lg transition-colors border border-purple-900/50"
             >
               <Copy className="w-4 h-4" />
-              Clonar Sessão Ordinária
+              Preencher c/ Ordinária
             </button>
             <button onClick={onClose} className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-full transition-colors">
               <X className="w-5 h-5" />
@@ -144,93 +141,104 @@ export const ModalConstrutorRitual: React.FC<ModalConstrutorRitualProps> = ({ ri
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-hidden p-6">
+        <div className="flex-1 overflow-y-auto p-6 bg-[#080808]">
           {carregando ? (
             <div className="flex h-full items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
             </div>
           ) : (
-            <DragDropContext onDragEnd={onDragEnd}>
-              <div className="grid grid-cols-2 gap-8 h-full">
-                
-                {/* Coluna 1: Dicionario */}
-                <div className="flex flex-col h-full bg-black/30 rounded-xl border border-gray-800">
-                  <div className="p-4 border-b border-gray-800">
-                    <h3 className="font-bold text-gray-300">Dicionário de Momentos</h3>
-                    <p className="text-xs text-gray-500">Arraste para a direita para adicionar</p>
-                  </div>
-                  <Droppable droppableId="dicionario" isDropDisabled={true}>
-                    {(provided) => (
-                      <div 
-                        ref={provided.innerRef} 
-                        {...provided.droppableProps}
-                        className="flex-1 overflow-y-auto p-4 space-y-2"
-                      >
-                        {dicMomentos.map((momento, index) => (
-                          <Draggable key={`dic-${momento.id}`} draggableId={`dic-${momento.id}`} index={index}>
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`p-3 bg-gray-900 border border-gray-700 rounded-lg flex items-center gap-3 ${snapshot.isDragging ? 'opacity-50' : ''}`}
-                              >
-                                <GripVertical className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                                <span className="text-sm font-medium text-gray-300">{momento.nome}</span>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </div>
+            <div className="max-w-2xl mx-auto space-y-4 pb-20">
+              <p className="text-sm text-gray-400 mb-6 text-center">
+                Arraste os itens para reordená-los. Clique no botão ao final da lista para adicionar novos momentos.
+              </p>
 
-                {/* Coluna 2: Playlist */}
-                <div className="flex flex-col h-full bg-black/30 rounded-xl border border-macaonico-dourado/30 relative">
-                  <div className="p-4 border-b border-macaonico-dourado/30 bg-macaonico-dourado/5 rounded-t-xl">
-                    <h3 className="font-bold text-macaonico-dourado">Sequência do Ritual</h3>
-                    <p className="text-xs text-gray-400">Arraste para reordenar. Arraste para fora para remover.</p>
-                  </div>
-                  <Droppable droppableId="playlist">
-                    {(provided, snapshot) => (
-                      <div 
-                        ref={provided.innerRef} 
-                        {...provided.droppableProps}
-                        className={`flex-1 overflow-y-auto p-4 space-y-2 transition-colors ${snapshot.isDraggingOver ? 'bg-macaonico-dourado/5' : ''}`}
-                      >
-                        {playlist.length === 0 && (
-                          <div className="h-32 flex items-center justify-center text-gray-600 text-sm border-2 border-dashed border-gray-800 rounded-xl">
-                            Solte os momentos aqui
-                          </div>
-                        )}
-                        {playlist.map((momento, index) => (
-                          <Draggable key={`pl-${momento.id}-${index}`} draggableId={`pl-${momento.id}-${index}`} index={index}>
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`p-3 bg-[#161616] border border-macaonico-dourado/50 rounded-lg flex items-center gap-3 shadow-lg ${snapshot.isDragging ? 'ring-2 ring-macaonico-dourado' : ''}`}
-                              >
-                                <GripVertical className="w-4 h-4 text-macaonico-dourado flex-shrink-0" />
-                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-macaonico-dourado text-black text-xs font-bold flex items-center justify-center">
-                                  {index + 1}
-                                </span>
-                                <span className="text-sm font-bold text-white">{momento.nome}</span>
+              <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable droppableId="playlist">
+                  {(provided) => (
+                    <div 
+                      ref={provided.innerRef} 
+                      {...provided.droppableProps}
+                      className="space-y-2"
+                    >
+                      {playlist.length === 0 && (
+                        <div className="p-12 text-center text-gray-600 border-2 border-dashed border-gray-800 rounded-xl">
+                          Nenhum evento nesta sessão.
+                        </div>
+                      )}
+                      
+                      {playlist.map((momento, index) => (
+                        <Draggable key={`pl-${momento.id}-${index}`} draggableId={`pl-${momento.id}-${index}`} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`p-3 bg-[#161616] border border-gray-800 rounded-xl flex items-center gap-4 shadow-sm transition-colors group ${snapshot.isDragging ? 'ring-2 ring-macaonico-dourado bg-[#1a1a1a]' : 'hover:border-gray-600'}`}
+                            >
+                              <GripVertical className="w-5 h-5 text-gray-600 cursor-grab active:cursor-grabbing" />
+                              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-black border border-gray-700 text-gray-400 text-xs font-bold flex items-center justify-center">
+                                {index + 1}
+                              </span>
+                              <div className="flex-1">
+                                <span className="text-base font-semibold text-gray-200">{momento.nome}</span>
                               </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </div>
+                              <button 
+                                onClick={() => removerMomento(index)}
+                                className="p-2 text-gray-600 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                title="Remover"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
 
+              {/* Adicionar Novo Evento */}
+              <div className="pt-6">
+                {!modoAdicao ? (
+                  <button 
+                    onClick={() => setModoAdicao(true)}
+                    className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-gray-700 text-gray-400 rounded-xl hover:border-gray-500 hover:text-white hover:bg-white/5 transition-colors font-medium"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Adicionar Novo Momento Ritualístico
+                  </button>
+                ) : (
+                  <div className="p-4 bg-[#111111] border border-macaonico-dourado/50 rounded-xl flex gap-3 shadow-lg">
+                    <select
+                      className="flex-1 bg-black border border-gray-700 rounded-lg px-4 text-white focus:outline-none focus:border-macaonico-dourado"
+                      value={momentoSelecionado}
+                      onChange={(e) => setMomentoSelecionado(e.target.value)}
+                    >
+                      <option value="">Selecione um momento do dicionário global...</option>
+                      {dicMomentos.map(m => (
+                        <option key={m.id} value={m.id}>{m.nome}</option>
+                      ))}
+                    </select>
+                    <button 
+                      onClick={adicionarMomento}
+                      disabled={!momentoSelecionado}
+                      className="px-6 py-2 bg-macaonico-dourado text-black font-bold rounded-lg hover:bg-yellow-500 disabled:opacity-50"
+                    >
+                      Inserir
+                    </button>
+                    <button 
+                      onClick={() => setModoAdicao(false)}
+                      className="px-4 py-2 text-gray-400 hover:text-white"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                )}
               </div>
-            </DragDropContext>
+
+            </div>
           )}
         </div>
 
@@ -245,10 +253,10 @@ export const ModalConstrutorRitual: React.FC<ModalConstrutorRitualProps> = ({ ri
           <button 
             onClick={handleSalvar}
             disabled={salvando || playlist.length === 0}
-            className="flex items-center gap-2 px-6 py-2 bg-macaonico-dourado text-black font-bold rounded-lg hover:bg-yellow-500 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-8 py-3 bg-macaonico-dourado text-black font-bold rounded-xl hover:bg-yellow-500 transition-colors disabled:opacity-50 text-lg shadow-[0_0_15px_rgba(212,175,55,0.3)]"
           >
-            {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Salvar Liturgia ({playlist.length})
+            {salvando ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+            Salvar Liturgia ({playlist.length} Momentos)
           </button>
         </div>
 
