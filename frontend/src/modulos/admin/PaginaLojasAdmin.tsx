@@ -102,12 +102,16 @@ export const PaginaLojasAdmin: React.FC = () => {
                         </span>
                       </td>
                       <td className="p-4 text-sm text-gray-300">
-                        {loja.status_assinatura === 'PAGA' ? (
-                          <span className="text-green-400">Ativa (Paga)</span>
-                        ) : loja.status_assinatura === 'TESTE' ? (
+                        {loja.status_assinatura === 'ATIVA' ? (
+                          <span className="text-green-400">Ativa</span>
+                        ) : loja.status_assinatura === 'ESPECIAL' ? (
+                          <span className="text-emerald-400">Especial</span>
+                        ) : loja.status_assinatura === 'DEMONSTRACAO' ? (
                           <span className="text-yellow-400">Demo</span>
+                        ) : loja.status_assinatura === 'INATIVA' ? (
+                          <span className="text-red-400">Inativa</span>
                         ) : (
-                          <span className="text-gray-400">Indefinido</span>
+                          <span className="text-gray-400">{loja.status_assinatura || 'Indefinido'}</span>
                         )}
                         {loja.validade_assinatura && (
                           <div className="text-xs text-gray-500">

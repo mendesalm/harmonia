@@ -19,7 +19,7 @@ export const ModalLojaAdmin: React.FC<Props> = ({ lojaId, onClose, onSalvo }) =>
     nome: '',
     rito_id: '',
     ativo: true,
-    status_assinatura: 'TESTE',
+    status_assinatura: 'DEMONSTRACAO',
     dados_especificos: {
       numero: '',
       obediencia: 'GOB',
@@ -45,7 +45,7 @@ export const ModalLojaAdmin: React.FC<Props> = ({ lojaId, onClose, onSalvo }) =>
             nome: resp.data.nome,
             rito_id: resp.data.rito_id || '',
             ativo: resp.data.ativo,
-            status_assinatura: resp.data.status_assinatura || 'TESTE',
+            status_assinatura: resp.data.status_assinatura || 'DEMONSTRACAO',
             dados_especificos: {
               numero: resp.data.dados_especificos?.numero || '',
               obediencia: resp.data.dados_especificos?.obediencia || 'GOB',
@@ -172,9 +172,10 @@ export const ModalLojaAdmin: React.FC<Props> = ({ lojaId, onClose, onSalvo }) =>
                   onChange={e => setFormData({ ...formData, status_assinatura: e.target.value })}
                   className="w-full bg-[#161616] border border-gray-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-macaonico-dourado"
                 >
-                  <option value="TESTE">Teste / Demo</option>
-                  <option value="PAGA">Paga / Ativa</option>
                   <option value="INATIVA">Inativa</option>
+                  <option value="ATIVA">Ativa</option>
+                  <option value="ESPECIAL">Especial (Ativa sem Cobrança)</option>
+                  <option value="DEMONSTRACAO">Demonstração (Acesso Limitado)</option>
                 </select>
               </div>
             </div>
