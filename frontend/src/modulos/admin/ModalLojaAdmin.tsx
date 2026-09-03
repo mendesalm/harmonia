@@ -81,9 +81,9 @@ export const ModalLojaAdmin: React.FC<Props> = ({ lojaId, onClose, onSalvo }) =>
         await clienteHttp.post('/organizacoes', payload);
       }
       onSalvo();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Erro ao salvar loja. Verifique os campos e tente novamente.');
+      alert('Erro ao salvar loja: ' + (err.response?.data?.detail || err.message || JSON.stringify(err)));
     } finally {
       setSalvando(false);
     }

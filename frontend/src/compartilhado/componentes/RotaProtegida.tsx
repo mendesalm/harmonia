@@ -21,5 +21,18 @@ export const RotaProtegida: React.FC<{ children: React.ReactNode }> = ({ childre
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return <>{children}</>;
+  const statusAssinatura = useAuth().usuario?.status_assinatura;
+  const isAssinaturaPendente = statusAssinatura === 'BLOQUEADO' || statusAssinatura === 'INATIVA';
+  const showBanner = isAssinaturaPendente && location.pathname !== '/assinatura' && useAuth().usuario?.tipo !== 'ADMIN';
+
+  return (
+    <>
+      {showBanner && (
+        <div className="bg-red-500 text-white w-full py-2 text-center text-sm font-semibold shadow-md">
+          Assinatura pendente ou vencida. <a href="/assinatura" className="underline hover:text-macaonico-dourado">Clique aqui para regularizar e recuperar o acesso</a>.
+        </div>
+      )}
+      {children}
+    </>
+  );
 };

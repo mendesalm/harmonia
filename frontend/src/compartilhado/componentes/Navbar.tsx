@@ -6,11 +6,16 @@ import { useAuth } from '../contextos/ContextoAutenticacao';
 export const Navbar: React.FC = () => {
   const { usuario, logout } = useAuth();
   
+  const temAcessoFinanceiro = usuario?.permissoes?.includes('mestre_harmonia') || usuario?.permissoes?.includes('super_admin') || usuario?.role === 'super_admin';
   const linksMestre = [
     { to: '/', label: 'Player', icon: PlayCircle },
     { to: '/eventos', label: 'Momentos', icon: LayoutTemplate },
     { to: '/musicas', label: 'Acervo', icon: Library },
   ];
+  
+  if (temAcessoFinanceiro) {
+      linksMestre.push({ to: '/assinatura', label: 'Assinatura', icon: KeyRound });
+  }
 
   const linksAdmin = [
     { to: '/admin', label: 'Painel', icon: PlayCircle },

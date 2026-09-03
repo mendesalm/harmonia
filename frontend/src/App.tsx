@@ -10,6 +10,7 @@ import { PaginaSessoes } from './modulos/sessoes/PaginaSessoes';
 import { PaginaEventos } from './modulos/eventos/PaginaEventos';
 import { PaginaMusicas } from './modulos/musicas/PaginaMusicas';
 import { PaginaDashboard } from './modulos/dashboard/PaginaDashboard';
+import PaginaAssinatura from './modulos/assinatura/PaginaAssinatura';
 
 import { PaginaDashboardAdmin } from './modulos/admin/PaginaDashboardAdmin';
 import { PaginaLojasAdmin } from './modulos/admin/PaginaLojasAdmin';
@@ -113,6 +114,16 @@ export const App: React.FC = () => {
                     <RotaProtegida>
                       <div className="h-full overflow-y-auto pb-16">
                         <PaginaMusicas />
+                      </div>
+                    </RotaProtegida>
+                  }
+                />
+                <Route
+                  path="/assinatura"
+                  element={
+                    <RotaProtegida>
+                      <div className="h-full overflow-y-auto pb-16">
+                        <PaginaAssinatura />
                       </div>
                     </RotaProtegida>
                   }
