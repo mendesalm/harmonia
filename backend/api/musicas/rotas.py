@@ -28,6 +28,7 @@ roteador_musicas = APIRouter(
 
 from sqlalchemy import select
 from backend.modelos.musica import Musica, MusicaEventoSugerido
+from backend.modelos.evento import Evento
 
 from sqlalchemy.orm import selectinload
 
@@ -38,7 +39,7 @@ from sqlalchemy.orm import selectinload
 )
 async def listar_musicas(db: AsyncSession = Depends(obter_banco_de_dados)):
     stmt = select(Musica).options(
-        selectinload(Musica.eventos_sugeridos).selectinload(MusicaEventoSugerido.evento)
+        selectinload(Musica.eventos_sugeridos).selectinload(MusicaEventoSugerido.evento).selectinload(Evento.rito)
     ).order_by(Musica.titulo)
     res = await db.execute(stmt)
     musicas = res.scalars().all()
@@ -60,7 +61,7 @@ async def listar_musicas(db: AsyncSession = Depends(obter_banco_de_dados)):
             "eventos": [
                 {
                     "evento_id": es.evento_id,
-                    "evento_nome": es.evento.nome if es.evento else None
+                    "evento_nome": f"{es.evento.nome} ({es.evento.rito.nome})" if es.evento and es.evento.rito else (es.evento.nome if es.evento else None)
                 } for es in m.eventos_sugeridos
             ]
         }
