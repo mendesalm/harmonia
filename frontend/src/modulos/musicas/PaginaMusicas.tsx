@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Play, Pause, Trash2, Music, ExternalLink, Youtube, Disc, X } from 'lucide-react';
+import { Plus, Search, Play, Pause, Trash2, Music, ExternalLink, Youtube, Disc, X, Edit2 } from 'lucide-react';
 import { Musica, Evento } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
@@ -82,6 +82,22 @@ export const PaginaMusicas: React.FC = () => {
       await carregarDados();
     } catch (err: any) {
       alert(err.response?.data?.detail || 'Erro ao deletar música.');
+    }
+  };
+
+  const handleEditarMusica = async (musica: Musica) => {
+    const novoTitulo = window.prompt("Digite o novo título da música:", musica.titulo);
+    if (novoTitulo === null) return;
+    const novoAutor = window.prompt("Digite o novo autor/artista (opcional):", musica.autor_artista || '') || null;
+    
+    try {
+      await clienteHttp.put(`/musicas/${musica.id}`, {
+        titulo: novoTitulo,
+        autor_artista: novoAutor
+      });
+      carregarDados();
+    } catch (err: any) {
+      alert("Erro ao editar música: " + (err.response?.data?.detail || err.message));
     }
   };
 
@@ -239,7 +255,14 @@ export const PaginaMusicas: React.FC = () => {
                       </td>
 
                       {/* Ações */}
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="py-3.5 px-4 text-right flex justify-end gap-1">
+                        <button
+                          onClick={() => handleEditarMusica(m)}
+                          className="p-2 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors cursor-pointer"
+                          title="Editar Música"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => deletarMusica(m)}
                           className="p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors cursor-pointer"
