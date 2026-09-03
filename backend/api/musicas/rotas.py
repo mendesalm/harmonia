@@ -17,8 +17,13 @@ from backend.api.musicas.servicos import (
     buscar_musicas_sugeridas_para_evento, 
     listar_arquivos_orfaos
 )
+from backend.api.assinaturas.dependencias import verificar_assinatura_ativa
 
-roteador_musicas = APIRouter(prefix="/musicas", tags=["Acervo Global e Músicas"])
+roteador_musicas = APIRouter(
+    prefix="/musicas", 
+    tags=["Acervo Global e Músicas"],
+    dependencies=[Depends(verificar_assinatura_ativa)]
+)
 
 
 from sqlalchemy import select

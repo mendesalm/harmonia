@@ -41,7 +41,7 @@ class TipoSessao(Base):
     )
 
     # Relacionamentos
-    # rito: Mapped["Rito"] = relationship("Rito", back_populates="tipos_sessao")
+    rito: Mapped["Rito"] = relationship("Rito", back_populates="tipos_sessao")
     canonico: Mapped[Optional["TipoSessaoCanonico"]] = relationship("TipoSessaoCanonico", back_populates="sessoes_rito")
     eventos: Mapped[List["TipoSessaoEvento"]] = relationship(
         "TipoSessaoEvento", back_populates="tipo_sessao", cascade="all, delete-orphan", order_by="TipoSessaoEvento.ordem_sequencia"

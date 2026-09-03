@@ -9,6 +9,7 @@ from backend.modelos.evento import Evento
 from backend.modelos.musica import Musica, MusicaEvento, MusicaEventoSugerido
 from backend.modelos.sessao import TipoSessao, TipoSessaoEvento, SessaoLoja, SessaoLojaEvento
 from backend.modelos.canonico import TipoSessaoCanonico, MomentoCanonico
+from backend.modelos.assinatura import HistoricoPagamento
 
 __all__ = [
     "Organizacao",

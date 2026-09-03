@@ -9,7 +9,13 @@ from backend.nucleo.banco import obter_banco_de_dados
 from backend.api.player.schemas import SessaoPlayerExecucao, MusicaSorteadaInfo
 from backend.api.player.servicos import ServicoPlayer
 
-roteador_player = APIRouter(prefix="/player", tags=["Player do Mestre de Harmonia"])
+from backend.api.assinaturas.dependencias import verificar_assinatura_ativa
+
+roteador_player = APIRouter(
+    prefix="/player", 
+    tags=["Player do Mestre de Harmonia"],
+    dependencies=[Depends(verificar_assinatura_ativa)]
+)
 
 
 @roteador_player.get(

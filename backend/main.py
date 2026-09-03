@@ -19,7 +19,9 @@ from backend.api.eventos.rotas import roteador_eventos
 from backend.api.sessoes.rotas import roteador_sessoes
 from backend.api.musicas.rotas import roteador_musicas
 from backend.api.player.rotas import roteador_player
+from backend.api.admin.rotas import roteador_admin
 from backend.api.auth.rotas import roteador_auth
+from backend.api.assinaturas.rotas import roteador_assinaturas
 
 # Inicialização da Aplicação FastAPI com documentação rica
 aplicacao = FastAPI(
@@ -69,6 +71,8 @@ aplicacao.include_router(roteador_eventos, prefix=PREFIXO_API)
 aplicacao.include_router(roteador_sessoes, prefix=PREFIXO_API)
 aplicacao.include_router(roteador_musicas, prefix=PREFIXO_API)
 aplicacao.include_router(roteador_player, prefix=PREFIXO_API)
+aplicacao.include_router(roteador_admin, prefix=PREFIXO_API)
+aplicacao.include_router(roteador_assinaturas, prefix=PREFIXO_API)
 
 
 @aplicacao.get("/", tags=["Status"])

@@ -45,3 +45,4 @@ class Organizacao(Base):
     # eventos removidos da organizacao, pois agora são globais
     sessoes_loja: Mapped[List["SessaoLoja"]] = relationship("SessaoLoja", back_populates="loja", cascade="all, delete-orphan")
     musicas: Mapped[List["Musica"]] = relationship("Musica", back_populates="organizacao", cascade="all, delete-orphan")
+    historico_pagamentos: Mapped[List["HistoricoPagamento"]] = relationship("HistoricoPagamento", back_populates="organizacao", cascade="all, delete-orphan")

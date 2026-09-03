@@ -20,8 +20,13 @@ from backend.api.sessoes.servicos import (
     importar_template_para_loja,
     atualizar_evento_customizado_loja
 )
+from backend.api.assinaturas.dependencias import verificar_assinatura_ativa
 
-roteador_sessoes = APIRouter(prefix="/sessoes", tags=["Templates e Sessões Customizadas"])
+roteador_sessoes = APIRouter(
+    prefix="/sessoes", 
+    tags=["Templates e Sessões Customizadas"],
+    dependencies=[Depends(verificar_assinatura_ativa)]
+)
 
 
 @roteador_sessoes.get(
