@@ -4,14 +4,21 @@ import { PlayCircle, Library, LayoutTemplate, KeyRound, LogOut, Settings } from 
 import { useAuth } from '../contextos/ContextoAutenticacao';
 
 export const Navbar: React.FC = () => {
-  const { logout } = useAuth();
-  // If we wanted to keep the store selector, we could add a settings modal. For now, we will add a simple settings button that triggers logout for simplicity, or just keep the basic tabs.
-
-  const links = [
+  const { usuario, logout } = useAuth();
+  
+  const linksMestre = [
     { to: '/', label: 'Player', icon: PlayCircle },
     { to: '/eventos', label: 'Momentos', icon: LayoutTemplate },
     { to: '/musicas', label: 'Acervo', icon: Library },
   ];
+
+  const linksAdmin = [
+    { to: '/admin', label: 'Painel', icon: PlayCircle },
+    { to: '/admin/lojas', label: 'Lojas', icon: LayoutTemplate },
+    { to: '/admin/templates', label: 'Ritos', icon: Library },
+  ];
+
+  const links = usuario?.tipo === 'ADMIN' ? linksAdmin : linksMestre;
 
   return (
     <nav className="relative z-50 w-full h-16 bg-[#060606] border-t border-macaonico-inactive/30 flex items-center justify-around px-2 shadow-[0_-10px_20px_rgba(0,0,0,0.5)] shrink-0">

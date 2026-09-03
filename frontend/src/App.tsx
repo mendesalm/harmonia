@@ -11,6 +11,20 @@ import { PaginaEventos } from './modulos/eventos/PaginaEventos';
 import { PaginaMusicas } from './modulos/musicas/PaginaMusicas';
 import { PaginaDashboard } from './modulos/dashboard/PaginaDashboard';
 
+import { PaginaDashboardAdmin } from './modulos/admin/PaginaDashboardAdmin';
+import { PaginaLojasAdmin } from './modulos/admin/PaginaLojasAdmin';
+import { PaginaRitosAdmin } from './modulos/admin/PaginaRitosAdmin';
+import { PaginaEventosAdmin } from './modulos/admin/PaginaEventosAdmin';
+import { useAuth } from './compartilhado/contextos/ContextoAutenticacao';
+
+const RotaRaiz = () => {
+  const { usuario } = useAuth();
+  if (usuario?.tipo === 'ADMIN') {
+    return <Navigate to="/admin" replace />;
+  }
+  return <PaginaDashboard />;
+};
+
 export const App: React.FC = () => {
   return (
     <ProvedorAutenticacao>
@@ -22,12 +36,46 @@ export const App: React.FC = () => {
                 {/* Rota Pública de Login */}
                 <Route path="/login" element={<PaginaLogin />} />
 
-                {/* Rotas Protegidas por Autenticação JWT */}
+                {/* Área do Admin (Global) */}
+                <Route
+                  path="/admin"
+                  element={
+                    <RotaProtegida>
+                      <PaginaDashboardAdmin />
+                    </RotaProtegida>
+                  }
+                />
+                <Route
+                  path="/admin/lojas"
+                  element={
+                    <RotaProtegida>
+                      <PaginaLojasAdmin />
+                    </RotaProtegida>
+                  }
+                />
+                <Route
+                  path="/admin/templates"
+                  element={
+                    <RotaProtegida>
+                      <PaginaRitosAdmin />
+                    </RotaProtegida>
+                  }
+                />
+                <Route
+                  path="/admin/eventos"
+                  element={
+                    <RotaProtegida>
+                      <PaginaEventosAdmin />
+                    </RotaProtegida>
+                  }
+                />
+
+                {/* Área do Mestre de Harmonia (Tenant) */}
                 <Route
                   path="/"
                   element={
                     <RotaProtegida>
-                      <PaginaDashboard />
+                      <RotaRaiz />
                     </RotaProtegida>
                   }
                 />
