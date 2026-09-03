@@ -27,7 +27,7 @@ class MusicaBase(BaseModel):
 class MusicaUpload(MusicaBase):
     """Schema para cadastro de música via Upload."""
     upload_por_loja_id: Optional[uuid.UUID] = Field(None, description="UUID da Loja (Null se Superadmin)")
-    eventos_sugeridos_ids: List[uuid.UUID] = Field(..., min_length=1, description="Obrigatório: IDs dos eventos sugeridos para esta música")
+    eventos_sugeridos_ids: List[uuid.UUID] = Field(default_factory=list, description="IDs dos eventos sugeridos para esta música")
 
 
 class MusicaAtualizacao(BaseModel):

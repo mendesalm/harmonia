@@ -495,6 +495,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                 ...prev,
                 musicas_sugeridas_ids: [...prev.musicas_sugeridas_ids, novaMusicaId]
               }));
+              setModoMusicas('LISTA');
             }
             setModalUploadAberto(false);
           }}

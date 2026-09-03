@@ -85,7 +85,7 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
         formData.append('arquivo', arquivo);
         if (titulo.trim()) formData.append('titulo', titulo.trim());
         if (autor.trim()) formData.append('autor_artista', autor.trim());
-        formData.append('evento_ids', JSON.stringify(eventosSelecionados));
+        formData.append('eventos_sugeridos_ids', JSON.stringify(eventosSelecionados));
 
         const resp = await clienteHttp.post('/musicas/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
@@ -105,7 +105,7 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
             titulo: titulo.trim() || undefined,
             autor_artista: autor.trim() || undefined,
             bitrate_kbps: 320,
-            evento_ids: eventosSelecionados,
+            eventos_sugeridos_ids: eventosSelecionados,
           });
           novaMusicaId = resp.data?.id;
         } else {
@@ -116,7 +116,7 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
             autor_artista: autor.trim() || null,
             tipo_midia: 'YOUTUBE',
             link_externo: linkStreaming.trim(),
-            evento_ids: eventosSelecionados,
+            eventos_sugeridos_ids: eventosSelecionados,
           });
           novaMusicaId = resp.data?.id;
         }
