@@ -14,14 +14,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from backend.nucleo.configuracoes import configuracoes
-from backend.api.organizacoes.rotas import roteador_organizacoes
 from backend.api.eventos.rotas import roteador_eventos
 from backend.api.sessoes.rotas import roteador_sessoes
 from backend.api.musicas.rotas import roteador_musicas
 from backend.api.player.rotas import roteador_player
 from backend.api.admin.rotas import roteador_admin
-from backend.api.auth.rotas import roteador_auth
-from backend.api.assinaturas.rotas import roteador_assinaturas
 
 # Inicialização da Aplicação FastAPI com documentação rica
 aplicacao = FastAPI(
@@ -65,14 +62,11 @@ aplicacao.mount(
 
 # Registro dos Roteadores Modulares (Prefixo /api/v1)
 PREFIXO_API = "/api/v1"
-aplicacao.include_router(roteador_auth, prefix=PREFIXO_API)
-aplicacao.include_router(roteador_organizacoes, prefix=PREFIXO_API)
 aplicacao.include_router(roteador_eventos, prefix=PREFIXO_API)
 aplicacao.include_router(roteador_sessoes, prefix=PREFIXO_API)
 aplicacao.include_router(roteador_musicas, prefix=PREFIXO_API)
 aplicacao.include_router(roteador_player, prefix=PREFIXO_API)
 aplicacao.include_router(roteador_admin, prefix=PREFIXO_API)
-aplicacao.include_router(roteador_assinaturas, prefix=PREFIXO_API)
 
 
 @aplicacao.get("/", tags=["Status"])
@@ -84,6 +78,15 @@ async def status_sistema():
         "status": "online",
         "documentacao": "/docs"
     }
+
+
+from fastapi import Depends
+from backend.nucleo.dependencias import obter_usuario_logado
+
+@aplicacao.get("/api/v1/auth/me", tags=["Mock Auth Identity"])
+async def mock_auth_me(usuario: dict = Depends(obter_usuario_logado)):
+    # Echo back the JWT payload to the frontend, acting as a proxy for the missing Identity Server
+    return usuario
 
 
 def iniciar_servidor():

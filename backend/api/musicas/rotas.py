@@ -17,7 +17,7 @@ from backend.api.musicas.servicos import (
     buscar_musicas_sugeridas_para_evento, 
     listar_arquivos_orfaos
 )
-from backend.api.assinaturas.dependencias import verificar_assinatura_ativa
+from backend.nucleo.dependencias import verificar_assinatura_ativa
 
 roteador_musicas = APIRouter(
     prefix="/musicas", 
