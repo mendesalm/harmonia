@@ -5,7 +5,7 @@ from backend.nucleo.seguranca import decodificar_token_acesso
 oauth2_scheme = HTTPBearer(auto_error=False)
 
 def obter_usuario_logado(token: HTTPAuthorizationCredentials = Depends(oauth2_scheme)):
-    "\"\"Extrai e valida o token JWT do header.\""\"
+    """Extrai e valida o token JWT do header."""
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nao autenticado")
     
