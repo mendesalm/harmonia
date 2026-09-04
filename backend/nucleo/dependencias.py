@@ -16,7 +16,7 @@ def obter_usuario_logado(token: HTTPAuthorizationCredentials = Depends(oauth2_sc
     return payload
 
 def verificar_assinatura_ativa(usuario: dict = Depends(obter_usuario_logado)):
-    "\"\"Verifica se o JWT possui as claims necessarias de acesso ao Harmonia.\""\"
+    """Verifica se o JWT possui as claims necessarias de acesso ao Harmonia."""
     harmonia_ativo = usuario.get("harmonia_ativo", False)
     role = usuario.get("role", "admin")
     
