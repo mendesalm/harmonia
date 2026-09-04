@@ -85,8 +85,18 @@ from backend.nucleo.dependencias import obter_usuario_logado
 
 @aplicacao.get("/api/v1/auth/me", tags=["Mock Auth Identity"])
 async def mock_auth_me(usuario: dict = Depends(obter_usuario_logado)):
-    # Echo back the JWT payload to the frontend, acting as a proxy for the missing Identity Server
-    return usuario
+    # Mapear o payload do JWT do e-Sigma para a estrutura que o Frontend do Harmonia espera
+    return {
+        "id": usuario.get("user_id", "unknown"),
+        "nome": "Irmão (SSO)",
+        "email": usuario.get("sub", ""),
+        "tipo": usuario.get("role", "member"),
+        "organizacao_id": usuario.get("loja_id"),
+        "organizacao_nome": f"Loja {usuario.get('loja_id')}",
+        "slug_armazenamento": None,
+        "permissoes": [],
+        "dados_especificos": {}
+    }
 
 
 def iniciar_servidor():

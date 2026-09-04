@@ -24,13 +24,27 @@ export const PaginaLogin: React.FC = () => {
     setCarregando(true);
 
     try {
-      const resp = await clienteHttp.post('/auth/login', {
-        email: email.trim(),
-        senha: senha,
+      // 1. Enviar credenciais para a API do e-Sigma (Single Sign-On)
+      const baseUrlIdp = import.meta.env.VITE_URL_IDENTIDADE || 'https://e-sigma.app';
+      const respIdp = await fetch(`${baseUrlIdp}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: email.trim(), password: senha })
       });
 
-      const { access_token, usuario } = resp.data;
-      login(access_token, usuario);
+      if (!respIdp.ok) {
+        throw new Error('Falha na autenticação no e-Sigma');
+      }
+
+      const { access_token } = await respIdp.json();
+      localStorage.setItem('@harmonia:token', access_token);
+      
+      // 2. Com o token em mãos, busca os detalhes do usuário no backend do Harmonia
+      const respMe = await clienteHttp.get('/auth/me', {
+        headers: { Authorization: `Bearer ${access_token}` }
+      });
+
+      login(access_token, respMe.data);
       await recarregarLojas();
       navigate(destino, { replace: true });
     } catch (err: any) {
