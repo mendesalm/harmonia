@@ -1,73 +1,38 @@
-# 🎼 Harmonia 2.0 • Gerenciador de Acervo e Player Ritualístico Maçônico
+# Harmonia 🎵
 
-> **Aplicativo Web & Mobile (PWA) Multi-Tenant para Mestres de Harmonia**
+O **Harmonia** é o módulo especialista de Músicas Ritualísticas do Ecossistema Sigma. Ele foi desenhado para ser um aplicativo extremamente leve, focado única e exclusivamente na execução de trilhas sonoras para Lojas Maçônicas.
 
----
+## 🚀 Arquitetura
 
-## 🏛️ Visão Geral
+Sendo um **Microserviço**, o Harmonia não lida com cobranças, faturas ou criação de lojas. Ele funciona como um aplicativo "satélite" (PWA / Web App) que recebe os usuários autenticados pelo cérebro central (e-Sigma Core).
 
-O **Harmonia** é uma plataforma concebida para gerenciar o acervo musical litúrgico e conduzir a trilha sonora de sessões ritualísticas maçônicas em Templo. Construído com arquitetura **Multi-Tenant (SaaS)**, permite que cada Loja Maçônica tenha seu espaço seguro e isolado, acervo próprio, personalização de ritos e esteiras ritualísticas completas.
+* **Frontend:** React + Vite, Tailwind CSS, Componentes de Áudio nativos.
+* **Backend:** Python + FastAPI.
+* **Banco de Dados:** SQLite (Armazenamento local super rápido de metadados das músicas).
+* **Armazenamento de Áudio:** Servido estaticamente pela VPS ou CDN.
 
----
+## 🔐 Autenticação e Single Sign-On (SSO)
 
-## ✨ Principais Funcionalidades
+O aplicativo Harmonia **terceiriza** a sua segurança e autenticação para o `e-sigma.app`.
 
-* 🎛️ **Player Ritualístico do Mestre de Harmonia**:
-  * **Pausa Inicial Mandatória**: Ao acessar qualquer momento litúrgico, a faixa fica engatilhada e pausada, aguardando a deixa do Venerável Mestre.
-  * **Avanço Automático de Momento**: Ao término da música ativa, o sistema avança automaticamente para o próximo momento litúrgico, posicionando-o em pausa.
-  * **Barra de Seleção Manual da Música**: Permite que o Mestre escolha instantaneamente qualquer faixa da playlist para aquele momento litúrgico.
-  * **Fade Out Gradual**: Suavização suave de volume ao avançar de momento.
-  * **Equalizador Visual**: Indicador dinâmico de reprodução no Templo.
-  * **Barra de Progresso e Seek**: Rastreamento de tempo decorrido e duração total com clique interativo.
-* ⚡ **Conversor Direto do YouTube para MP3 (320 kbps)**:
-  * Motor integrado com `yt-dlp` e `FFmpeg` que baixa áudios do YouTube e converte para MP3 em 320 kbps, salvando no servidor da Loja para execução 100% offline.
-* 📜 **Suporte Completo aos Ritos**:
-  * REAA (Rito Escocês Antigo e Aceito), Rito Brasileiro, York, Moderno, Schroeder e Adonhiramita.
-  * **Clonagem de Modelos de Sessão**: Duplicação rápida de esteiras litúrgicas com mudança de rito ou grau.
-* 🔒 **SaaS Multi-Tenant e Autenticação JWT (Padrão Sigma)**:
-  * E-mails padronizados (`loja{numero}@harmonia.sigma.app`), controle de acesso por perfis e troca de senha pelo usuário.
-* 📱 **Mobile PWA First-Class**:
-  * Instalável em smartphones e tablets Android e iOS sem barras de navegação (modo *standalone*).
+O fluxo funciona da seguinte maneira:
+1. Quando um Mestre de Harmonia tenta logar no aplicativo (Web ou Celular), o frontend do Harmonia dispara um pedido `POST` secretamente para a API do e-Sigma (`https://e-sigma.app/api/auth/login`).
+2. Se o e-Sigma validar que a Loja daquele usuário está com a assinatura do módulo Harmonia paga (verificada via Asaas), ele devolve um JWT.
+3. O Frontend do Harmonia salva o JWT e, a partir de então, toda requisição de música enviada para o backend do Harmonia leva esse Token.
+4. O backend do Harmonia e do e-Sigma compartilham a mesma `JWT_SECRET_KEY`. Assim, o Harmonia confia plenamente na permissão concedida e libera o Player.
 
----
+## 📦 Estrutura do Projeto
 
-## 🛠️ Stack Tecnológica
+* `/backend` - API FastAPI, lógica de playlists e endpoints estáticos para streaming de mp3/wav.
+* `/frontend` - Interface moderna com reprodutor de áudio, lista de sugestões por momento ritualístico.
+* `.github/workflows` - Scripts de Automação CI/CD.
 
-* **Backend**: Python 3.14 + FastAPI + SQLAlchemy Assíncrono (`asyncpg`) + Pydantic V2 + `yt-dlp` + `imageio-ffmpeg`
-* **Banco de Dados**: PostgreSQL Remoto (`harmoniadb`)
-* **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS + Lucide Icons + PWA
-* **Testes Automatizados**: Pytest com 100% de cobertura nos fluxos principais.
+## 🌐 Deploy (Produção VPS)
+
+O Harmonia está em produção numa VPS Ubuntu (`69.62.89.211`).
+* **Frontend:** Servido via Nginx estático (`/var/www/harmonia/frontend/dist`) no domínio `harmonia.e-sigma.app`.
+* **Backend:** Rodando via Uvicorn na porta `8000` (`harmonia.service` no Systemd).
+* **CI/CD:** Qualquer push aciona o Github Actions que compila o Frontend e reinicia o serviço Systemd automaticamente na VPS.
 
 ---
-
-## 🚀 Como Executar o Projeto
-
-### 1. Backend (FastAPI)
-```bash
-# Ativar o ambiente virtual
-.\venv\Scripts\activate
-
-# Executar o servidor backend
-uvicorn backend.main:aplicacao --reload --port 8000
-```
-Swagger UI disponível em: `http://localhost:8000/docs`
-
-### 2. Frontend (React + Vite)
-```bash
-cd frontend
-npm install
-npm run dev
-```
-Acesse no navegador: `http://localhost:5173`
-
----
-
-## 🧪 Testes Automatizados
-```bash
-.\venv\Scripts\pytest -v
-```
-
----
-
-## 📄 Licença
-Propriedade do Ecossistema Sigma / Harmonia. Todos os direitos reservados.
+*Harmonia - A trilha sonora da sua Loja, integrada ao Ecossistema Sigma.*
