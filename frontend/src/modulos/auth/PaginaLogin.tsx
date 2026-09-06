@@ -6,7 +6,7 @@ import { useAuth } from '../../compartilhado/contextos/ContextoAutenticacao';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
 import { GoogleLogin } from '@react-oauth/google';
 import HeroBackground from '../../compartilhado/componentes/HeroBackground';
-import harmoniaLogo from '../../assets/harmonia.svg';
+import LogoAnimadaHarmonia from '../../compartilhado/componentes/LogoAnimadaHarmonia';
 
 export const PaginaLogin: React.FC = () => {
   const navigate = useNavigate();
@@ -121,11 +121,7 @@ export const PaginaLogin: React.FC = () => {
           {/* Logo e Título */}
           <div className="flex flex-col items-center text-center mb-8">
             <div id="hero-logo" className="mb-4">
-              <img 
-                src={harmoniaLogo} 
-                alt="Harmonia Logo" 
-                className="w-24 h-24 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]" 
-              />
+              <LogoAnimadaHarmonia width={110} height={110} showText={false} animated={true} />
             </div>
 
             <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-sky-600 tracking-wider font-sans flex items-center gap-2 drop-shadow-[0_0_10px_rgba(56,189,248,0.3)]">
