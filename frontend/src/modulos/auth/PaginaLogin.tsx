@@ -110,29 +110,43 @@ export const PaginaLogin: React.FC = () => {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <div className="relative">
-                <Mail className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" />
                 <input
                   type="email"
+                  id="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="CIM ou E-mail da Loja"
-                  className="w-full bg-transparent border border-white/20 rounded-xl pl-12 pr-4 py-3.5 text-sm text-white focus:border-sky-400 outline-none placeholder:text-slate-500 transition-all focus:bg-white/5"
+                  placeholder=" "
+                  className="peer w-full bg-transparent border border-white/20 rounded-xl pl-12 pr-4 pt-5 pb-2 text-sm text-white focus:border-sky-400 outline-none transition-all focus:bg-white/5"
                 />
+                <label 
+                  htmlFor="email"
+                  className="absolute left-12 top-1.5 text-[10px] text-slate-400 transition-all pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-focus:top-1.5 peer-focus:text-[10px] peer-focus:text-sky-400"
+                >
+                  CIM ou E-mail da Loja
+                </label>
+                <Mail className="w-5 h-5 text-slate-400 absolute left-4 top-3.5 peer-focus:text-sky-400 transition-colors" />
               </div>
             </div>
 
             <div>
               <div className="relative">
-                <Lock className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" />
                 <input
                   type="password"
+                  id="senha"
                   required
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
-                  placeholder="Senha"
-                  className="w-full bg-transparent border border-white/20 rounded-xl pl-12 pr-4 py-3.5 text-sm text-white focus:border-sky-400 outline-none placeholder:text-slate-500 transition-all focus:bg-white/5"
+                  placeholder=" "
+                  className="peer w-full bg-transparent border border-white/20 rounded-xl pl-12 pr-4 pt-5 pb-2 text-sm text-white focus:border-sky-400 outline-none transition-all focus:bg-white/5"
                 />
+                <label 
+                  htmlFor="senha"
+                  className="absolute left-12 top-1.5 text-[10px] text-slate-400 transition-all pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-focus:top-1.5 peer-focus:text-[10px] peer-focus:text-sky-400"
+                >
+                  Senha
+                </label>
+                <Lock className="w-5 h-5 text-slate-400 absolute left-4 top-3.5 peer-focus:text-sky-400 transition-colors" />
               </div>
             </div>
 
