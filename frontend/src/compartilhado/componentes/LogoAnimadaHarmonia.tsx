@@ -85,7 +85,7 @@ export const LogoAnimadaHarmonia: React.FC<LogoAnimadaHarmoniaProps> = ({
           
           const angle = Math.atan2(dy, dx) * (180 / Math.PI);
           
-          glowElement.setAttribute('transform', `translate(${point.x}, ${point.y}) rotate(${angle})`);
+          glowElement?.setAttribute('transform', `translate(${point.x}, ${point.y}) rotate(${angle})`);
           frameId = requestAnimationFrame(step);
         } else {
           setTimeout(() => launchGlow(glowElement), Math.random() * 2000 + 500);
@@ -108,10 +108,7 @@ export const LogoAnimadaHarmonia: React.FC<LogoAnimadaHarmoniaProps> = ({
     <div className="sigma-logo-wrapper" data-theme={theme}>
       <div className="sigma-logo-container">
         <div className={`sigma-logo-symbol ${animated ? 'sigma-logo-animated' : ''}`} style={{ width, height, marginBottom: showText ? '20px' : '0' }}>
-          <svg xmlns="http://www.w3.org/2000/svg" xmlSpace="preserve" width="193.876mm" height="179.156mm" version="1.1" style="shapeRendering:geometricPrecision; textRendering:geometricPrecision; imageRendering:optimizeQuality; fillRule:evenodd; clipRule:evenodd"
-viewBox="0 0 19091.96 17642.44"
- xmlns:xlink="http://www.w3.org/1999/xlink"
- xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
+          <svg xmlSpace="preserve" width="193.876mm" height="179.156mm" version="1.1" style={{ shapeRendering: 'geometricPrecision', textRendering: 'geometricPrecision', fillRule: 'evenodd', clipRule: 'evenodd' }} viewBox="0 0 19091.96 17642.44">
  <defs>
                   <linearGradient id="metalGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop className="light" offset="0%" />
