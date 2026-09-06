@@ -108,7 +108,7 @@ export const LogoAnimadaHarmonia: React.FC<LogoAnimadaHarmoniaProps> = ({
     <div className="sigma-logo-wrapper" data-theme={theme}>
       <div className="sigma-logo-container">
         <div className={`sigma-logo-symbol ${animated ? 'sigma-logo-animated' : ''}`} style={{ width, height, marginBottom: showText ? '20px' : '0' }}>
-          <svg xmlSpace="preserve" width="193.876mm" height="179.156mm" version="1.1" style={{ shapeRendering: 'geometricPrecision', textRendering: 'geometricPrecision', fillRule: 'evenodd', clipRule: 'evenodd' }} viewBox="0 0 19091.96 17642.44">
+          <svg width="100%" height="100%" xmlSpace="preserve" version="1.1" style={{ shapeRendering: 'geometricPrecision', textRendering: 'geometricPrecision', fillRule: 'evenodd', clipRule: 'evenodd' }} viewBox="0 0 19091.96 17642.44">
  <defs>
                   <linearGradient id="metalGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop className="light" offset="0%" />
