@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Volume2, Lock, Mail, ArrowRight, ShieldCheck, Sparkles, Building, KeyRound } from 'lucide-react';
+import { Lock, Mail, ArrowRight } from 'lucide-react';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useAuth } from '../../compartilhado/contextos/ContextoAutenticacao';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
+import HeroBackground from '../../compartilhado/componentes/HeroBackground';
+import harmoniaLogo from '../../assets/harmonia.svg';
 
 export const PaginaLogin: React.FC = () => {
   const navigate = useNavigate();
@@ -24,12 +26,16 @@ export const PaginaLogin: React.FC = () => {
     setCarregando(true);
 
     try {
-      // 1. Enviar credenciais para a API do e-Sigma (Single Sign-On)
+      // 1. Enviar credenciais para a API do e-Sigma informando modulo_origem
       const baseUrlIdp = import.meta.env.VITE_URL_IDENTIDADE || 'https://e-sigma.app';
       const respIdp = await fetch(`${baseUrlIdp}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: email.trim(), password: senha })
+        body: JSON.stringify({ 
+          username: email.trim(), 
+          password: senha,
+          modulo_origem: "harmonia" 
+        })
       });
 
       if (!respIdp.ok) {
@@ -65,28 +71,31 @@ export const PaginaLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-primaria-900 relative overflow-hidden selection:bg-macaonico-cianoSigma selection:text-black">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#0B0F19] relative overflow-hidden selection:bg-macaonico-cianoSigma selection:text-black z-0">
       
-      {/* Elementos de Fundo */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-macaonico-cianoSigma/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-macaonico-dourado/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Background Animado */}
+      <HeroBackground />
 
-      <div className="w-full max-w-md relative z-10">
+      <div className="w-full max-w-md relative z-10 animate-fade-in-up">
         
-        {/* Cartão de Login */}
-        <div className="vidro-destaque rounded-3xl p-8 shadow-2xl border border-white/15">
+        {/* Cartão de Login - Estilo e-Sigma Glassmorphism */}
+        <div className="bg-[#131b29]/40 backdrop-blur-xl rounded-3xl p-8 sm:p-10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-white/10">
           
           {/* Logo e Título */}
           <div className="flex flex-col items-center text-center mb-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-macaonico-cianoSigma via-primaria-600 to-macaonico-dourado flex items-center justify-center shadow-xl shadow-cyan-500/25 mb-4 scale-105">
-              <Volume2 className="w-9 h-9 text-black" />
+            <div id="hero-logo" className="mb-4">
+              <img 
+                src={harmoniaLogo} 
+                alt="Harmonia Logo" 
+                className="w-24 h-24 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]" 
+              />
             </div>
 
-            <h1 className="text-3xl font-black text-white tracking-wider fonte-ritual flex items-center gap-2">
+            <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-sky-600 tracking-wider font-sans flex items-center gap-2 drop-shadow-[0_0_10px_rgba(56,189,248,0.3)]">
               HARMONIA
             </h1>
-            <p className="text-xs text-slate-400 mt-1 font-sans">
-              Acesso por Assinatura de Loja • Ecossistema Sigma
+            <p className="text-sm text-slate-400 mt-2 font-sans">
+              Acesso Restrito
             </p>
           </div>
 
@@ -100,93 +109,63 @@ export const PaginaLogin: React.FC = () => {
           {/* Formulário */}
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
-                <span>E-mail da Loja Assinante</span>
-                <span className="text-[10px] text-macaonico-cianoSigma/80 font-mono">loja(nº)@harmonia.sigma.app</span>
-              </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <Mail className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="loja2181@harmonia.sigma.app"
-                  className="w-full bg-primaria-800 border border-white/15 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:border-macaonico-cianoSigma outline-none placeholder:text-slate-500 transition-all"
+                  placeholder="CIM ou E-mail da Loja"
+                  className="w-full bg-transparent border border-white/20 rounded-xl pl-12 pr-4 py-3.5 text-sm text-white focus:border-sky-400 outline-none placeholder:text-slate-500 transition-all focus:bg-white/5"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Senha de Acesso
-              </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <Lock className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" />
                 <input
                   type="password"
                   required
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-primaria-800 border border-white/15 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:border-macaonico-cianoSigma outline-none placeholder:text-slate-500 transition-all"
+                  placeholder="Senha"
+                  className="w-full bg-transparent border border-white/20 rounded-xl pl-12 pr-4 py-3.5 text-sm text-white focus:border-sky-400 outline-none placeholder:text-slate-500 transition-all focus:bg-white/5"
                 />
               </div>
+            </div>
+
+            <div className="flex justify-end mb-2">
+              <a href="#" className="text-xs text-sky-400 hover:underline">Esqueci a senha</a>
             </div>
 
             <button
               type="submit"
               disabled={carregando}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-macaonico-cianoSigma to-primaria-500 hover:from-cyan-400 hover:to-primaria-400 text-black font-bold py-3 px-4 rounded-xl text-sm shadow-lg shadow-cyan-500/25 transition-all cursor-pointer disabled:opacity-50 mt-6"
+              className="w-full flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 text-white font-bold py-3.5 px-4 rounded-xl text-sm shadow-[0_4px_14px_rgba(56,189,248,0.39)] hover:shadow-[0_6px_20px_rgba(56,189,248,0.23)] transition-all cursor-pointer disabled:opacity-50 mt-4"
             >
               {carregando ? (
                 <span>Autenticando...</span>
               ) : (
-                <>
-                  <span>Entrar no Harmonia</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
+                <span>Entrar</span>
               )}
             </button>
           </form>
 
-          {/* Atalhos Rápidos para Lojas Modelo */}
-          <div className="mt-8 pt-6 border-t border-white/10 text-center">
-            <p className="text-[11px] font-semibold text-macaonico-dourado uppercase tracking-wider mb-3 font-cinzel">
-              Experimente (Acesso de Demonstração - 30 Minutos)
+          <div className="flex items-center my-6">
+            <div className="flex-1 h-px bg-white/10"></div>
+            <span className="px-4 text-xs text-slate-500">ou</span>
+            <div className="flex-1 h-px bg-white/10"></div>
+          </div>
+
+          <div className="text-center">
+            <p className="text-xs text-slate-400">
+              Não tem uma conta? <a href="#" className="text-sky-400 font-semibold hover:underline">Solicitar cadastro</a>
             </p>
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => preencherCredencialRapida('LOJA2181')}
-                className="p-3 rounded-xl bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-xs font-semibold text-macaonico-dourado border border-macaonico-dourado/30 transition-all text-center shadow-md flex items-center justify-center gap-2"
-              >
-                🏛️ Acessar Loja Modelo (Rito Brasileiro)
-              </button>
-              <button
-                type="button"
-                onClick={() => alert("Loja Modelo REAA será carregada na próxima carga do script Seed.")}
-                className="p-3 rounded-xl bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-xs font-semibold text-macaonico-dourado border border-macaonico-dourado/30 transition-all text-center shadow-md flex items-center justify-center gap-2"
-              >
-                🏛️ Acessar Loja Modelo (REAA)
-              </button>
-              <button
-                type="button"
-                onClick={() => preencherCredencialRapida('ADMIN')}
-                className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[11px] font-medium text-slate-300 border border-white/5 transition-all text-center mt-2"
-              >
-                🛡️ Personificar como SuperAdmin
-              </button>
-            </div>
           </div>
 
         </div>
-
-        {/* Rodapé */}
-        <p className="text-center text-xs text-slate-500 mt-6">
-          Harmonia v2.0 • Sistema de Assinatura Mensal por Loja Maçônica
-        </p>
-
       </div>
     </div>
   );
