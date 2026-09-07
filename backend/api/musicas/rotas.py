@@ -1,11 +1,13 @@
+# EM CONFORMIDADE COM AS REGRAS DE OURO DO E-SIGMA
 """
-Controlador de Rotas RESTful para Músicas, Acervo Global e Sugestões.
+Controlador de Rotas RESTful para Musicas, Acervo Global e Sugestoes.
 """
 import uuid
 import json
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from loguru import logger
 from backend.nucleo.banco import obter_banco_de_dados
 from backend.api.musicas.schemas import (
     MusicaUpload,
@@ -98,6 +100,7 @@ async def upload_musica(
     arquivo: UploadFile = File(..., description="Arquivo de áudio (MP3, WAV, OGG)"),
     db: AsyncSession = Depends(obter_banco_de_dados)
 ):
+    logger.info(f"Upload de música iniciado: {titulo} - Loja: {upload_por_loja_id}")
     try:
         ids_parsed = json.loads(eventos_sugeridos_ids)
         lista_eventos = [uuid.UUID(str(i)) for i in ids_parsed]
