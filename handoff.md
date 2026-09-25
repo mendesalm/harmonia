@@ -89,3 +89,19 @@ npm run dev
 ```powershell
 .\venv\Scripts\pytest -v
 ```
+
+---
+
+## 🎨 Atualizações da Sessão (25 de Setembro de 2026)
+- **Design System Soberano**:
+  - Implementação de Glassmorphism Deep Blue Glass (`.card-deep-blue-glass`), fundo preto abissal (`#050508`) e botões `.btn-masonic-pill .btn-pill-blue` com aro chanfrado metálico em ouro.
+  - Favicon em ouro maçônico e `favicon.ico` gerados com cache busting `?v=3`.
+- **Tela de Login Padronizada (`PaginaLogin.tsx`)**:
+  - Clone visual da tela de login do `e-sigma.app`.
+  - Inclusão do canvas de partículas `HeroBackground`, card `.card-deep-blue-glass` e `LogoAnimadaHarmonia` dourada animada (100x100).
+  - Título "Acesso Restrito" em gradiente dourado (`#FDE68A` -> `#DDB96B` -> `#B8862D`).
+  - Inputs elegantes com botão para alternar visibilidade de senha, "Lembrar-me", link "Esqueci a senha", botão `.btn-masonic-pill .btn-pill-blue`, divisor "ou", Google Login e link de solicitação de cadastro.
+  - Preservação da autenticação delegada ao IdP e-Sigma (`modulo_origem: "harmonia"`) e carregamento de tenant/lojas.
+- **Deploy Automático na VPS (`srv854308`)**:
+  - Deploy via GitHub Actions validado em `https://harmonia.e-sigma.app` respondendo HTTP 200 com novo bundle JS/CSS.
+
