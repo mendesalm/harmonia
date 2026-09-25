@@ -26,7 +26,7 @@ export const Navbar: React.FC = () => {
   const links = usuario?.tipo === 'ADMIN' ? linksAdmin : linksMestre;
 
   return (
-    <nav className="relative z-50 w-full h-16 bg-[#060606] border-t border-macaonico-inactive/30 flex items-center justify-around px-2 shadow-[0_-10px_20px_rgba(0,0,0,0.5)] shrink-0">
+    <nav className="relative z-50 w-full h-16 bg-[#070e1c]/95 backdrop-blur-md border-t border-[rgba(221,185,107,0.2)] flex items-center justify-around px-2 shadow-[0_-10px_20px_rgba(0,0,0,0.8)] shrink-0">
       
       {links.map((link) => {
         const Icon = link.icon;

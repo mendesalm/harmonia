@@ -18,15 +18,15 @@ export default {
           900: '#060d17',
         },
         macaonico: {
-          dourado: '#D4AF37',
-          douradoClaro: '#FBF5B7',
-          douradoEscuro: '#AA8529',
-          azulProfundo: '#0b192c',
-          azulTemplo: '#1E3E62',
+          dourado: '#DDB96B',
+          douradoClaro: '#FDE68A',
+          douradoEscuro: '#785012',
+          azulProfundo: '#0b172e',
+          azulTemplo: '#070e1c',
           vermelhoCortejo: '#8B0000',
-          cianoSigma: '#00E5FF',
-          surface: '#080808',
-          inactive: '#3A3A3A',
+          cianoSigma: '#DDB96B',
+          surface: '#050508',
+          inactive: '#64748B',
         }
       },
       fontFamily: {

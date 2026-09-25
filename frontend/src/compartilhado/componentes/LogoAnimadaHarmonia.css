@@ -1,19 +1,19 @@
 .sigma-logo-wrapper {
-  /* Variáveis de Material (Padrão: Prata Metálico) */
-  --m-light: #ffffff;
-  --m-mid: #94a3b8;
-  --m-dark: #334155;
-  --m-deep: #1e293b;
-  --m-accent: #ffffff;
+  /* Variáveis de Material (Padrão: Ouro Maçônico) */
+  --m-light: #FDE68A;
+  --m-mid: #DDB96B;
+  --m-dark: #B8862D;
+  --m-deep: #785012;
+  --m-accent: #DDB96B;
 }
 
 /* Tema: Ouro Maçónico */
 .sigma-logo-wrapper[data-theme="ouro"] {
-  --m-light: #fef08a;
-  --m-mid: #eab308;
-  --m-dark: #854d0e;
-  --m-deep: #422006;
-  --m-accent: #facc15;
+  --m-light: #FDE68A;
+  --m-mid: #DDB96B;
+  --m-dark: #B8862D;
+  --m-deep: #785012;
+  --m-accent: #DDB96B;
 }
 
 /* Tema: Aço Carbono */

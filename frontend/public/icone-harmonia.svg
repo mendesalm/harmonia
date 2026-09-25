@@ -1,14 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0b192c"/>
-      <stop offset="50%" stop-color="#1e3e62"/>
-      <stop offset="100%" stop-color="#060d17"/>
+      <stop offset="0%" stop-color="#050508"/>
+      <stop offset="50%" stop-color="#0b172e"/>
+      <stop offset="100%" stop-color="#070e1c"/>
     </linearGradient>
     <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00e5ff"/>
-      <stop offset="50%" stop-color="#d4af37"/>
-      <stop offset="100%" stop-color="#f3e5ab"/>
+      <stop offset="0%" stop-color="#FDE68A"/>
+      <stop offset="35%" stop-color="#DDB96B"/>
+      <stop offset="70%" stop-color="#B8862D"/>
+      <stop offset="100%" stop-color="#785012"/>
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="128" fill="url(#bg)"/>

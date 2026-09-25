@@ -14,7 +14,7 @@ interface LogoAnimadaHarmoniaProps {
 const neonColors = ['#4A90E2', '#D4AF37', '#00FF9D', '#FF0055', '#B026FF', '#FFFFFF', '#38bdf8'];
 
 export const LogoAnimadaHarmonia: React.FC<LogoAnimadaHarmoniaProps> = ({ 
-  theme = 'cyber', 
+  theme = 'ouro', 
   width = 260, 
   height = 260,
   showText = true,

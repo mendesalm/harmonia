@@ -108,7 +108,7 @@ export const PaginaLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#0B0F19] relative overflow-hidden selection:bg-macaonico-cianoSigma selection:text-black z-0">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#050508] relative overflow-hidden selection:bg-macaonico-cianoSigma selection:text-black z-0">
       
       {/* Background Animado */}
       <HeroBackground />
@@ -116,7 +116,7 @@ export const PaginaLogin: React.FC = () => {
       <div className="w-full max-w-md relative z-10 animate-fade-in-up">
         
         {/* Cartão de Login - Estilo e-Sigma Glassmorphism */}
-        <div className="bg-[#131b29]/40 backdrop-blur-xl rounded-3xl p-8 sm:p-10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-white/10">
+        <div className="card-deep-blue-glass p-8 sm:p-10">
           
           {/* Logo e Título */}
           <div className="flex flex-col items-center text-center mb-8">
@@ -124,7 +124,7 @@ export const PaginaLogin: React.FC = () => {
               <LogoAnimadaHarmonia width={110} height={110} showText={false} animated={true} />
             </div>
 
-            <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-sky-600 tracking-wider font-sans flex items-center gap-2 drop-shadow-[0_0_10px_rgba(56,189,248,0.3)]">
+            <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FDE68A] via-[#DDB96B] to-[#B8862D] tracking-wider font-sans flex items-center gap-2 drop-shadow-[0_0_15px_rgba(221,185,107,0.35)]">
               HARMONIA
             </h1>
             <p className="text-sm text-slate-400 mt-2 font-sans">
@@ -150,15 +150,15 @@ export const PaginaLogin: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder=" "
-                  className="peer w-full bg-transparent border border-white/20 rounded-xl pl-12 pr-4 pt-5 pb-2 text-sm text-white focus:border-sky-400 outline-none transition-all focus:bg-white/5"
+                  className="peer w-full bg-transparent border border-white/20 rounded-xl pl-12 pr-4 pt-5 pb-2 text-sm text-white focus:border-[#DDB96B] outline-none transition-all focus:bg-white/5"
                 />
                 <label 
                   htmlFor="email"
-                  className="absolute left-12 top-1.5 text-[10px] text-slate-400 transition-all pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-focus:top-1.5 peer-focus:text-[10px] peer-focus:text-sky-400"
+                  className="absolute left-12 top-1.5 text-[10px] text-slate-400 transition-all pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-focus:top-1.5 peer-focus:text-[10px] peer-focus:text-[#FDE68A]"
                 >
                   CIM ou E-mail da Loja
                 </label>
-                <Mail className="w-5 h-5 text-slate-400 absolute left-4 top-3.5 peer-focus:text-sky-400 transition-colors" />
+                <Mail className="w-5 h-5 text-slate-400 absolute left-4 top-3.5 peer-focus:text-[#FDE68A] transition-colors" />
               </div>
             </div>
 
@@ -171,26 +171,26 @@ export const PaginaLogin: React.FC = () => {
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
                   placeholder=" "
-                  className="peer w-full bg-transparent border border-white/20 rounded-xl pl-12 pr-4 pt-5 pb-2 text-sm text-white focus:border-sky-400 outline-none transition-all focus:bg-white/5"
+                  className="peer w-full bg-transparent border border-white/20 rounded-xl pl-12 pr-4 pt-5 pb-2 text-sm text-white focus:border-[#DDB96B] outline-none transition-all focus:bg-white/5"
                 />
                 <label 
                   htmlFor="senha"
-                  className="absolute left-12 top-1.5 text-[10px] text-slate-400 transition-all pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-focus:top-1.5 peer-focus:text-[10px] peer-focus:text-sky-400"
+                  className="absolute left-12 top-1.5 text-[10px] text-slate-400 transition-all pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-focus:top-1.5 peer-focus:text-[10px] peer-focus:text-[#FDE68A]"
                 >
                   Senha
                 </label>
-                <Lock className="w-5 h-5 text-slate-400 absolute left-4 top-3.5 peer-focus:text-sky-400 transition-colors" />
+                <Lock className="w-5 h-5 text-slate-400 absolute left-4 top-3.5 peer-focus:text-[#FDE68A] transition-colors" />
               </div>
             </div>
 
             <div className="flex justify-end mb-2">
-              <a href="#" className="text-xs text-sky-400 hover:underline">Esqueci a senha</a>
+              <a href="#" className="text-xs text-[#DDB96B] hover:underline">Esqueci a senha</a>
             </div>
 
             <button
               type="submit"
               disabled={carregando}
-              className="w-full flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 text-white font-bold py-3.5 px-4 rounded-xl text-sm shadow-[0_4px_14px_rgba(56,189,248,0.39)] hover:shadow-[0_6px_20px_rgba(56,189,248,0.23)] transition-all cursor-pointer disabled:opacity-50 mt-4"
+              className="btn-masonic-pill btn-pill-blue w-full py-3.5 px-4 text-sm font-bold mt-4 cursor-pointer disabled:opacity-50"
             >
               {carregando ? (
                 <span>Autenticando...</span>
@@ -218,7 +218,7 @@ export const PaginaLogin: React.FC = () => {
 
           <div className="text-center">
             <p className="text-xs text-slate-400">
-              Não tem uma conta? <a href="#" className="text-sky-400 font-semibold hover:underline">Solicitar cadastro</a>
+              Não tem uma conta? <a href="#" className="text-[#DDB96B] font-semibold hover:underline">Solicitar cadastro</a>
             </p>
           </div>
 
