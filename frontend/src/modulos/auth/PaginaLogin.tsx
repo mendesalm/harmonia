@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Lock, Mail, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useAuth } from '../../compartilhado/contextos/ContextoAutenticacao';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
@@ -16,6 +16,8 @@ export const PaginaLogin: React.FC = () => {
 
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [lembrarMe, setLembrarMe] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -63,7 +65,6 @@ export const PaginaLogin: React.FC = () => {
     setCarregando(true);
 
     try {
-      // 1. Enviar credenciais para a API do e-Sigma informando modulo_origem
       const baseUrlIdp = import.meta.env.VITE_URL_IDENTIDADE || 'https://e-sigma.app';
       const respIdp = await fetch(`${baseUrlIdp}/api/auth/login`, {
         method: 'POST',
@@ -82,7 +83,6 @@ export const PaginaLogin: React.FC = () => {
       const { access_token } = await respIdp.json();
       localStorage.setItem('@harmonia:token', access_token);
       
-      // 2. Com o token em mãos, busca os detalhes do usuário no backend do Harmonia
       const respMe = await clienteHttp.get('/auth/me', {
         headers: { Authorization: `Bearer ${access_token}` }
       });
@@ -97,133 +97,141 @@ export const PaginaLogin: React.FC = () => {
     }
   };
 
-  const preencherCredencialRapida = (tipo: 'LOJA2181' | 'ADMIN') => {
-    if (tipo === 'LOJA2181') {
-      setEmail('loja2181@harmonia.sigma.app');
-      setSenha('harmonia@2026');
-    } else {
-      setEmail('sistema@e-sigma.app');
-      setSenha('harmonia@2026');
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#050508] relative overflow-hidden selection:bg-macaonico-cianoSigma selection:text-black z-0">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#050508] relative overflow-hidden z-0">
       
-      {/* Background Animado */}
-      <HeroBackground />
+      {/* Background Animado de Partículas idêntico ao e-Sigma */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <HeroBackground />
+      </div>
 
-      <div className="w-full max-w-md relative z-10 animate-fade-in-up">
+      <div className="w-full max-w-md relative z-10 my-auto py-6">
         
-        {/* Cartão de Login - Estilo e-Sigma Glassmorphism */}
-        <div className="card-deep-blue-glass p-8 sm:p-10">
+        {/* Cartão de Login - Glassmorphism Soberano Deep Blue Glass */}
+        <div className="card-deep-blue-glass p-8 sm:p-10 flex flex-col items-center">
           
-          {/* Logo e Título */}
-          <div className="flex flex-col items-center text-center mb-8">
-            <div id="hero-logo" className="mb-4">
-              <LogoAnimadaHarmonia width={110} height={110} showText={false} animated={true} />
+          {/* Logo e Título Padronizados como Clone Visual do e-Sigma */}
+          <div className="flex flex-col items-center text-center mb-6">
+            <div id="hero-logo" className="mb-2 flex justify-center">
+              <LogoAnimadaHarmonia width={100} height={100} showText={false} animated={true} />
             </div>
 
-            <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FDE68A] via-[#DDB96B] to-[#B8862D] tracking-wider font-sans flex items-center gap-2 drop-shadow-[0_0_15px_rgba(221,185,107,0.35)]">
-              HARMONIA
-            </h1>
-            <p className="text-sm text-slate-400 mt-2 font-sans">
+            <h1 className="text-3xl font-bold tracking-wider font-sans text-transparent bg-clip-text bg-gradient-to-r from-[#FDE68A] via-[#DDB96B] to-[#B8862D] drop-shadow-[0_0_10px_rgba(221,185,107,0.35)]">
               Acesso Restrito
+            </h1>
+            <p className="text-sm text-slate-400 mt-1 font-sans">
+              Insira suas credenciais para continuar
             </p>
           </div>
 
           {/* Alerta de Erro */}
           {erro && (
-            <div className="mb-6 p-3.5 rounded-xl bg-red-500/15 border border-red-500/30 text-xs text-red-200 text-center animate-shake">
+            <div className="w-full mb-5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-200 text-center">
               {erro}
             </div>
           )}
 
-          {/* Formulário */}
-          <form onSubmit={handleLogin} className="space-y-4">
+          {/* Formulário Principal */}
+          <form onSubmit={handleLogin} className="w-full space-y-4">
             <div>
-              <div className="relative">
-                <input
-                  type="email"
-                  id="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder=" "
-                  className="peer w-full bg-transparent border border-white/20 rounded-xl pl-12 pr-4 pt-5 pb-2 text-sm text-white focus:border-[#DDB96B] outline-none transition-all focus:bg-white/5"
-                />
-                <label 
-                  htmlFor="email"
-                  className="absolute left-12 top-1.5 text-[10px] text-slate-400 transition-all pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-focus:top-1.5 peer-focus:text-[10px] peer-focus:text-[#FDE68A]"
-                >
-                  CIM ou E-mail da Loja
-                </label>
-                <Mail className="w-5 h-5 text-slate-400 absolute left-4 top-3.5 peer-focus:text-[#FDE68A] transition-colors" />
-              </div>
+              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                E-mail ou CIM
+              </label>
+              <input
+                type="text"
+                id="email"
+                autoComplete="username"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Insira seu e-mail ou CIM"
+                className="w-full bg-[#0a1428]/60 border border-white/15 focus:border-[#DDB96B] rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#DDB96B]/50"
+              />
             </div>
 
             <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                Senha
+              </label>
               <div className="relative">
                 <input
-                  type="password"
+                  type={mostrarSenha ? 'text' : 'password'}
                   id="senha"
                   required
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
-                  placeholder=" "
-                  className="peer w-full bg-transparent border border-white/20 rounded-xl pl-12 pr-4 pt-5 pb-2 text-sm text-white focus:border-[#DDB96B] outline-none transition-all focus:bg-white/5"
+                  placeholder="Insira sua senha"
+                  className="w-full bg-[#0a1428]/60 border border-white/15 focus:border-[#DDB96B] rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-slate-500 outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#DDB96B]/50"
                 />
-                <label 
-                  htmlFor="senha"
-                  className="absolute left-12 top-1.5 text-[10px] text-slate-400 transition-all pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-focus:top-1.5 peer-focus:text-[10px] peer-focus:text-[#FDE68A]"
+                <button
+                  type="button"
+                  onClick={() => setMostrarSenha(!mostrarSenha)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                  aria-label="Alternar visibilidade da senha"
                 >
-                  Senha
-                </label>
-                <Lock className="w-5 h-5 text-slate-400 absolute left-4 top-3.5 peer-focus:text-[#FDE68A] transition-colors" />
+                  {mostrarSenha ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                </button>
               </div>
             </div>
 
-            <div className="flex justify-end mb-2">
-              <a href="#" className="text-xs text-[#DDB96B] hover:underline">Esqueci a senha</a>
+            {/* Linha Lembrar-me e Esqueci a Senha */}
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-400 hover:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={lembrarMe}
+                  onChange={(e) => setLembrarMe(e.target.checked)}
+                  className="rounded border-slate-700 text-[#DDB96B] focus:ring-[#DDB96B] bg-[#0a1428]"
+                />
+                <span>Lembrar-me</span>
+              </label>
+              <a href="#" className="text-xs text-[#DDB96B] hover:underline">
+                Esqueci a senha
+              </a>
             </div>
 
+            {/* Botão de Submissão no estilo Pill Oficial */}
             <button
               type="submit"
               disabled={carregando}
-              className="btn-masonic-pill btn-pill-blue w-full py-3.5 px-4 text-sm font-bold mt-4 cursor-pointer disabled:opacity-50"
+              className="btn-masonic-pill btn-pill-blue w-full py-3.5 px-4 text-base font-semibold mt-4 cursor-pointer disabled:opacity-50"
             >
-              {carregando ? (
-                <span>Autenticando...</span>
-              ) : (
-                <span>Entrar</span>
-              )}
+              {carregando ? 'Autenticando...' : 'Entrar'}
             </button>
+
+            {/* Divisor "ou" */}
+            <div className="flex items-center my-5 w-full">
+              <div className="flex-1 h-px bg-white/10"></div>
+              <span className="px-3 text-xs text-slate-400">ou</span>
+              <div className="flex-1 h-px bg-white/10"></div>
+            </div>
+
+            {/* Google Login */}
+            <div className="flex justify-center mb-4 w-full">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setErro('Ocorreu um erro ao tentar fazer login com o Google')}
+                theme="filled_black"
+                text="continue_with"
+                width="100%"
+              />
+            </div>
+
+            {/* Links Auxiliares no Rodapé */}
+            <div className="text-center pt-2">
+              <p className="text-xs text-slate-400">
+                Não tem uma conta?{' '}
+                <a href="https://e-sigma.app/register" className="text-[#DDB96B] font-semibold hover:underline">
+                  Solicitar cadastro
+                </a>
+              </p>
+            </div>
           </form>
-
-          <div className="flex items-center my-6">
-            <div className="flex-1 h-px bg-white/10"></div>
-            <span className="px-4 text-xs text-slate-500">ou</span>
-            <div className="flex-1 h-px bg-white/10"></div>
-          </div>
-
-          <div className="flex justify-center mb-6">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => setErro('Ocorreu um erro ao tentar fazer login com o Google')}
-              theme="filled_black"
-              text="continue_with"
-              width="100%"
-            />
-          </div>
-
-          <div className="text-center">
-            <p className="text-xs text-slate-400">
-              Não tem uma conta? <a href="#" className="text-[#DDB96B] font-semibold hover:underline">Solicitar cadastro</a>
-            </p>
-          </div>
 
         </div>
       </div>
     </div>
   );
 };
+
+export default PaginaLogin;
