@@ -9,11 +9,34 @@
     font-family: 'Inter', sans-serif;
     overflow-x: hidden;
     touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
   }
   
   h1, h2, h3, .fonte-ritual {
     font-family: 'Cinzel', serif;
   }
+
+  @media screen and (max-width: 768px) {
+    input, select, textarea {
+      font-size: 16px !important;
+    }
+  }
+
+  button, a, input, select, textarea, [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+.pt-safe {
+  padding-top: max(1rem, env(safe-area-inset-top, 0px));
+}
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* ========================================================

@@ -6,6 +6,8 @@ import { useAuth } from '../contextos/ContextoAutenticacao';
 export const Navbar: React.FC = () => {
   const { usuario, logout } = useAuth();
   
+  if (!usuario) return null;
+  
   const temAcessoFinanceiro = usuario?.permissoes?.includes('mestre_harmonia') || usuario?.permissoes?.includes('super_admin') || usuario?.role === 'super_admin';
   const linksMestre = [
     { to: '/', label: 'Player', icon: PlayCircle },
@@ -26,7 +28,7 @@ export const Navbar: React.FC = () => {
   const links = usuario?.tipo === 'ADMIN' ? linksAdmin : linksMestre;
 
   return (
-    <nav className="relative z-50 w-full h-16 bg-[#070e1c]/95 backdrop-blur-md border-t border-[rgba(221,185,107,0.2)] flex items-center justify-around px-2 shadow-[0_-10px_20px_rgba(0,0,0,0.8)] shrink-0">
+    <nav className="relative z-50 w-full min-h-[4rem] pb-safe bg-[#070e1c]/95 backdrop-blur-md border-t border-[rgba(221,185,107,0.2)] flex items-center justify-around px-2 shadow-[0_-10px_20px_rgba(0,0,0,0.8)] shrink-0">
       
       {links.map((link) => {
         const Icon = link.icon;
