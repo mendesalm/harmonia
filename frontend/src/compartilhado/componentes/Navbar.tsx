@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { PlayCircle, Library, LayoutTemplate, KeyRound, LogOut, Settings } from 'lucide-react';
+import { PlayCircle, Library, LayoutTemplate, KeyRound, LogOut, Settings, Download } from 'lucide-react';
 import { useAuth } from '../contextos/ContextoAutenticacao';
+import { usePwaInstall } from '../hooks/usePwaInstall';
 
 export const Navbar: React.FC = () => {
   const { usuario, logout } = useAuth();
+  const { podeInstalar, dispararInstalacao } = usePwaInstall();
   
   if (!usuario) return null;
   
@@ -62,6 +64,19 @@ export const Navbar: React.FC = () => {
           </NavLink>
         );
       })}
+
+      {podeInstalar && (
+        <button 
+          onClick={dispararInstalacao}
+          className="flex flex-col items-center justify-center w-20 h-full text-macaonico-dourado hover:text-yellow-300 transition-all animate-pulse"
+          title="Instalar Aplicativo Harmonia"
+        >
+          <Download size={22} strokeWidth={1.5} className="mb-1" />
+          <span className="text-[9px] font-cinzel uppercase tracking-wider font-bold">
+            Instalar
+          </span>
+        </button>
+      )}
 
       {/* Settings / Profile Toggle */}
       <button 
