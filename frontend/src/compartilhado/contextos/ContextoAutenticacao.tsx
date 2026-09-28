@@ -40,7 +40,21 @@ export const ProvedorAutenticacao: React.FC<{ children: React.ReactNode }> = ({ 
     });
 
     const validarSessao = async () => {
-      const tokenSalvo = localStorage.getItem('@harmonia:token');
+      // 0. SSO via URL query (?sso_token=... ou ?token=...) vindo do Hub e-Sigma
+      let tokenSalvo = localStorage.getItem('@harmonia:token');
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const urlToken = params.get('sso_token') || params.get('token');
+        if (urlToken) {
+          tokenSalvo = urlToken;
+          localStorage.setItem('@harmonia:token', urlToken);
+          params.delete('sso_token');
+          params.delete('token');
+          const remainingQuery = params.toString() ? `?${params.toString()}` : '';
+          window.history.replaceState({}, document.title, `${window.location.pathname}${remainingQuery}`);
+        }
+      }
+
       if (!tokenSalvo) {
         setCarregando(false);
         return;
