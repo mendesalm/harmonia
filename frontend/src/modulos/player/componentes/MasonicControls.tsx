@@ -1,5 +1,6 @@
 import React from 'react';
 import { Play, Pause, SkipBack, SkipForward, Rewind, FastForward } from 'lucide-react';
+import { feedbackTatil } from '../../../compartilhado/utilitarios/dispositivoNativo';
 
 interface MasonicControlsProps {
   tocando: boolean;
@@ -56,7 +57,10 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
         {/* Left Wing (Previous) */}
         <div className="absolute left-0 w-[45%] h-14 bg-macaonico-surface rounded-l-full border border-macaonico-inactive/50 flex items-center justify-between px-5 pr-12 z-0 shadow-[inset_0_0_15px_rgba(212,175,55,0.05)]">
           <button 
-            onClick={onPrevMoment}
+            onClick={() => {
+              feedbackTatil.clique();
+              onPrevMoment();
+            }}
             className="text-macaonico-dourado/80 hover:text-macaonico-dourado transition-colors flex flex-col items-center active:scale-95"
           >
             <Rewind size={22} fill="currentColor" />
@@ -64,7 +68,10 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
           </button>
           
           <button 
-            onClick={onPrevTrack}
+            onClick={() => {
+              feedbackTatil.clique();
+              onPrevTrack();
+            }}
             className="text-macaonico-dourado/80 hover:text-macaonico-dourado transition-colors flex flex-col items-center active:scale-95"
           >
             <SkipBack size={22} fill="currentColor" />
@@ -75,7 +82,10 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
         {/* Right Wing (Next) */}
         <div className="absolute right-0 w-[45%] h-14 bg-macaonico-surface rounded-r-full border border-macaonico-inactive/50 flex items-center justify-between px-5 pl-12 z-0 shadow-[inset_0_0_15px_rgba(212,175,55,0.05)]">
           <button 
-            onClick={onNextTrack}
+            onClick={() => {
+              feedbackTatil.clique();
+              onNextTrack();
+            }}
             className="text-macaonico-dourado/80 hover:text-macaonico-dourado transition-colors flex flex-col items-center active:scale-95"
           >
             <SkipForward size={22} fill="currentColor" />
@@ -83,7 +93,10 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
           </button>
 
           <button 
-            onClick={onNextMoment}
+            onClick={() => {
+              feedbackTatil.clique();
+              onNextMoment();
+            }}
             className="text-macaonico-dourado/80 hover:text-macaonico-dourado transition-colors flex flex-col items-center active:scale-95"
           >
             <FastForward size={22} fill="currentColor" />
@@ -93,7 +106,10 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
 
         {/* Center Play Button */}
         <button 
-          onClick={onPlayPause}
+          onClick={() => {
+            feedbackTatil.acaoMedia();
+            onPlayPause();
+          }}
           className={`relative z-10 w-28 h-28 rounded-full border-2 flex flex-col items-center justify-center transition-all duration-300 active:scale-95
             ${tocando 
               ? 'bg-[#151515] border-macaonico-dourado shadow-[0_0_30px_rgba(212,175,55,0.25)]' 
