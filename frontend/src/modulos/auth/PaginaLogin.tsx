@@ -213,7 +213,7 @@ export const PaginaLogin: React.FC = () => {
                 onError={() => setErro('Ocorreu um erro ao tentar fazer login com o Google')}
                 theme="filled_black"
                 text="continue_with"
-                width="100%"
+                width="380"
               />
             </div>
 
