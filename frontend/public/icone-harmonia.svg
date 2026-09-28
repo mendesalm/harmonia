@@ -11,8 +11,7 @@
       <stop offset="70%" stop-color="#B8862D"/>
       <stop offset="100%" stop-color="#785012"/>
     </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="128" fill="url(#bg)"/>
+  <rect width="512" height="512" fill="url(#bg)"/>
   <circle cx="256" cy="256" r="180" stroke="url(#gold)" stroke-width="8" fill="none" opacity="0.3"/>
   <!-- Clave de Sol estilizada / Volume -->
   <path d="M220 340 A40 40 0 1 1 260 300 L260 140 L340 120 L340 200 A30 30 0 1 1 310 170" fill="url(#gold)"/>
