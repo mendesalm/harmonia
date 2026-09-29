@@ -206,12 +206,13 @@ export const PaginaLogin: React.FC = () => {
               <div className="flex-1 h-px bg-white/10"></div>
             </div>
 
-            {/* Google Login */}
-            <div className="flex justify-center mb-4 w-full">
+            {/* Google Login Restilizado */}
+            <div className="flex justify-center mb-4 w-full h-[46px] rounded-full overflow-hidden border border-white/10 hover:border-white/30 transition-all opacity-90 hover:opacity-100">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={() => setErro('Ocorreu um erro ao tentar fazer login com o Google')}
                 theme="filled_black"
+                shape="pill"
                 text="continue_with"
                 width="380"
               />
