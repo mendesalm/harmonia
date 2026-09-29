@@ -29,7 +29,7 @@ export const PaginaLogin: React.FC = () => {
     setCarregando(true);
     try {
       const baseUrlIdp = import.meta.env.VITE_URL_IDENTIDADE || 'https://e-sigma.app';
-      const respIdp = await fetch(`${baseUrlIdp}/api/auth/google`, {
+      const respIdp = await fetch(`${baseUrlIdp}/api/v1/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -66,7 +66,7 @@ export const PaginaLogin: React.FC = () => {
 
     try {
       const baseUrlIdp = import.meta.env.VITE_URL_IDENTIDADE || 'https://e-sigma.app';
-      const respIdp = await fetch(`${baseUrlIdp}/api/auth/login`, {
+      const respIdp = await fetch(`${baseUrlIdp}/api/v1/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

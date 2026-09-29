@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Organizacao } from '../tipos';
+import axios from 'axios';
 import clienteHttp from '../api/cliente_http';
 
 interface ContextoTenantTipo {
@@ -20,7 +21,8 @@ export const ProvedorTenant: React.FC<{ children: React.ReactNode }> = ({ childr
   const carregarLojas = async () => {
     try {
       setCarregando(true);
-      const resp = await clienteHttp.get<Organizacao[]>('/organizacoes');
+      const baseUrlIdp = import.meta.env.VITE_URL_IDENTIDADE || 'https://e-sigma.app';
+      const resp = await axios.get<Organizacao[]>(`${baseUrlIdp}/api/v1/organizacoes`);
       setLojas(resp.data);
 
       if (resp.data.length > 0) {
