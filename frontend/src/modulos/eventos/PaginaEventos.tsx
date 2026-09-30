@@ -200,7 +200,7 @@ export const PaginaEventos: React.FC = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-1.5">
                       {ev.padrao_sistema ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md bg-sigma-gold text-[#070F1E] shadow-sm text-amber-300 border border-amber-500/30">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md bg-sigma-elevated border border-sigma-border text-amber-300 border border-amber-500/30">
                           <ShieldCheck className="w-3 h-3" /> Padrão Maçônico
                         </span>
                       ) : (
