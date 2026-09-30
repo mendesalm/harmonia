@@ -141,7 +141,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
          </div>
          
          <div 
-            className="relative w-full h-1.5 bg-[#1a1a1a] rounded-full cursor-pointer overflow-hidden border border-white/5"
+            className="relative w-full h-1.5 bg-sigma-elevated rounded-full cursor-pointer overflow-hidden border border-white/5"
             onClick={(e) => {
               if (duracaoTotal <= 0) return;
               const rect = e.currentTarget.getBoundingClientRect();

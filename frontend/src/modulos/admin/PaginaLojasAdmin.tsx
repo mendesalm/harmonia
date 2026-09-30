@@ -34,7 +34,7 @@ export const PaginaLojasAdmin: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-full overflow-y-auto p-4 md:p-8 bg-[#080808]">
+    <div className="h-full overflow-y-auto p-4 md:p-8 bg-sigma-bg">
       <div className="max-w-7xl mx-auto space-y-6">
         
         <header className="flex items-center justify-between border-b border-gray-800 pb-6 pt-4">
@@ -63,7 +63,7 @@ export const PaginaLojasAdmin: React.FC = () => {
           </button>
         </header>
 
-        <section className="bg-[#111111] border border-gray-800 rounded-2xl overflow-hidden">
+        <section className="bg-sigma-surface border border-gray-800 rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>

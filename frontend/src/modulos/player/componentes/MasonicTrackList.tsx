@@ -56,7 +56,7 @@ export const MasonicTrackList: React.FC<MasonicTrackListProps> = ({
                 className={`
                   relative h-[84px] mb-3 rounded-lg flex items-center px-6 transition-all duration-300 cursor-pointer w-full
                   ${isAtivo 
-                    ? 'bg-black border-[1.5px] border-macaonico-dourado shadow-[0_0_18px_rgba(212,175,55,0.25)] z-10' 
+                    ? 'bg-sigma-bg border-[1.5px] border-macaonico-dourado shadow-[0_0_18px_rgba(212,175,55,0.25)] z-10' 
                     : 'bg-transparent border border-transparent hover:bg-white/5 z-0 opacity-70 hover:opacity-100'
                   }
                 `}

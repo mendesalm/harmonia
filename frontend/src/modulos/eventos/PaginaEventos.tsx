@@ -283,7 +283,7 @@ export const PaginaEventos: React.FC = () => {
 
       {/* Modal de Criação / Edição */}
       {modalAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sigma-bg/70 backdrop-blur-sm">
           <div className="vidro-destaque rounded-3xl w-full max-w-lg p-6 animate-in fade-in zoom-in-95 duration-200">
             <h2 className="text-xl font-bold text-white fonte-ritual mb-4">
               {eventoEmEdicao ? 'Editar Evento Ritualístico' : 'Novo Evento Ritualístico'}

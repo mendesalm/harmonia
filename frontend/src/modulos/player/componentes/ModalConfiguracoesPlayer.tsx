@@ -22,7 +22,7 @@ export const ModalConfiguracoesPlayer: React.FC<Props> = ({
   if (!aberto) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sigma-bg/80 backdrop-blur-md animate-fadeIn">
       <div className="relative w-full max-w-lg bg-[#060e1d] border border-cyan-500/40 rounded-3xl p-5 shadow-[0_0_50px_rgba(0,229,255,0.25)] text-slate-100 flex flex-col gap-4">
         
         {/* Header do Modal */}

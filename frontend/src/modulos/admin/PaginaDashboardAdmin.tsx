@@ -61,7 +61,7 @@ export const PaginaDashboardAdmin: React.FC = () => {
   ];
 
   return (
-    <div className="h-full overflow-y-auto p-4 md:p-8 bg-[#080808]">
+    <div className="h-full overflow-y-auto p-4 md:p-8 bg-sigma-bg">
       <div className="max-w-7xl mx-auto space-y-8">
         
         <header className="flex flex-col gap-2 border-b border-gray-800 pb-6 pt-4">
@@ -80,7 +80,7 @@ export const PaginaDashboardAdmin: React.FC = () => {
               className={`cursor-pointer border ${stat.corBorda} ${stat.corBg} rounded-2xl p-6 transition-all hover:scale-[1.02] hover:shadow-lg group relative overflow-hidden`}
             >
               <div className="flex items-start justify-between mb-4 relative z-10">
-                <div className="p-3 bg-[#111111] rounded-xl shadow-inner">
+                <div className="p-3 bg-sigma-surface rounded-xl shadow-inner">
                   {stat.icone}
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors" />
@@ -96,7 +96,7 @@ export const PaginaDashboardAdmin: React.FC = () => {
           ))}
         </section>
 
-        <section className="bg-[#111] border border-gray-800 rounded-2xl p-6 h-64 flex items-center justify-center">
+        <section className="bg-sigma-surface border border-gray-800 rounded-2xl p-6 h-64 flex items-center justify-center">
           <div className="text-center text-gray-500">
             <Activity className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p>Gráficos de uso do Player aparecerão aqui em breve.</p>

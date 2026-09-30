@@ -182,8 +182,8 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-[#111111] border border-gray-800 rounded-2xl w-full max-w-3xl h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-sigma-bg/80 backdrop-blur-sm">
+      <div className="bg-sigma-surface border border-gray-800 rounded-2xl w-full max-w-3xl h-[85vh] flex flex-col shadow-2xl overflow-hidden">
         
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-800 bg-[#161616]">
@@ -221,7 +221,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 bg-[#080808]">
+        <div className="flex-1 overflow-y-auto p-6 bg-sigma-bg">
           {carregando ? (
             <div className="flex h-full items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
@@ -238,7 +238,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                       type="text" 
                       value={formData.nome}
                       onChange={e => setFormData({...formData, nome: e.target.value})}
-                      className="w-full bg-[#111111] border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-macaonico-dourado transition-colors"
+                      className="w-full bg-sigma-surface border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-macaonico-dourado transition-colors"
                       placeholder="Ex: Entrada do Cortejo"
                     />
                   </div>
@@ -248,7 +248,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                       type="number" 
                       value={formData.ordem_sugerida}
                       onChange={e => setFormData({...formData, ordem_sugerida: parseInt(e.target.value) || 0})}
-                      className="w-full bg-[#111111] border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-macaonico-dourado transition-colors"
+                      className="w-full bg-sigma-surface border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-macaonico-dourado transition-colors"
                       placeholder="Ex: 10, 20, 150..."
                     />
                   </div>
@@ -257,7 +257,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                     <select 
                       value={formData.grau_aplicado}
                       onChange={e => setFormData({...formData, grau_aplicado: parseInt(e.target.value) || 0})}
-                      className="w-full bg-[#111111] border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-macaonico-dourado transition-colors"
+                      className="w-full bg-sigma-surface border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-macaonico-dourado transition-colors"
                     >
                       <option value={0}>0 - Universal (Qualquer Grau)</option>
                       <option value={1}>1 - Aprendiz Maçom</option>
@@ -270,7 +270,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                     <textarea 
                       value={formData.descricao}
                       onChange={e => setFormData({...formData, descricao: e.target.value})}
-                      className="w-full bg-[#111111] border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-macaonico-dourado transition-colors h-24"
+                      className="w-full bg-sigma-surface border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-macaonico-dourado transition-colors h-24"
                     />
                   </div>
                   <div>
@@ -278,7 +278,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                     <textarea 
                       value={formData.orientacao}
                       onChange={e => setFormData({...formData, orientacao: e.target.value})}
-                      className="w-full bg-[#111111] border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-macaonico-dourado transition-colors h-24"
+                      className="w-full bg-sigma-surface border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-macaonico-dourado transition-colors h-24"
                       placeholder="Ex: A música deve estar em surdina."
                     />
                   </div>
@@ -293,7 +293,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                   </div>
                   
                   {formData.ritos.map((vr, idx) => (
-                    <div key={idx} className="bg-[#111111] border border-gray-800 p-4 rounded-xl space-y-4 relative group">
+                    <div key={idx} className="bg-sigma-surface border border-gray-800 p-4 rounded-xl space-y-4 relative group">
                       <button 
                         onClick={() => removeVariacaoRito(idx)}
                         className="absolute top-4 right-4 text-gray-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
@@ -307,7 +307,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                           <select 
                             value={vr.rito_id}
                             onChange={e => updateVariacaoRito(idx, 'rito_id', e.target.value)}
-                            className="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-sm text-white"
+                            className="w-full bg-sigma-bg border border-gray-700 rounded-lg px-3 py-2 text-sm text-white"
                           >
                             {ritos.map(r => <option key={r.id} value={r.id}>{r.nome}</option>)}
                           </select>
@@ -318,7 +318,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                             type="text" 
                             value={vr.nome}
                             onChange={e => updateVariacaoRito(idx, 'nome', e.target.value)}
-                            className="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-sm text-white"
+                            className="w-full bg-sigma-bg border border-gray-700 rounded-lg px-3 py-2 text-sm text-white"
                           />
                         </div>
                       </div>
@@ -327,7 +327,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                         <textarea 
                           value={vr.observacao_padrao_mestre_harmonia}
                           onChange={e => updateVariacaoRito(idx, 'observacao_padrao_mestre_harmonia', e.target.value)}
-                          className="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-sm text-white h-16"
+                          className="w-full bg-sigma-bg border border-gray-700 rounded-lg px-3 py-2 text-sm text-white h-16"
                         />
                       </div>
                     </div>
@@ -360,7 +360,7 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                       </div>
 
                       {formData.musicas_sugeridas_ids.length === 0 ? (
-                        <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-gray-800 rounded-xl bg-[#111111]">
+                        <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-gray-800 rounded-xl bg-sigma-surface">
                           <Music className="w-12 h-12 text-gray-600 mb-4" />
                           <p className="text-gray-400 mb-4">Nenhuma música vinculada a este evento ainda.</p>
                           <button 
@@ -371,11 +371,11 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                           </button>
                         </div>
                       ) : (
-                        <div className="flex-1 overflow-y-auto space-y-2 bg-[#111111] border border-gray-800 rounded-xl p-4">
+                        <div className="flex-1 overflow-y-auto space-y-2 bg-sigma-surface border border-gray-800 rounded-xl p-4">
                           {musicasAcervo
                             .filter(m => formData.musicas_sugeridas_ids.includes(m.id))
                             .map(musica => (
-                              <div key={musica.id} className="flex items-center justify-between p-3 bg-black/40 rounded-lg border border-gray-800 hover:border-gray-600 transition-colors">
+                              <div key={musica.id} className="flex items-center justify-between p-3 bg-sigma-bg/40 rounded-lg border border-gray-800 hover:border-gray-600 transition-colors">
                                 <div className="flex items-center gap-3">
                                   <Music className="w-5 h-5 text-macaonico-dourado" />
                                   <div className="flex flex-col">
@@ -428,14 +428,14 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                         </div>
                       </div>
                       
-                      <div className="bg-[#111111] border border-gray-800 rounded-xl p-4 flex flex-col flex-1">
+                      <div className="bg-sigma-surface border border-gray-800 rounded-xl p-4 flex flex-col flex-1">
                         <div className="mb-4">
                           <input 
                             type="text" 
                             placeholder="Buscar música no Acervo..." 
                             value={buscaMusica}
                             onChange={(e) => setBuscaMusica(e.target.value)}
-                            className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-macaonico-dourado transition-colors"
+                            className="w-full bg-sigma-bg border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-macaonico-dourado transition-colors"
                           />
                         </div>
                         
@@ -444,11 +444,11 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
                             .filter(m => !m.autor_artista?.includes('Loja'))
                             .filter(m => m.titulo.toLowerCase().includes(buscaMusica.toLowerCase()) || m.autor_artista?.toLowerCase().includes(buscaMusica.toLowerCase()))
                             .map(musica => (
-                            <div key={musica.id} className="flex items-center justify-between p-2 hover:bg-black/50 rounded-lg border border-transparent hover:border-gray-800 transition-colors">
+                            <div key={musica.id} className="flex items-center justify-between p-2 hover:bg-sigma-bg/50 rounded-lg border border-transparent hover:border-gray-800 transition-colors">
                               <label className="flex items-center gap-3 cursor-pointer flex-1">
                                 <input 
                                   type="checkbox"
-                                  className="w-4 h-4 rounded border-gray-600 text-macaonico-dourado focus:ring-macaonico-dourado bg-black"
+                                  className="w-4 h-4 rounded border-gray-600 text-macaonico-dourado focus:ring-macaonico-dourado bg-sigma-bg"
                                   checked={formData.musicas_sugeridas_ids.includes(musica.id)}
                                   onChange={(e) => {
                                     if(e.target.checked) {

@@ -40,7 +40,7 @@ export const PaginaDashboard: React.FC = () => {
         </h1>
 
         {/* SEÇÃO 1: Informações do Assinante */}
-        <section className="bg-black/60 backdrop-blur-md border border-macaonico-dourado/30 rounded-xl p-6 shadow-2xl">
+        <section className="bg-sigma-bg/60 backdrop-blur-md border border-macaonico-dourado/30 rounded-xl p-6 shadow-2xl">
           <h2 className="text-xl font-bold text-macaonico-dourado mb-4 border-b border-macaonico-dourado/20 pb-2 font-cinzel">Informações da Loja</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -70,12 +70,12 @@ export const PaginaDashboard: React.FC = () => {
         </section>
 
         {/* SEÇÃO 2: Cadastros */}
-        <section className="bg-black/60 backdrop-blur-md border border-macaonico-dourado/30 rounded-xl p-6 shadow-2xl">
+        <section className="bg-sigma-bg/60 backdrop-blur-md border border-macaonico-dourado/30 rounded-xl p-6 shadow-2xl">
           <h2 className="text-xl font-bold text-macaonico-dourado mb-4 border-b border-macaonico-dourado/20 pb-2 font-cinzel">Cadastros Operacionais</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button 
               onClick={() => navigate('/musicas')}
-              className="flex flex-col items-center justify-center gap-3 bg-gray-900/50 hover:bg-black/80 border border-gray-800 rounded-xl p-6 transition-all hover:border-macaonico-dourado hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] group z-20"
+              className="flex flex-col items-center justify-center gap-3 bg-gray-900/50 hover:bg-sigma-bg/80 border border-gray-800 rounded-xl p-6 transition-all hover:border-macaonico-dourado hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] group z-20"
             >
               <Music className="w-10 h-10 text-macaonico-dourado group-hover:scale-110 transition-transform" />
               <span className="font-semibold text-white tracking-wide">Acervo de Músicas</span>
@@ -83,7 +83,7 @@ export const PaginaDashboard: React.FC = () => {
             
             <button 
               onClick={() => navigate('/sessoes')}
-              className="flex flex-col items-center justify-center gap-3 bg-gray-900/50 hover:bg-black/80 border border-gray-800 rounded-xl p-6 transition-all hover:border-macaonico-dourado hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] group z-20"
+              className="flex flex-col items-center justify-center gap-3 bg-gray-900/50 hover:bg-sigma-bg/80 border border-gray-800 rounded-xl p-6 transition-all hover:border-macaonico-dourado hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] group z-20"
             >
               <ListOrdered className="w-10 h-10 text-macaonico-dourado group-hover:scale-110 transition-transform" />
               <span className="font-semibold text-white tracking-wide">Sessões / Roteiros</span>
@@ -91,7 +91,7 @@ export const PaginaDashboard: React.FC = () => {
 
             <button 
               onClick={() => navigate('/eventos')}
-              className="flex flex-col items-center justify-center gap-3 bg-gray-900/50 hover:bg-black/80 border border-gray-800 rounded-xl p-6 transition-all hover:border-macaonico-dourado hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] group z-20"
+              className="flex flex-col items-center justify-center gap-3 bg-gray-900/50 hover:bg-sigma-bg/80 border border-gray-800 rounded-xl p-6 transition-all hover:border-macaonico-dourado hover:shadow-[0_0_15px_rgba(212,175,55,0.3)] group z-20"
             >
               <CalendarHeart className="w-10 h-10 text-macaonico-dourado group-hover:scale-110 transition-transform" />
               <span className="font-semibold text-white tracking-wide">Eventos Ritualísticos</span>

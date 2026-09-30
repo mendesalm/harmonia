@@ -299,7 +299,7 @@ export const PaginaMusicas: React.FC = () => {
 
       {/* Modal de Prévia de Streaming (YouTube / Spotify) */}
       {musicaStreamingPrevia && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sigma-bg/80 backdrop-blur-md">
           <div className="vidro-destaque rounded-3xl w-full max-w-xl p-6 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
               <div>
@@ -319,7 +319,7 @@ export const PaginaMusicas: React.FC = () => {
             </div>
 
             {musicaStreamingPrevia.tipo_midia === 'YOUTUBE' && (
-              <div className="rounded-2xl overflow-hidden aspect-video bg-black/80 shadow-2xl mb-4 border border-white/10">
+              <div className="rounded-2xl overflow-hidden aspect-video bg-sigma-bg/80 shadow-2xl mb-4 border border-white/10">
                 <iframe
                   title={musicaStreamingPrevia.titulo}
                   src={`https://www.youtube.com/embed/${extrairIdYoutube(musicaStreamingPrevia.link_externo)}?autoplay=1&rel=0`}
@@ -375,7 +375,7 @@ export const PaginaMusicas: React.FC = () => {
       )}
 
       {musicaEmEdicao && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-sigma-bg/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#161616] border border-gray-800 p-6 rounded-2xl shadow-xl w-full max-w-md">
             <h2 className="text-xl font-bold text-white mb-4">Editar Música</h2>
             <div className="space-y-4">
@@ -385,7 +385,7 @@ export const PaginaMusicas: React.FC = () => {
                   type="text"
                   value={tituloEdit}
                   onChange={(e) => setTituloEdit(e.target.value)}
-                  className="w-full bg-black border border-gray-700 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-macaonico-cianoSigma"
+                  className="w-full bg-sigma-bg border border-gray-700 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-macaonico-cianoSigma"
                 />
               </div>
               <div>
@@ -394,7 +394,7 @@ export const PaginaMusicas: React.FC = () => {
                   type="text"
                   value={autorEdit}
                   onChange={(e) => setAutorEdit(e.target.value)}
-                  className="w-full bg-black border border-gray-700 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-macaonico-cianoSigma"
+                  className="w-full bg-sigma-bg border border-gray-700 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-macaonico-cianoSigma"
                 />
               </div>
             </div>

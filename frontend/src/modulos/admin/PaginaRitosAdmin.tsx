@@ -34,7 +34,7 @@ export const PaginaRitosAdmin: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-full overflow-y-auto p-4 md:p-8 bg-[#080808]">
+    <div className="h-full overflow-y-auto p-4 md:p-8 bg-sigma-bg">
       <div className="max-w-7xl mx-auto space-y-6">
         
         <header className="flex items-center justify-between border-b border-gray-800 pb-6 pt-4">
@@ -63,7 +63,7 @@ export const PaginaRitosAdmin: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {ritos.map(rito => (
-              <div key={rito.id} className="bg-[#111111] border border-gray-800 rounded-2xl p-6 hover:border-gray-700 transition-colors">
+              <div key={rito.id} className="bg-sigma-surface border border-gray-800 rounded-2xl p-6 hover:border-gray-700 transition-colors">
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h2 className="text-xl font-bold text-white mb-1">{rito.nome}</h2>
@@ -86,7 +86,7 @@ export const PaginaRitosAdmin: React.FC = () => {
                   ) : (
                     <ul className="space-y-2">
                       {rito.tipos_sessao.map(sessao => (
-                        <li key={sessao.id} className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-gray-800/50">
+                        <li key={sessao.id} className="flex justify-between items-center bg-sigma-bg/40 p-3 rounded-lg border border-gray-800/50">
                           <div>
                             <span className="font-medium text-gray-300">{sessao.nome}</span>
                             {sessao.canonico && (

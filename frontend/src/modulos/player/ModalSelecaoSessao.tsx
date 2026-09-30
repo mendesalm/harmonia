@@ -80,8 +80,8 @@ export const ModalSelecaoSessao: React.FC<Props> = ({ onFechar }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-[#111111] border border-macaonico-dourado/30 rounded-2xl w-full max-w-xl p-6 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sigma-bg/80 backdrop-blur-sm">
+      <div className="bg-sigma-surface border border-macaonico-dourado/30 rounded-2xl w-full max-w-xl p-6 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
         
         {/* Golden Line Decorator */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-600 via-macaonico-dourado to-yellow-600"></div>

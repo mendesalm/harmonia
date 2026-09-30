@@ -278,7 +278,7 @@ export const PaginaSessoes: React.FC = () => {
 
       {/* Modal Clonar Sessão */}
       {sessaoParaClonar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sigma-bg/80 backdrop-blur-md">
           <div className="vidro-destaque rounded-3xl w-full max-w-lg p-6 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
               <div>
@@ -383,7 +383,7 @@ export const PaginaSessoes: React.FC = () => {
 
       {/* Modal de Criação / Edição de Sessão */}
       {modalNovaAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sigma-bg/70 backdrop-blur-sm">
           <div className="vidro-destaque rounded-3xl w-full max-w-lg p-6 animate-in fade-in zoom-in-95 duration-200">
             <h2 className="text-xl font-bold text-white fonte-ritual mb-4">
               {sessaoEmEdicao ? 'Editar Sessão Maçônica' : 'Nova Sessão Maçônica'}

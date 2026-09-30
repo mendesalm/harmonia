@@ -31,7 +31,7 @@ export const App: React.FC = () => {
     <ProvedorAutenticacao>
       <ProvedorTenant>
         <Router>
-          <div className="h-screen max-h-screen w-screen overflow-hidden flex flex-col bg-[#080808] text-slate-100 selection:bg-macaonico-dourado selection:text-black font-inter">
+          <div className="h-screen max-h-screen w-screen overflow-hidden flex flex-col bg-sigma-bg text-slate-100 selection:bg-macaonico-dourado selection:text-black font-inter">
             <main className="flex-1 min-h-0 overflow-hidden relative">
               <Routes>
                 {/* Rota Pública de Login */}

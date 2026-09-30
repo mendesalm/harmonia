@@ -98,7 +98,7 @@ export const PaginaLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#050508] relative overflow-hidden z-0">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-sigma-bg relative overflow-hidden z-0">
       
       {/* Background Animado de Partículas idêntico ao e-Sigma */}
       <div className="absolute inset-0 pointer-events-none z-0">
@@ -145,7 +145,7 @@ export const PaginaLogin: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Insira seu e-mail ou CIM"
-                className="w-full bg-[#0a1428]/60 border border-white/15 focus:border-[#DDB96B] rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#DDB96B]/50"
+                className="w-full bg-sigma-surface/60 border border-white/15 focus:border-[#DDB96B] rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#DDB96B]/50"
               />
             </div>
 
@@ -161,7 +161,7 @@ export const PaginaLogin: React.FC = () => {
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
                   placeholder="Insira sua senha"
-                  className="w-full bg-[#0a1428]/60 border border-white/15 focus:border-[#DDB96B] rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-slate-500 outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#DDB96B]/50"
+                  className="w-full bg-sigma-surface/60 border border-white/15 focus:border-[#DDB96B] rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-slate-500 outline-none transition-all shadow-inner focus:ring-1 focus:ring-[#DDB96B]/50"
                 />
                 <button
                   type="button"
@@ -181,7 +181,7 @@ export const PaginaLogin: React.FC = () => {
                   type="checkbox"
                   checked={lembrarMe}
                   onChange={(e) => setLembrarMe(e.target.checked)}
-                  className="rounded border-slate-700 text-[#DDB96B] focus:ring-[#DDB96B] bg-[#0a1428]"
+                  className="rounded border-slate-700 text-[#DDB96B] focus:ring-[#DDB96B] bg-sigma-surface"
                 />
                 <span>Lembrar-me</span>
               </label>

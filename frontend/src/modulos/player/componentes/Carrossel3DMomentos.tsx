@@ -49,7 +49,7 @@ export const Carrossel3DMomentos: React.FC<Props> = ({
 
   if (!momentos || momentos.length === 0) {
     return (
-      <div className="w-full flex-1 flex flex-col items-center justify-center p-8 text-center bg-black/20 rounded-2xl border border-white/5 mx-4 max-w-2xl">
+      <div className="w-full flex-1 flex flex-col items-center justify-center p-8 text-center bg-sigma-bg/20 rounded-2xl border border-white/5 mx-4 max-w-2xl">
         <Music className="w-16 h-16 text-slate-500 mb-4 opacity-50" />
         <h3 className="text-xl font-cinzel text-slate-300">Sessão Vazia</h3>
         <p className="text-slate-500 mt-2">Adicione momentos e músicas na aba de acervo para começar o ritual.</p>

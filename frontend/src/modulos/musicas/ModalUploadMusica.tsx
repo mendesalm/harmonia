@@ -133,7 +133,7 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sigma-bg/80 backdrop-blur-md">
       <div className="vidro-destaque rounded-3xl w-full max-w-2xl p-6 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
         
         {/* Cabeçalho */}

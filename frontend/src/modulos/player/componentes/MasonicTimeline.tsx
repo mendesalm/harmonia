@@ -49,7 +49,7 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
   }, [indiceAtual]);
 
   return (
-    <div className="relative w-full pb-6 pt-4 border-b border-white/5 bg-[#080808] z-10 before:absolute before:inset-0 before:bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')] before:opacity-10 before:pointer-events-none">
+    <div className="relative w-full pb-6 pt-4 border-b border-white/5 bg-sigma-bg z-10 before:absolute before:inset-0 before:bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')] before:opacity-10 before:pointer-events-none">
       
       {/* Decorative Outer Frame */}
       <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-macaonico-dourado/30"></div>
@@ -67,7 +67,7 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
         {/* Left Arrow */}
         <button 
           onClick={handlePrev}
-          className="text-macaonico-inactive hover:text-macaonico-dourado transition-colors disabled:opacity-20 absolute left-4 z-20 bg-[#080808]/80 backdrop-blur-sm rounded-full"
+          className="text-macaonico-inactive hover:text-macaonico-dourado transition-colors disabled:opacity-20 absolute left-4 z-20 bg-sigma-bg/80 backdrop-blur-sm rounded-full"
           disabled={indiceAtual === 0}
         >
           <ChevronLeft size={28} strokeWidth={1} />
@@ -185,12 +185,12 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
                       mb-[26px] flex items-center justify-center transition-all duration-500 relative rounded-[10px]
                       ${isAtivo 
                         ? 'w-14 h-14 border-2 border-macaonico-dourado bg-macaonico-dourado/20 shadow-[0_0_25px_rgba(212,175,55,0.7)] scale-110 z-20' 
-                        : 'w-10 h-10 border border-macaonico-inactive bg-[#0c0c0c] group-hover:border-macaonico-dourado/50 opacity-50 hover:opacity-100 z-10'
+                        : 'w-10 h-10 border border-macaonico-inactive bg-sigma-surface group-hover:border-macaonico-dourado/50 opacity-50 hover:opacity-100 z-10'
                       }
                     `}>
                       {/* Arrow Pointer */}
                       <div className={`absolute -bottom-[6px] left-1/2 -translate-x-1/2 w-[10px] h-[10px] transform rotate-45 border-b-[1.5px] border-r-[1.5px] transition-colors duration-500
-                        ${isAtivo ? 'border-macaonico-dourado bg-macaonico-dourado' : 'border-macaonico-inactive bg-[#0c0c0c]'}
+                        ${isAtivo ? 'border-macaonico-dourado bg-macaonico-dourado' : 'border-macaonico-inactive bg-sigma-surface'}
                       `}></div>
                       
                       <div className={`relative z-10 ${isAtivo ? 'text-macaonico-dourado drop-shadow-[0_0_8px_rgba(212,175,55,1)]' : 'text-macaonico-inactive'}`}>
@@ -199,7 +199,7 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
 
                       {/* Equalizer (Bargraph) Overlay when Playing */}
                       {isAtivo && tocando && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-[#111]/80 rounded-[8px] z-30 backdrop-blur-[1px]">
+                        <div className="absolute inset-0 flex items-center justify-center bg-sigma-surface/80 rounded-[8px] z-30 backdrop-blur-[1px]">
                           <style>{`
                             @keyframes eq {
                               0%, 100% { transform: scaleY(0.3); }
@@ -245,7 +245,7 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({ momentos, indi
         {/* Right Arrow */}
         <button 
           onClick={handleNext}
-          className="text-macaonico-inactive hover:text-macaonico-dourado transition-colors disabled:opacity-20 absolute right-4 z-20 bg-[#080808]/80 backdrop-blur-sm rounded-full"
+          className="text-macaonico-inactive hover:text-macaonico-dourado transition-colors disabled:opacity-20 absolute right-4 z-20 bg-sigma-bg/80 backdrop-blur-sm rounded-full"
           disabled={indiceAtual === momentos.length - 1}
         >
           <ChevronRight size={28} strokeWidth={1} />

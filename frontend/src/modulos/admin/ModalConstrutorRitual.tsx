@@ -120,8 +120,8 @@ export const ModalConstrutorRitual: React.FC<ModalConstrutorRitualProps> = ({ ri
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-[#111111] border border-gray-800 rounded-2xl w-full max-w-3xl h-[85vh] flex flex-col shadow-2xl">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-sigma-bg/80 backdrop-blur-sm">
+      <div className="bg-sigma-surface border border-gray-800 rounded-2xl w-full max-w-3xl h-[85vh] flex flex-col shadow-2xl">
         
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-800">
@@ -145,7 +145,7 @@ export const ModalConstrutorRitual: React.FC<ModalConstrutorRitualProps> = ({ ri
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 bg-[#080808]">
+        <div className="flex-1 overflow-y-auto p-6 bg-sigma-bg">
           {carregando ? (
             <div className="flex h-full items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
@@ -177,10 +177,10 @@ export const ModalConstrutorRitual: React.FC<ModalConstrutorRitualProps> = ({ ri
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className={`p-3 bg-[#161616] border border-gray-800 rounded-xl flex items-center gap-4 shadow-sm transition-colors group ${snapshot.isDragging ? 'ring-2 ring-macaonico-dourado bg-[#1a1a1a]' : 'hover:border-gray-600'}`}
+                              className={`p-3 bg-[#161616] border border-gray-800 rounded-xl flex items-center gap-4 shadow-sm transition-colors group ${snapshot.isDragging ? 'ring-2 ring-macaonico-dourado bg-sigma-elevated' : 'hover:border-gray-600'}`}
                             >
                               <GripVertical className="w-5 h-5 text-gray-600 cursor-grab active:cursor-grabbing" />
-                              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-black border border-gray-700 text-gray-400 text-xs font-bold flex items-center justify-center">
+                              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-sigma-bg border border-gray-700 text-gray-400 text-xs font-bold flex items-center justify-center">
                                 {index + 1}
                               </span>
                               <div className="flex-1">
@@ -214,9 +214,9 @@ export const ModalConstrutorRitual: React.FC<ModalConstrutorRitualProps> = ({ ri
                     Adicionar Novo Momento Ritualístico
                   </button>
                 ) : (
-                  <div className="p-4 bg-[#111111] border border-macaonico-dourado/50 rounded-xl flex gap-3 shadow-lg">
+                  <div className="p-4 bg-sigma-surface border border-macaonico-dourado/50 rounded-xl flex gap-3 shadow-lg">
                     <select
-                      className="flex-1 bg-black border border-gray-700 rounded-lg px-4 text-white focus:outline-none focus:border-macaonico-dourado"
+                      className="flex-1 bg-sigma-bg border border-gray-700 rounded-lg px-4 text-white focus:outline-none focus:border-macaonico-dourado"
                       value={momentoSelecionado}
                       onChange={(e) => setMomentoSelecionado(e.target.value)}
                     >
@@ -247,7 +247,7 @@ export const ModalConstrutorRitual: React.FC<ModalConstrutorRitualProps> = ({ ri
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-800 flex justify-end gap-3 bg-black/50">
+        <div className="p-6 border-t border-gray-800 flex justify-end gap-3 bg-sigma-bg/50">
           <button 
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors"
