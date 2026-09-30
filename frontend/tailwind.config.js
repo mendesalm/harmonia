@@ -6,7 +6,10 @@ export default {
   ],
   theme: {
     extend: {
-      colors: {
+      backgroundImage: { 
+          'sigma-gold': 'linear-gradient(to right, #C6AB6A, #D1A958, #EBCD79)',
+        },
+        colors: {
         sigma: {
           bg: '#070F1E',        /* Fundo principal da aplicação (Azul mais escuro) */
           surface: '#0A1428',   /* Fundo de cards padrão (Azul escuro) */
@@ -18,5 +21,8 @@ export default {
       }
     },
   },
-  plugins: [],
+  plugins: [
+    require('tailwindcss-animate')
+  ],
 }
+
