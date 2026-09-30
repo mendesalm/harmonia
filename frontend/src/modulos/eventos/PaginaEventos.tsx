@@ -169,7 +169,7 @@ export const PaginaEventos: React.FC = () => {
               onClick={() => setFiltroTipo(tipo)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                 filtroTipo === tipo
-                  ? 'bg-macaonico-cianoSigma text-black shadow-md'
+                  ? 'bg-macaonico-cianoSigma shadow-md'
                   : 'bg-white/5 text-slate-400 hover:text-white border border-white/5'
               }`}
             >
@@ -200,7 +200,7 @@ export const PaginaEventos: React.FC = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-1.5">
                       {ev.padrao_sistema ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md bg-sigma-gold text-[#070F1E] border-none shadow-md shadow-amber-900/20/10 text-amber-300 border border-amber-500/30">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md bg-sigma-gold text-[#070F1E] shadow-sm text-amber-300 border border-amber-500/30">
                           <ShieldCheck className="w-3 h-3" /> Padrão Maçônico
                         </span>
                       ) : (

@@ -163,7 +163,7 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
             onClick={() => setAbaAtiva('ARQUIVO')}
             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${
               abaAtiva === 'ARQUIVO'
-                ? 'bg-macaonico-cianoSigma text-black shadow-md'
+                ? 'bg-macaonico-cianoSigma shadow-md'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -176,7 +176,7 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
             onClick={() => setAbaAtiva('YOUTUBE')}
             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${
               abaAtiva === 'YOUTUBE'
-                ? 'bg-macaonico-cianoSigma text-black shadow-md'
+                ? 'bg-macaonico-cianoSigma shadow-md'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
