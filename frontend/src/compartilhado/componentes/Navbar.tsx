@@ -1,9 +1,13 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { PlayCircle, Library, LayoutTemplate, LogOut, Shield, ListOrdered, Download } from 'lucide-react';
+import { PlayCircle, Library, LayoutTemplate, LogOut, Shield, ListOrdered, Download, Home } from 'lucide-react';
 import { useAuth } from '../contextos/ContextoAutenticacao';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 
+/**
+ * Barra de navegação inferior (Bottom Navigation) responsiva e otimizada para dispositivos móveis (PWA/Capacitor)
+ * e telas desktop. Garante áreas de toque >= 48px e adaptação fluida em telas de 320px+.
+ */
 export const Navbar: React.FC = () => {
   const { usuario, logout } = useAuth();
   const { podeInstalar, dispararInstalacao } = usePwaInstall();
@@ -20,7 +24,8 @@ export const Navbar: React.FC = () => {
   const emModoAdmin = location.pathname.startsWith('/admin');
 
   const linksMestre = [
-    { to: '/', label: 'Player', icon: PlayCircle },
+    { to: '/', label: 'Início', icon: Home },
+    { to: '/player', label: 'Player', icon: PlayCircle },
     { to: '/sessoes', label: 'Sessões', icon: ListOrdered },
     { to: '/eventos', label: 'Momentos', icon: LayoutTemplate },
     { to: '/musicas', label: 'Acervo', icon: Library },
@@ -38,13 +43,13 @@ export const Navbar: React.FC = () => {
   ];
 
   if (possuiLojaVinculada) {
-    linksAdmin.push({ to: '/', label: 'Console Loja', icon: PlayCircle });
+    linksAdmin.push({ to: '/', label: 'Loja', icon: PlayCircle });
   }
 
   const links = (emModoAdmin || (ehSuperAdmin && !possuiLojaVinculada)) ? linksAdmin : linksMestre;
 
   return (
-    <nav className="relative z-50 w-full min-h-[4rem] pb-safe bg-[#070e1c]/95 backdrop-blur-md border-t border-[rgba(221,185,107,0.2)] flex items-center justify-around px-2 shadow-[0_-10px_20px_rgba(0,0,0,0.8)] shrink-0">
+    <nav className="relative z-50 w-full min-h-[3.75rem] sm:min-h-[4.25rem] pb-safe bg-[#070e1c]/95 backdrop-blur-md border-t border-[rgba(221,185,107,0.2)] flex items-stretch justify-around px-1 sm:px-4 shadow-[0_-10px_20px_rgba(0,0,0,0.8)] shrink-0">
       
       {links.map((link) => {
         const Icon = link.icon;
@@ -54,20 +59,20 @@ export const Navbar: React.FC = () => {
             to={link.to}
             end={link.to === '/' || link.to === '/admin'}
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center w-20 h-full transition-all relative ${
-                isActive ? 'text-macaonico-dourado' : 'text-macaonico-inactive hover:text-slate-400'
+              `flex flex-col items-center justify-center flex-1 min-w-0 max-w-[6rem] py-1.5 px-1 transition-all relative select-none ${
+                isActive ? 'text-macaonico-dourado' : 'text-macaonico-inactive hover:text-slate-300 active:text-slate-200'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                {/* Active Glow Indicator */}
+                {/* Indicador superior luminoso da aba ativa */}
                 {isActive && (
-                  <div className="absolute -top-px left-1/2 -translate-x-1/2 w-8 h-[2px] bg-macaonico-dourado shadow-[0_0_8px_rgba(212,175,55,1)]"></div>
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-7 sm:w-9 h-[2px] bg-macaonico-dourado shadow-[0_0_8px_rgba(212,175,55,1)]"></div>
                 )}
                 
-                <Icon size={isActive ? 24 : 22} strokeWidth={isActive ? 1.5 : 1} className="mb-1" />
-                <span className={`text-[9px] font-cinzel uppercase tracking-wider ${isActive ? 'font-bold' : ''}`}>
+                <Icon size={isActive ? 22 : 20} strokeWidth={isActive ? 1.75 : 1.25} className="mb-0.5 sm:mb-1 shrink-0" />
+                <span className={`text-[9px] sm:text-[10px] font-cinzel uppercase tracking-wide truncate w-full text-center ${isActive ? 'font-bold' : ''}`}>
                   {link.label}
                 </span>
                 
@@ -83,23 +88,24 @@ export const Navbar: React.FC = () => {
       {podeInstalar && (
         <button 
           onClick={dispararInstalacao}
-          className="flex flex-col items-center justify-center w-20 h-full text-macaonico-dourado hover:text-yellow-300 transition-all animate-pulse"
+          className="flex flex-col items-center justify-center flex-1 min-w-0 max-w-[5.5rem] py-1.5 px-1 text-macaonico-dourado hover:text-yellow-300 transition-all animate-pulse select-none"
           title="Instalar Aplicativo Harmonia"
         >
-          <Download size={22} strokeWidth={1.5} className="mb-1" />
-          <span className="text-[9px] font-cinzel uppercase tracking-wider font-bold">
+          <Download size={20} strokeWidth={1.5} className="mb-0.5 sm:mb-1 shrink-0" />
+          <span className="text-[9px] sm:text-[10px] font-cinzel uppercase tracking-wide font-bold truncate w-full text-center">
             Instalar
           </span>
         </button>
       )}
 
-      {/* Settings / Profile Toggle */}
+      {/* Botão de encerramento de sessão */}
       <button 
         onClick={logout}
-        className="flex flex-col items-center justify-center w-20 h-full text-macaonico-inactive hover:text-slate-400 transition-all"
+        className="flex flex-col items-center justify-center flex-1 min-w-0 max-w-[5rem] py-1.5 px-1 text-macaonico-inactive hover:text-red-400 active:text-red-300 transition-all select-none"
+        title="Sair da Estação Harmonia"
       >
-        <LogOut size={22} strokeWidth={1} className="mb-1" />
-        <span className="text-[9px] font-cinzel uppercase tracking-wider">
+        <LogOut size={20} strokeWidth={1.25} className="mb-0.5 sm:mb-1 shrink-0" />
+        <span className="text-[9px] sm:text-[10px] font-cinzel uppercase tracking-wide truncate w-full text-center">
           Sair
         </span>
       </button>

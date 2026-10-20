@@ -248,3 +248,13 @@
   color: #DDB96B !important;
   filter: drop-shadow(0px 1px 0px #82714A) drop-shadow(0px -1px 0px #82714A) drop-shadow(1px 0px 0px #82714A) drop-shadow(-1px 0px 0px #82714A);
 }
+
+
+/* Ocultar barra de rolagem mantendo scroll nativo suave (Mobile/Touch) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

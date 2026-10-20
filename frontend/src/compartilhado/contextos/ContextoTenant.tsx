@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Organizacao } from '../tipos';
 import clienteHttp from '../api/cliente_http';
+import { useAuth } from './ContextoAutenticacao';
 
 interface ContextoTenantTipo {
   lojaAtiva: Organizacao | null;
@@ -14,13 +15,27 @@ const ContextoTenant = createContext<ContextoTenantTipo>({} as ContextoTenantTip
 
 /**
  * Provedor de contexto Multi-Tenant (Lojas Maçônicas).
- * Em conformidade com AGENTS.md, utiliza exclusivamente `clienteHttp` para
- * que o interceptor de autenticação envie o token Bearer ao consultar organizações.
+ * Sincroniza automaticamente a Loja ativa a partir do perfil autenticado (`/auth/me`)
+ * e consulta a lista completa de organizações apenas quando necessário.
  */
 export const ProvedorTenant: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { usuario } = useAuth();
   const [lojas, setLojas] = useState<Organizacao[]>([]);
   const [lojaAtiva, setLojaAtiva] = useState<Organizacao | null>(null);
   const [carregando, setCarregando] = useState(true);
+
+  const construirLojaDoUsuario = (): Organizacao | null => {
+    if (!usuario?.organizacao_id) return null;
+    return {
+      id: usuario.organizacao_id,
+      nome: usuario.organizacao_nome || 'Loja Maçônica',
+      slug_armazenamento: usuario.slug_armazenamento || 'loja',
+      rito_id: usuario.dados_especificos?.rito_id || undefined,
+      rito_padrao: usuario.dados_especificos?.rito_padrao || 'Rito Escocês Antigo e Aceito',
+      status_assinatura: (usuario as any).status_assinatura || 'ATIVA',
+      ativo: true,
+    };
+  };
 
   const carregarLojas = async () => {
     const tokenSalvo = localStorage.getItem('@harmonia:token');
@@ -29,22 +44,41 @@ export const ProvedorTenant: React.FC<{ children: React.ReactNode }> = ({ childr
       return;
     }
 
+    // 1. Se o usuário já possui organização vinculada no perfil (/auth/me), usa imediatamente
+    const lojaUsuario = construirLojaDoUsuario();
+    if (lojaUsuario) {
+      setLojaAtiva(lojaUsuario);
+      setLojas([lojaUsuario]);
+      localStorage.setItem('@harmonia:loja_id', lojaUsuario.id);
+    }
+
+    // 2. Se for SuperAdmin, tenta buscar lista global de organizações
+    const ehSuperAdmin =
+      usuario?.tipo === 'ADMIN' ||
+      usuario?.permissoes?.includes('super_admin') ||
+      (usuario as any)?.role === 'super_admin';
+
+    if (!ehSuperAdmin && lojaUsuario) {
+      setCarregando(false);
+      return;
+    }
+
     try {
       setCarregando(true);
       const baseUrlIdp = import.meta.env.VITE_URL_IDENTIDADE || 'https://e-sigma.app';
       const resp = await clienteHttp.get<Organizacao[]>(`${baseUrlIdp}/api/v1/organizacoes`);
-      setLojas(resp.data);
-
-      if (resp.data.length > 0) {
-        // Tenta recuperar loja salva no localStorage ou pega a primeira
-        const salvaId = localStorage.getItem('@harmonia:loja_id');
+      if (Array.isArray(resp.data) && resp.data.length > 0) {
+        setLojas(resp.data);
+        const salvaId = localStorage.getItem('@harmonia:loja_id') || usuario?.organizacao_id;
         const encontrada = resp.data.find((l) => l.id === salvaId);
-        const lojaPadrao = encontrada || resp.data[0];
+        const lojaPadrao = encontrada || lojaUsuario || resp.data[0];
         setLojaAtiva(lojaPadrao);
         localStorage.setItem('@harmonia:loja_id', lojaPadrao.id);
       }
     } catch (err) {
-      console.error('Erro ao carregar organizações/lojas:', err);
+      if (!lojaUsuario) {
+        console.warn('Não foi possível listar todas as organizações no IdP; mantendo contexto local.');
+      }
     } finally {
       setCarregando(false);
     }
@@ -52,7 +86,7 @@ export const ProvedorTenant: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     carregarLojas();
-  }, []);
+  }, [usuario?.id, usuario?.organizacao_id]);
 
   const selecionarLoja = (loja: Organizacao) => {
     setLojaAtiva(loja);

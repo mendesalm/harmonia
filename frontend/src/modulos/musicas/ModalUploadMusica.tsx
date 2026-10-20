@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Upload, Music, Youtube, AlertCircle, DownloadCloud, Sparkles, CheckCircle2 } from 'lucide-react';
+import { X, Upload, Music, Youtube, DownloadCloud, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Evento } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
@@ -12,12 +12,21 @@ interface Props {
   esconderEventos?: boolean;
 }
 
-export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoIdPreSelecionado, isGlobalAdmin, esconderEventos }) => {
+/**
+ * Modal de Upload de Áudio e Conversão YouTube para o Acervo Harmonia.
+ * Adaptado para bottom-sheet em dispositivos móveis e modal centralizado no desktop.
+ */
+export const ModalUploadMusica: React.FC<Props> = ({
+  onFechar,
+  onSalvo,
+  eventoIdPreSelecionado,
+  isGlobalAdmin,
+  esconderEventos,
+}) => {
   const { lojaAtiva } = useTenant();
   const [abaAtiva, setAbaAtiva] = useState<'ARQUIVO' | 'YOUTUBE'>('ARQUIVO');
   const [eventosDisponiveis, setEventosDisponiveis] = useState<Evento[]>([]);
-  
-  // Campos
+
   const [titulo, setTitulo] = useState('');
   const [autor, setAutor] = useState('');
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -40,7 +49,7 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
       try {
         const orgId = isGlobalAdmin ? null : lojaAtiva?.id;
         const resp = await clienteHttp.get<Evento[]>('/eventos', {
-          params: { organizacao_id: orgId, incluir_globais: true }
+          params: { organizacao_id: orgId, incluir_globais: true },
         });
         setEventosDisponiveis(resp.data);
       } catch (err) {
@@ -65,7 +74,9 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
     if (!isGlobalAdmin && !lojaAtiva) return;
 
     if (!esconderEventos && eventosSelecionados.length === 0) {
-      alert('Atenção: É obrigatório vincular a música a pelo menos um Momento Ritualístico (checklist sugerido) para que ela funcione no Auto-Fill.');
+      alert(
+        'Atenção: Selecione pelo menos um Momento Ritualístico abaixo para vincular esta música.'
+      );
       return;
     }
 
@@ -79,16 +90,18 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
           return;
         }
 
-        setMensagemStatus('Fazendo upload e processando metadados...');
+        setMensagemStatus('Enviando arquivo de áudio para o servidor...');
         const formData = new FormData();
-        if (lojaAtiva) formData.append('organizacao_id', lojaAtiva.id);
+        if (lojaAtiva) {
+          formData.append('upload_por_loja_id', lojaAtiva.id);
+        }
         formData.append('arquivo', arquivo);
-        if (titulo.trim()) formData.append('titulo', titulo.trim());
+        formData.append('titulo', titulo.trim() || arquivo.name);
         if (autor.trim()) formData.append('autor_artista', autor.trim());
         formData.append('eventos_sugeridos_ids', JSON.stringify(eventosSelecionados));
 
         const resp = await clienteHttp.post('/musicas/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
         novaMusicaId = resp.data?.id;
       } else {
@@ -98,7 +111,7 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
         }
 
         if (converterParaMp3) {
-          setMensagemStatus('Baixando áudio e convertendo para MP3 320 kbps no servidor da Loja...');
+          setMensagemStatus('Baixando áudio e convertendo para MP3 no servidor...');
           const resp = await clienteHttp.post('/musicas/converter-youtube', {
             organizacao_id: lojaAtiva ? lojaAtiva.id : undefined,
             link_youtube: linkStreaming.trim(),
@@ -133,66 +146,65 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sigma-bg/80 backdrop-blur-md">
-      <div className="vidro-destaque rounded-3xl w-full max-w-2xl p-6 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
-        
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-sigma-bg/85 backdrop-blur-md">
+      <div className="vidro-destaque rounded-t-3xl sm:rounded-3xl w-full max-w-2xl p-4 sm:p-6 max-h-[92dvh] flex flex-col">
         {/* Cabeçalho */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-white fonte-ritual flex items-center gap-2">
-              <Music className="w-6 h-6 text-macaonico-cianoSigma" />
-              Acervo • Adicionar Música
+        <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3 shrink-0">
+          <div className="min-w-0 pr-2">
+            <h2 className="text-lg sm:text-2xl font-bold text-white fonte-ritual flex items-center gap-2 truncate">
+              <Music className="w-5 h-5 sm:w-6 sm:h-6 text-macaonico-dourado shrink-0" />
+              <span>Adicionar Música</span>
             </h2>
-            <p className="text-xs text-slate-400">
-              Faça upload de arquivos MP3 ou converta áudios do YouTube diretamente para MP3 320 kbps.
+            <p className="text-[11px] sm:text-xs text-slate-400">
+              Envie arquivos MP3/WAV ou adicione links do YouTube ao acervo.
             </p>
           </div>
 
           <button
             onClick={onFechar}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Abas */}
-        <div className="flex rounded-xl bg-primaria-800/80 p-1 mb-5 border border-white/10">
+        <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-primaria-800/80 p-1 mb-4 border border-white/10 shrink-0">
           <button
             type="button"
             onClick={() => setAbaAtiva('ARQUIVO')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-lg text-xs font-bold transition-all ${
               abaAtiva === 'ARQUIVO'
-                ? 'bg-macaonico-cianoSigma shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-macaonico-dourado text-black shadow-md'
+                : 'text-slate-300 hover:text-white'
             }`}
           >
-            <Upload className="w-4 h-4" />
-            <span>Upload de Arquivo (MP3 / WAV / OGG)</span>
+            <Upload className="w-4 h-4 shrink-0" />
+            <span className="truncate">Arquivo MP3/WAV</span>
           </button>
 
           <button
             type="button"
             onClick={() => setAbaAtiva('YOUTUBE')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-lg text-xs font-bold transition-all ${
               abaAtiva === 'YOUTUBE'
-                ? 'bg-macaonico-cianoSigma shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-macaonico-dourado text-black shadow-md'
+                : 'text-slate-300 hover:text-white'
             }`}
           >
-            <Youtube className="w-4 h-4 text-red-500" />
-            <span>Link do YouTube (Conversor MP3 320kbps)</span>
+            <Youtube className="w-4 h-4 shrink-0" />
+            <span className="truncate">YouTube</span>
           </button>
         </div>
 
         {/* Formulário */}
-        <form onSubmit={handleSalvar} className="space-y-4 flex-1 overflow-y-auto pr-1">
+        <form onSubmit={handleSalvar} className="space-y-4 flex-1 overflow-y-auto pr-1 min-h-0">
           {abaAtiva === 'ARQUIVO' ? (
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                 Arquivo de Áudio (.mp3, .wav, .ogg)
               </label>
-              <div className="border-2 border-dashed border-white/20 hover:border-macaonico-cianoSigma/50 rounded-2xl p-6 text-center bg-white/5 transition-colors cursor-pointer relative">
+              <div className="border-2 border-dashed border-white/20 hover:border-macaonico-dourado/60 rounded-2xl p-4 sm:p-6 text-center bg-white/5 transition-colors cursor-pointer relative">
                 <input
                   type="file"
                   accept="audio/mp3,audio/wav,audio/ogg,audio/mpeg"
@@ -208,15 +220,17 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
                   }}
                   className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                 />
-                <Upload className="w-8 h-8 text-macaonico-cianoSigma mx-auto mb-2" />
+                <Upload className="w-7 h-7 text-macaonico-dourado mx-auto mb-1.5" />
                 {arquivo ? (
-                  <p className="text-sm font-bold text-macaonico-cianoSigma truncate">
+                  <p className="text-xs sm:text-sm font-bold text-macaonico-dourado truncate">
                     {arquivo.name} ({(arquivo.size / (1024 * 1024)).toFixed(2)} MB)
                   </p>
                 ) : (
                   <>
-                    <p className="text-sm font-semibold text-white">Clique para selecionar ou arraste o áudio</p>
-                    <p className="text-xs text-slate-400 mt-1">MP3, WAV ou OGG de alta qualidade</p>
+                    <p className="text-xs sm:text-sm font-semibold text-white">
+                      Toque para selecionar o arquivo de áudio
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">MP3, WAV ou OGG</p>
                   </>
                 )}
               </div>
@@ -232,27 +246,26 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
                   required
                   value={linkStreaming}
                   onChange={(e) => setLinkStreaming(e.target.value)}
-                  placeholder="Ex: https://www.youtube.com/watch?v=k1-TrAvp_xs"
-                  className="w-full bg-primaria-800 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:border-macaonico-cianoSigma outline-none"
+                  placeholder="Ex: https://www.youtube.com/watch?v=..."
+                  className="w-full bg-primaria-800 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:border-macaonico-dourado outline-none"
                 />
               </div>
 
-              {/* Opção de Conversão para MP3 320kbps */}
-              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-cyan-500/10 to-primaria-800 border border-macaonico-cianoSigma/30">
+              <div className="p-3 rounded-2xl bg-primaria-800/80 border border-macaonico-dourado/30">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={converterParaMp3}
                     onChange={(e) => setConverterParaMp3(e.target.checked)}
-                    className="mt-1 rounded accent-macaonico-cianoSigma w-4 h-4 cursor-pointer"
+                    className="mt-1 rounded accent-macaonico-dourado w-4 h-4 cursor-pointer shrink-0"
                   />
                   <div>
                     <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-macaonico-cianoSigma" />
-                      Converter e Baixar em MP3 320 kbps (Recomendado)
+                      <Sparkles className="w-3.5 h-3.5 text-macaonico-dourado shrink-0" />
+                      Converter para MP3 320 kbps
                     </span>
                     <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
-                      O servidor baixa o áudio, converte na máxima taxa de bits (320 kbps) e salva na pasta exclusiva da sua Loja para execução offline, fluida e com fade-out suave.
+                      Salva no servidor para reprodução imediata sem anúncios.
                     </p>
                   </div>
                 </label>
@@ -260,52 +273,47 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Título da Música / Hino {abaAtiva === 'YOUTUBE' && '(Opcional se for converter)'}
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Título da Música
               </label>
               <input
                 type="text"
                 required={abaAtiva === 'ARQUIVO' || !converterParaMp3}
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
-                placeholder="Ex: Hino Maçônico de Abertura"
-                className="w-full bg-primaria-800 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:border-macaonico-cianoSigma outline-none"
+                placeholder="Ex: Hino de Abertura"
+                className="w-full bg-primaria-800 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-macaonico-dourado outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Compositor / Intérprete (Opcional)
               </label>
               <input
                 type="text"
                 value={autor}
                 onChange={(e) => setAutor(e.target.value)}
-                placeholder="Ex: W. A. Mozart / Dom Pedro I"
-                className="w-full bg-primaria-800 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:border-macaonico-cianoSigma outline-none"
+                placeholder="Ex: W. A. Mozart"
+                className="w-full bg-primaria-800 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-macaonico-dourado outline-none"
               />
             </div>
           </div>
 
-          {/* Vínculo de Eventos Litúrgicos (Playlists) */}
           {!esconderEventos && (
             <div>
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-semibold text-slate-300">
-                  Vincular aos Momentos Ritualísticos (Playlists):
+                  Vincular aos Momentos Ritualísticos:
                 </label>
-                <span className="text-[11px] text-macaonico-cianoSigma font-bold">
+                <span className="text-[11px] text-macaonico-dourado font-bold">
                   {eventosSelecionados.length} selecionado(s)
                 </span>
               </div>
 
-              <p className="text-[11px] text-slate-400 mb-2">
-                Marque os momentos litúrgicos em que esta música poderá ser sorteada ou selecionada pelo Mestre.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1 bg-primaria-800/40 rounded-2xl border border-white/5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1.5 bg-primaria-800/40 rounded-2xl border border-white/5">
                 {eventosDisponiveis.map((ev) => {
                   const selecionado = eventosSelecionados.includes(ev.id);
                   return (
@@ -313,16 +321,20 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
                       key={ev.id}
                       type="button"
                       onClick={() => toggleEvento(ev.id)}
-                      className={`flex items-center justify-between p-2.5 rounded-xl text-left border transition-all text-xs ${
+                      className={`flex items-center justify-between p-2.5 rounded-xl text-left border transition-all text-xs min-h-[40px] ${
                         selecionado
-                          ? 'bg-macaonico-cianoSigma/15 border-macaonico-cianoSigma/40 text-white font-bold shadow-sm'
-                          : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
+                          ? 'bg-macaonico-dourado/20 border-macaonico-dourado text-white font-bold'
+                          : 'bg-white/5 border-white/5 text-slate-300 hover:bg-white/10'
                       }`}
                     >
                       <span className="truncate mr-2">{ev.nome}</span>
-                      <span className={`w-4 h-4 rounded-md flex items-center justify-center border text-[10px] ${
-                        selecionado ? 'bg-macaonico-cianoSigma text-black border-transparent font-black' : 'border-white/20'
-                      }`}>
+                      <span
+                        className={`w-4 h-4 rounded-md flex items-center justify-center border text-[10px] shrink-0 ${
+                          selecionado
+                            ? 'bg-macaonico-dourado text-black border-transparent font-black'
+                            : 'border-white/20'
+                        }`}
+                      >
                         {selecionado ? '✓' : ''}
                       </span>
                     </button>
@@ -332,27 +344,26 @@ export const ModalUploadMusica: React.FC<Props> = ({ onFechar, onSalvo, eventoId
             </div>
           )}
 
-          {/* Barra de Status durante Download/Conversão */}
           {salvando && mensagemStatus && (
-            <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-300 flex items-center gap-2 animate-pulse">
-              <DownloadCloud className="w-4 h-4 animate-bounce" />
+            <div className="p-3 rounded-xl bg-macaonico-dourado/10 border border-macaonico-dourado/30 text-xs text-macaonico-dourado flex items-center gap-2 animate-pulse">
+              <DownloadCloud className="w-4 h-4 animate-bounce shrink-0" />
               <span>{mensagemStatus}</span>
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
             <button
               type="button"
               disabled={salvando}
               onClick={onFechar}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={salvando}
-              className="bg-macaonico-cianoSigma hover:bg-cyan-400 text-black font-bold px-6 py-2 rounded-xl text-sm transition-all cursor-pointer disabled:opacity-50 shadow-md shadow-cyan-500/20 flex items-center gap-2"
+              className="bg-macaonico-dourado hover:bg-yellow-400 text-black font-bold px-5 py-2.5 rounded-xl text-sm transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
             >
               {salvando ? (
                 <>

@@ -2,10 +2,13 @@
 Controlador de Rotas RESTful para Sessões (Templates e Roteiros).
 """
 import uuid
-from typing import List
-from fastapi import APIRouter, Depends, status
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from backend.nucleo.banco import obter_banco_de_dados
+from backend.modelos.sessao import TipoSessao, SessaoLoja
 
 from backend.api.sessoes.schemas import (
     TipoSessaoResposta,
@@ -23,10 +26,26 @@ from backend.api.sessoes.servicos import (
 from backend.nucleo.dependencias import verificar_assinatura_ativa
 
 roteador_sessoes = APIRouter(
-    prefix="/sessoes", 
+    prefix="/sessoes",
     tags=["Templates e Sessões Customizadas"],
     dependencies=[Depends(verificar_assinatura_ativa)]
 )
+
+
+@roteador_sessoes.get(
+    "/templates",
+    response_model=List[TipoSessaoResposta],
+    summary="Listar Templates Globais de Sessão",
+    description="Lista os templates de sessão disponíveis para importação pelas Lojas, com filtro opcional por Rito."
+)
+async def listar_templates_disponiveis(
+    rito_id: Optional[uuid.UUID] = Query(None, description="UUID opcional do Rito"),
+    db: AsyncSession = Depends(obter_banco_de_dados)
+):
+    if rito_id:
+        return await listar_tipos_sessao_por_rito(db=db, rito_id=rito_id)
+    res = await db.execute(select(TipoSessao).options(selectinload(TipoSessao.eventos)).order_by(TipoSessao.nome))
+    return list(res.scalars().all())
 
 
 @roteador_sessoes.get(
@@ -66,6 +85,28 @@ async def importar_template(
     db: AsyncSession = Depends(obter_banco_de_dados)
 ):
     return await importar_template_para_loja(db=db, loja_id=loja_id, dados=dados)
+
+
+@roteador_sessoes.delete(
+    "/loja/{loja_id}/{sessao_loja_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Excluir Sessão Customizada da Loja",
+    description="Remove uma sessão/roteiro instanciado pela Loja."
+)
+async def deletar_sessao_loja(
+    loja_id: uuid.UUID,
+    sessao_loja_id: uuid.UUID,
+    db: AsyncSession = Depends(obter_banco_de_dados)
+):
+    res = await db.execute(
+        select(SessaoLoja).where(SessaoLoja.id == sessao_loja_id, SessaoLoja.loja_id == loja_id)
+    )
+    sessao = res.scalar_one_or_none()
+    if not sessao:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada para esta Loja.")
+    await db.delete(sessao)
+    await db.commit()
+    return None
 
 
 @roteador_sessoes.put(

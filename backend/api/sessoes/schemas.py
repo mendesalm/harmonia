@@ -37,6 +37,7 @@ class SessaoLojaEventoResposta(SessaoLojaEventoBase):
     id: uuid.UUID
     sessao_loja_id: uuid.UUID
     evento_id: uuid.UUID
+    evento_nome: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
 
 class SessaoLojaBase(BaseModel):

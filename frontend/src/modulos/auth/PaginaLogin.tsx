@@ -32,10 +32,10 @@ export const PaginaLogin: React.FC = () => {
       const respIdp = await fetch(`${baseUrlIdp}/api/v1/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           credential: credentialResponse.credential,
-          modulo_origem: "harmonia" 
-        })
+          modulo_origem: 'harmonia',
+        }),
       });
 
       if (!respIdp.ok) {
@@ -44,9 +44,9 @@ export const PaginaLogin: React.FC = () => {
 
       const { access_token } = await respIdp.json();
       localStorage.setItem('@harmonia:token', access_token);
-      
+
       const respMe = await clienteHttp.get('/auth/me', {
-        headers: { Authorization: `Bearer ${access_token}` }
+        headers: { Authorization: `Bearer ${access_token}` },
       });
 
       login(access_token, respMe.data);
@@ -69,11 +69,11 @@ export const PaginaLogin: React.FC = () => {
       const respIdp = await fetch(`${baseUrlIdp}/api/v1/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          username: email.trim(), 
+        body: JSON.stringify({
+          username: email.trim(),
           password: senha,
-          modulo_origem: "harmonia" 
-        })
+          modulo_origem: 'harmonia',
+        }),
       });
 
       if (!respIdp.ok) {
@@ -82,57 +82,56 @@ export const PaginaLogin: React.FC = () => {
 
       const { access_token } = await respIdp.json();
       localStorage.setItem('@harmonia:token', access_token);
-      
+
       const respMe = await clienteHttp.get('/auth/me', {
-        headers: { Authorization: `Bearer ${access_token}` }
+        headers: { Authorization: `Bearer ${access_token}` },
       });
 
       login(access_token, respMe.data);
       await recarregarLojas();
       navigate(destino, { replace: true });
     } catch (err: any) {
-      setErro(err.response?.data?.detail || 'Falha na autenticação. Verifique seu e-mail e senha.');
+      setErro(
+        err.response?.data?.detail || 'Falha na autenticação. Verifique seu e-mail/CIM e senha.'
+      );
     } finally {
       setCarregando(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-sigma-bg relative overflow-hidden z-0">
-      
+    <div className="h-full overflow-y-auto flex items-center justify-center p-3 sm:p-4 bg-sigma-bg relative z-0">
       {/* Background Animado de Partículas idêntico ao e-Sigma */}
-      <div className="absolute inset-0 pointer-events-none z-0">
+      <div className="fixed inset-0 pointer-events-none z-0">
         <HeroBackground />
       </div>
 
-      <div className="w-full max-w-md relative z-10 my-auto py-6">
-        
+      <div className="w-full max-w-md relative z-10 my-auto py-3 sm:py-6">
         {/* Cartão de Login - Glassmorphism Soberano Deep Blue Glass */}
-        <div className="card-deep-blue-glass p-8 sm:p-10 flex flex-col items-center">
-          
+        <div className="card-deep-blue-glass p-5 sm:p-10 flex flex-col items-center">
           {/* Logo e Título Padronizados como Clone Visual do e-Sigma */}
-          <div className="flex flex-col items-center text-center mb-6">
-            <div id="hero-logo" className="mb-2 flex justify-center">
-              <LogoAnimadaHarmonia width={100} height={100} showText={false} animated={true} />
+          <div className="flex flex-col items-center text-center mb-4 sm:mb-6">
+            <div id="hero-logo" className="mb-1.5 flex justify-center">
+              <LogoAnimadaHarmonia width={84} height={84} showText={false} animated={true} />
             </div>
 
-            <h1 className="text-3xl font-bold tracking-wider font-sans text-transparent bg-clip-text bg-gradient-to-r from-[#FDE68A] via-[#DDB96B] to-[#B8862D] drop-shadow-[0_0_10px_rgba(221,185,107,0.35)]">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-wider font-sans text-transparent bg-clip-text bg-gradient-to-r from-[#FDE68A] via-[#DDB96B] to-[#B8862D] drop-shadow-[0_0_10px_rgba(221,185,107,0.35)]">
               Acesso Restrito
             </h1>
-            <p className="text-sm text-slate-400 mt-1 font-sans">
+            <p className="text-xs sm:text-sm text-slate-400 mt-1 font-sans">
               Insira suas credenciais para continuar
             </p>
           </div>
 
           {/* Alerta de Erro */}
           {erro && (
-            <div className="w-full mb-5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-200 text-center">
+            <div className="w-full mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-200 text-center">
               {erro}
             </div>
           )}
 
           {/* Formulário Principal */}
-          <form onSubmit={handleLogin} className="w-full space-y-4">
+          <form onSubmit={handleLogin} className="w-full space-y-3.5 sm:space-y-4">
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1.5">
                 E-mail ou CIM
@@ -166,10 +165,10 @@ export const PaginaLogin: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setMostrarSenha(!mostrarSenha)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white transition-colors"
                   aria-label="Alternar visibilidade da senha"
                 >
-                  {mostrarSenha ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                  {mostrarSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
@@ -185,7 +184,10 @@ export const PaginaLogin: React.FC = () => {
                 />
                 <span>Lembrar-me</span>
               </label>
-              <a href="#" className="text-xs text-[#DDB96B] hover:underline">
+              <a
+                href="https://e-sigma.app/forgot-password"
+                className="text-xs text-[#DDB96B] hover:underline"
+              >
                 Esqueci a senha
               </a>
             </div>
@@ -194,41 +196,43 @@ export const PaginaLogin: React.FC = () => {
             <button
               type="submit"
               disabled={carregando}
-              className="btn-masonic-pill btn-pill-blue w-full py-3.5 px-4 text-base font-semibold mt-4 cursor-pointer disabled:opacity-50"
+              className="btn-masonic-pill btn-pill-blue w-full py-3.5 px-4 text-base font-semibold mt-3 cursor-pointer disabled:opacity-50"
             >
               {carregando ? 'Autenticando...' : 'Entrar'}
             </button>
 
             {/* Divisor "ou" */}
-            <div className="flex items-center my-5 w-full">
+            <div className="flex items-center my-4 w-full">
               <div className="flex-1 h-px bg-white/10"></div>
               <span className="px-3 text-xs text-slate-400">ou</span>
               <div className="flex-1 h-px bg-white/10"></div>
             </div>
 
-            {/* Google Login Restilizado */}
-            <div className="flex justify-center mb-4 w-full h-[46px] rounded-full overflow-hidden border border-white/10 hover:border-white/30 transition-all opacity-90 hover:opacity-100">
+            {/* Google Login Restilizado e Responsivo */}
+            <div className="flex justify-center mb-3 w-full max-w-full rounded-full overflow-hidden border border-white/10 hover:border-white/30 transition-all opacity-90 hover:opacity-100">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={() => setErro('Ocorreu um erro ao tentar fazer login com o Google')}
                 theme="filled_black"
                 shape="pill"
                 text="continue_with"
-                width="380"
+                width="280"
               />
             </div>
 
             {/* Links Auxiliares no Rodapé */}
-            <div className="text-center pt-2">
+            <div className="text-center pt-1">
               <p className="text-xs text-slate-400">
                 Não tem uma conta?{' '}
-                <a href="https://e-sigma.app/register" className="text-[#DDB96B] font-semibold hover:underline">
+                <a
+                  href="https://e-sigma.app/register"
+                  className="text-[#DDB96B] font-semibold hover:underline"
+                >
                   Solicitar cadastro
                 </a>
               </p>
             </div>
           </form>
-
         </div>
       </div>
     </div>

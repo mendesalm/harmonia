@@ -31,7 +31,7 @@ export const App: React.FC = () => {
     <ProvedorAutenticacao>
       <ProvedorTenant>
         <Router>
-          <div className="h-screen max-h-screen w-screen overflow-hidden flex flex-col bg-sigma-bg text-slate-100 selection:bg-macaonico-dourado selection:text-black font-inter">
+          <div className="h-[100dvh] max-h-[100dvh] w-full overflow-hidden flex flex-col bg-sigma-bg text-slate-100 selection:bg-macaonico-dourado selection:text-black font-inter">
             <main className="flex-1 min-h-0 overflow-hidden relative">
               <Routes>
                 {/* Rota Pública de Login */}
@@ -42,7 +42,9 @@ export const App: React.FC = () => {
                   path="/admin"
                   element={
                     <RotaProtegida>
-                      <PaginaDashboardAdmin />
+                      <div className="h-full overflow-y-auto">
+                        <PaginaDashboardAdmin />
+                      </div>
                     </RotaProtegida>
                   }
                 />
@@ -50,7 +52,9 @@ export const App: React.FC = () => {
                   path="/admin/lojas"
                   element={
                     <RotaProtegida>
-                      <PaginaLojasAdmin />
+                      <div className="h-full overflow-y-auto">
+                        <PaginaLojasAdmin />
+                      </div>
                     </RotaProtegida>
                   }
                 />
@@ -58,7 +62,9 @@ export const App: React.FC = () => {
                   path="/admin/templates"
                   element={
                     <RotaProtegida>
-                      <PaginaRitosAdmin />
+                      <div className="h-full overflow-y-auto">
+                        <PaginaRitosAdmin />
+                      </div>
                     </RotaProtegida>
                   }
                 />
@@ -66,7 +72,9 @@ export const App: React.FC = () => {
                   path="/admin/eventos"
                   element={
                     <RotaProtegida>
-                      <PaginaEventosAdmin />
+                      <div className="h-full overflow-y-auto">
+                        <PaginaEventosAdmin />
+                      </div>
                     </RotaProtegida>
                   }
                 />
@@ -74,7 +82,7 @@ export const App: React.FC = () => {
                   path="/admin/musicas"
                   element={
                     <RotaProtegida>
-                      <div className="h-full overflow-y-auto pb-16">
+                      <div className="h-full overflow-y-auto pb-8">
                         <PaginaMusicas />
                       </div>
                     </RotaProtegida>
@@ -102,7 +110,7 @@ export const App: React.FC = () => {
                   path="/sessoes"
                   element={
                     <RotaProtegida>
-                      <div className="h-full overflow-y-auto pb-16">
+                      <div className="h-full overflow-y-auto pb-8">
                         <PaginaSessoes />
                       </div>
                     </RotaProtegida>
@@ -112,7 +120,7 @@ export const App: React.FC = () => {
                   path="/eventos"
                   element={
                     <RotaProtegida>
-                      <div className="h-full overflow-y-auto pb-16">
+                      <div className="h-full overflow-y-auto pb-8">
                         <PaginaEventos />
                       </div>
                     </RotaProtegida>
@@ -122,7 +130,7 @@ export const App: React.FC = () => {
                   path="/musicas"
                   element={
                     <RotaProtegida>
-                      <div className="h-full overflow-y-auto pb-16">
+                      <div className="h-full overflow-y-auto pb-8">
                         <PaginaMusicas />
                       </div>
                     </RotaProtegida>

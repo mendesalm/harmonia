@@ -121,6 +121,7 @@ async def obter_perfil_usuario_atual(
     organizacao_nome = None
     slug_armazenamento = None
     rito_padrao = None
+    rito_id = None
 
     if usuario.organizacao_id:
         try:
@@ -135,6 +136,7 @@ async def obter_perfil_usuario_atual(
             if org:
                 organizacao_nome = org.nome
                 slug_armazenamento = org.slug_armazenamento
+                rito_id = str(org.rito_id) if org.rito_id else None
                 if org.rito:
                     rito_padrao = org.rito.nome
         except (ValueError, Exception) as erro:
@@ -162,6 +164,7 @@ async def obter_perfil_usuario_atual(
         "dados_especificos": {
             "cim": usuario.cim,
             "cpf": usuario.cpf,
+            "rito_id": rito_id,
             "rito_padrao": rito_padrao,
         },
     }

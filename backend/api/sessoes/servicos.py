@@ -32,7 +32,11 @@ async def listar_sessoes_loja(db: AsyncSession, loja_id: uuid.UUID) -> List[Sess
         )
         .where(SessaoLoja.loja_id == loja_id)
     )
-    return list(result.scalars().all())
+    sessoes = list(result.scalars().all())
+    for s in sessoes:
+        for ev_cust in s.eventos_customizados:
+            ev_cust.evento_nome = ev_cust.evento.nome if ev_cust.evento else "Momento Ritualístico"
+    return sessoes
 
 
 async def importar_template_para_loja(
