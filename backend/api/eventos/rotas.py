@@ -5,6 +5,7 @@ import uuid
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from backend.nucleo.auth_esigma import UsuarioEsigma, obter_usuario_esigma
 from backend.nucleo.banco import obter_banco_de_dados
 from backend.nucleo.dependencias import verificar_assinatura_ativa
 from backend.api.eventos.schemas import EventoCriacao, EventoAtualizacao, EventoResposta
@@ -21,17 +22,25 @@ roteador_eventos = APIRouter(
     "",
     response_model=List[EventoResposta],
     summary="Listar Eventos Ritualísticos",
-    description="Retorna eventos disponíveis para a loja informada, incluindo eventos padrão do sistema e compartilhados."
+    description="Retorna eventos disponíveis para a loja informada, filtrando pelo Rito da Organização para evitar duplicidade."
 )
 async def listar_eventos(
     organizacao_id: Optional[uuid.UUID] = Query(None, description="UUID da loja para filtrar eventos"),
     incluir_globais: bool = Query(True, description="Se deve incluir os eventos padrão do sistema"),
     apenas_ativos: bool = Query(True, description="Se deve filtrar apenas eventos ativos"),
+    usuario: UsuarioEsigma = Depends(obter_usuario_esigma),
     db: AsyncSession = Depends(obter_banco_de_dados)
 ):
+    org_efetiva = organizacao_id
+    if not org_efetiva and usuario.organizacao_id:
+        try:
+            org_efetiva = uuid.UUID(str(usuario.organizacao_id))
+        except ValueError:
+            org_efetiva = None
+
     return await ServicoEvento.listar(
         db=db,
-        organizacao_id=organizacao_id,
+        organizacao_id=org_efetiva,
         incluir_globais=incluir_globais,
         apenas_ativos=apenas_ativos
     )

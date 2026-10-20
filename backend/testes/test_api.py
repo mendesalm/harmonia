@@ -116,6 +116,8 @@ async def test_listagem_eventos_sessoes_e_player_loja_2181(cliente_http: AsyncCl
         assert resp_ev.status_code == 200
         eventos = resp_ev.json()
         assert len(eventos) >= 10
+        nomes_eventos = [ev["nome"] for ev in eventos]
+        assert len(nomes_eventos) == len(set(nomes_eventos)), "Não deve haver momentos duplicados na listagem"
 
         resp_sessoes = await cliente_http.get(
             f"/api/v1/sessoes/loja/{LOJA_2181_UUID}",

@@ -4,72 +4,109 @@ Controlador de Rotas RESTful para Musicas, Acervo Global e Sugestoes.
 """
 import uuid
 import json
+import shutil
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, UploadFile, File, Form, status
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from loguru import logger
+
 from backend.nucleo.banco import obter_banco_de_dados
+from backend.nucleo.configuracoes import configuracoes
+from backend.nucleo.dependencias import verificar_assinatura_ativa
+from backend.modelos.musica import Musica, MusicaEventoSugerido
+from backend.modelos.evento import Evento
 from backend.api.musicas.schemas import (
     MusicaUpload,
     MusicaAtualizacao,
     MusicaResposta
 )
 from backend.api.musicas.servicos import (
-    registrar_upload_musica, 
-    buscar_musicas_sugeridas_para_evento, 
+    registrar_upload_musica,
+    buscar_musicas_sugeridas_para_evento,
     listar_arquivos_orfaos
 )
-from backend.nucleo.dependencias import verificar_assinatura_ativa
 
 roteador_musicas = APIRouter(
-    prefix="/musicas", 
+    prefix="/musicas",
     tags=["Acervo Global e Músicas"],
     dependencies=[Depends(verificar_assinatura_ativa)]
 )
 
 
-from sqlalchemy import select
-from backend.modelos.musica import Musica, MusicaEventoSugerido
-from backend.modelos.evento import Evento
-
-from sqlalchemy.orm import selectinload
-
 @roteador_musicas.get(
     "",
     summary="Listar Acervo",
-    description="Retorna todas as músicas do acervo."
+    description="Retorna as músicas do acervo com filtro opcional por evento ritualístico (incluindo equivalência canônica)."
 )
-async def listar_musicas(db: AsyncSession = Depends(obter_banco_de_dados)):
-    stmt = select(Musica).options(
-        selectinload(Musica.eventos_sugeridos).selectinload(MusicaEventoSugerido.evento).selectinload(Evento.rito)
-    ).order_by(Musica.titulo)
+async def listar_musicas(
+    evento_id: Optional[uuid.UUID] = Query(None, description="Filtrar músicas sugeridas para um evento ritualístico"),
+    db: AsyncSession = Depends(obter_banco_de_dados)
+):
+    ids_eventos_filtro = None
+    if evento_id:
+        res_ev = await db.execute(select(Evento).where(Evento.id == evento_id))
+        ev_alvo = res_ev.scalar_one_or_none()
+        if ev_alvo and ev_alvo.canonico_id:
+            res_eq = await db.execute(select(Evento.id).where(Evento.canonico_id == ev_alvo.canonico_id))
+            ids_eventos_filtro = set(res_eq.scalars().all())
+        else:
+            ids_eventos_filtro = {evento_id}
+
+    stmt = (
+        select(Musica)
+        .options(
+            selectinload(Musica.eventos_sugeridos)
+            .selectinload(MusicaEventoSugerido.evento)
+            .selectinload(Evento.rito),
+            selectinload(Musica.eventos_sugeridos)
+            .selectinload(MusicaEventoSugerido.evento)
+            .selectinload(Evento.canonico),
+        )
+        .order_by(Musica.titulo)
+    )
     res = await db.execute(stmt)
     musicas = res.scalars().all()
-    
+
     resultados = []
     for m in musicas:
+        if ids_eventos_filtro is not None:
+            possui_vinculo = any(es.evento_id in ids_eventos_filtro for es in m.eventos_sugeridos)
+            if not possui_vinculo:
+                continue
+
+        eventos_unicos = {}
+        for es in m.eventos_sugeridos:
+            if not es.evento:
+                continue
+            chave_ev = str(es.evento.canonico_id) if es.evento.canonico_id else es.evento.nome.strip().lower()
+            if chave_ev not in eventos_unicos:
+                eventos_unicos[chave_ev] = {
+                    "evento_id": es.evento_id,
+                    "evento_nome": es.evento.canonico.nome if es.evento.canonico else es.evento.nome,
+                }
+
         m_dict = {
             "id": m.id,
             "titulo": m.titulo,
             "autor_artista": m.autor_artista,
             "upload_por_loja_id": m.upload_por_loja_id,
             "arquivo_url": m.arquivo_url,
+            "caminho_arquivo": m.arquivo_url,
+            "tipo_midia": "ARQUIVO_LOCAL",
             "sinalizada_erro": m.sinalizada_erro,
             "status_uso": m.status_uso,
             "ativo": m.ativo,
             "criado_em": m.criado_em,
             "atualizado_em": m.atualizado_em,
             "metadados": m.metadados,
-            "eventos": [
-                {
-                    "evento_id": es.evento_id,
-                    "evento_nome": f"{es.evento.nome} ({es.evento.rito.nome})" if es.evento and es.evento.rito else (es.evento.nome if es.evento else None)
-                } for es in m.eventos_sugeridos
-            ]
+            "eventos": list(eventos_unicos.values()),
         }
         resultados.append(m_dict)
-    
+
     return resultados
+
 
 @roteador_musicas.get(
     "/sugeridas/{evento_id}",
@@ -107,22 +144,15 @@ async def upload_musica(
     except Exception:
         lista_eventos = []
 
-    from backend.nucleo.configuracoes import configuracoes
-    import shutil
-    import os
-    
-    # Define o diretório de destino
     diretorio_destino = configuracoes.DIRETORIO_INSTANCIAS_PUBLIC / "musicas"
     diretorio_destino.mkdir(parents=True, exist_ok=True)
-    
-    # Gera nome unico para evitar colisoes
+
     nome_arquivo_seguro = f"{uuid.uuid4().hex}_{arquivo.filename}"
     caminho_completo = diretorio_destino / nome_arquivo_seguro
-    
-    # Salva o arquivo no disco
+
     with open(caminho_completo, "wb") as buffer:
         shutil.copyfileobj(arquivo.file, buffer)
-        
+
     caminho_salvo = f"/storage/instancias/public/musicas/{nome_arquivo_seguro}"
 
     dados_upload = MusicaUpload(
@@ -145,7 +175,6 @@ async def obter_orfaos(
 ):
     return await listar_arquivos_orfaos(db=db)
 
-from fastapi import HTTPException
 
 @roteador_musicas.put("/{musica_id}", response_model=MusicaResposta)
 async def atualizar_musica(
@@ -158,15 +187,16 @@ async def atualizar_musica(
     musica = res.scalars().first()
     if not musica:
         raise HTTPException(status_code=404, detail="Música não encontrada")
-    
+
     if dados.titulo is not None:
         musica.titulo = dados.titulo
     if dados.autor_artista is not None:
         musica.autor_artista = dados.autor_artista
-    
+
     await db.commit()
     await db.refresh(musica)
     return musica
+
 
 @roteador_musicas.delete("/{musica_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def deletar_musica(
@@ -178,7 +208,7 @@ async def deletar_musica(
     musica = res.scalars().first()
     if not musica:
         raise HTTPException(status_code=404, detail="Música não encontrada")
-    
+
     await db.delete(musica)
     await db.commit()
     return None

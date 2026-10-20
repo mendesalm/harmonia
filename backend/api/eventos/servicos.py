@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
 from backend.modelos.evento import Evento
+from backend.modelos.organizacao import Organizacao
 from backend.modelos.musica import MusicaEventoSugerido
 from backend.api.eventos.schemas import EventoCriacao, EventoAtualizacao, EventoResposta
 from backend.nucleo.formatadores import formatar_titulo_inteligente
@@ -25,21 +26,28 @@ class ServicoEvento:
         apenas_ativos: bool = True
     ) -> List[EventoResposta]:
         """
-        Lista eventos disponíveis para a loja.
-        Retorna eventos padrão globais + eventos criados pela própria loja + eventos compartilhados.
+        Lista eventos disponíveis para a loja filtrando pelo Rito vinculado à Organização,
+        evitando duplicidade de momentos homônimos pertencentes a outros Ritos.
         """
-        stmt = select(
-            Evento,
-            func.count(MusicaEventoSugerido.id).label("total_musicas")
-        ).outerjoin(MusicaEventoSugerido, Evento.id == MusicaEventoSugerido.evento_id).options(selectinload(Evento.canonico))
+        stmt = (
+            select(
+                Evento,
+                func.count(MusicaEventoSugerido.id).label("total_musicas")
+            )
+            .outerjoin(MusicaEventoSugerido, Evento.id == MusicaEventoSugerido.evento_id)
+            .options(selectinload(Evento.canonico), selectinload(Evento.rito))
+        )
 
         filtros = []
         if apenas_ativos:
             filtros.append(Evento.ativo == True)
-        
-        # Como o Evento não tem mais organizacao_id, vamos retornar todos os eventos.
-        # Numa aplicação real multi-tenant, você filtraria por Rito da Loja.
-        
+
+        if organizacao_id:
+            res_org = await db.execute(select(Organizacao).where(Organizacao.id == organizacao_id))
+            org = res_org.scalar_one_or_none()
+            if org and org.rito_id:
+                filtros.append(or_(Evento.rito_id == org.rito_id, Evento.rito_id.is_(None)))
+
         if filtros:
             stmt = stmt.where(*filtros)
 
@@ -47,24 +55,46 @@ class ServicoEvento:
         resultado = await db.execute(stmt)
         linhas = resultado.all()
 
-        resposta = []
-        for evento, total in linhas:
-            resp_obj = EventoResposta(
-                id=evento.id,
-                nome=evento.nome,
-                descricao=evento.descricao or (evento.canonico.descricao if evento.canonico else None),
-                categoria_rito="Universal",
-                compartilhado=True,
-                ordem_sugerida=evento.canonico.ordem_sugerida if evento.canonico else 999,
-                organizacao_id=None,
-                padrao_sistema=True,
-                ativo=evento.ativo,
-                total_musicas=total,
-                criado_em=evento.criado_em,
-                atualizado_em=evento.atualizado_em
-            )
-            resposta.append(resp_obj)
+        # Calcula também a contagem consolidada de músicas por canonico_id (equivalência entre Ritos)
+        stmt_can = (
+            select(Evento.canonico_id, func.count(func.distinct(MusicaEventoSugerido.musica_id)))
+            .join(MusicaEventoSugerido, Evento.id == MusicaEventoSugerido.evento_id)
+            .where(Evento.canonico_id.is_not(None))
+            .group_by(Evento.canonico_id)
+        )
+        res_can = await db.execute(stmt_can)
+        mapa_total_canonico = {row[0]: row[1] for row in res_can.all()}
 
+        # Consolida momentos com mesmo canonico_id (ou nome normalizado) para evitar duplicidade visual
+        agrupados = {}
+        for evento, total in linhas:
+            chave = str(evento.canonico_id) if evento.canonico_id else evento.nome.strip().lower()
+            total_efetivo = mapa_total_canonico.get(evento.canonico_id, total) if evento.canonico_id else total
+            nome_rito = evento.rito.nome if evento.rito else "Universal"
+
+            if chave not in agrupados:
+                agrupados[chave] = EventoResposta(
+                    id=evento.id,
+                    nome=evento.canonico.nome if evento.canonico else evento.nome,
+                    descricao=evento.descricao or (evento.canonico.descricao if evento.canonico else None),
+                    categoria_rito=nome_rito,
+                    compartilhado=True,
+                    ordem_sugerida=evento.canonico.ordem_sugerida if evento.canonico else 999,
+                    organizacao_id=None,
+                    padrao_sistema=True,
+                    ativo=evento.ativo,
+                    total_musicas=total_efetivo,
+                    criado_em=evento.criado_em,
+                    atualizado_em=evento.atualizado_em
+                )
+            else:
+                existente = agrupados[chave]
+                existente.total_musicas = max(existente.total_musicas or 0, total_efetivo or 0)
+                if not organizacao_id and existente.categoria_rito != nome_rito:
+                    existente.categoria_rito = "Multi-Rito"
+
+        resposta = list(agrupados.values())
+        resposta.sort(key=lambda x: (x.ordem_sugerida, x.nome))
         return resposta
 
     @staticmethod
