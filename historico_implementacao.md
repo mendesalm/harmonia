@@ -4,6 +4,26 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [20 de Outubro de 2026] - Fase 1 SSO/RBAC, Auto-Provisionamento SaaS, Redesign Mobile-First PWA, Desduplicação de Momentos e Self-Healing de Rito
+**Módulo:** `Segurança SSO` / `Multi-Tenant` / `Mobile-First PWA` / `Rito Brasileiro`
+
+### 1. Segurança SSO e RBAC (Conformidade `AGENTS.md`)
+- Removido fallback de segredo JWT hardcoded em `backend/nucleo/configuracoes.py`.
+- Criado `backend/nucleo/dependencias.py` validando tokens exclusivamente via `GET /api/v1/auth/validate` do `e-Sigma` IdP e exigindo assinatura SaaS ativa (`verificar_assinatura_ativa`) ou perfil `super_admin` (`exigir_super_admin`).
+- Adicionado endpoint `GET /api/v1/auth/me` no backend do Harmonia e substituído uso de `axios` puro por `clienteHttp` no frontend.
+
+### 2. Sincronização de Tenant (Loja 2181), Desduplicação por Rito e Self-Healing
+- Criado `backend/nucleo/sincronizacao_tenant.py` executado na inicialização do FastAPI (`lifespan`) e sob demanda, garantindo que a **ARLS João Pedro Junqueira nº 2181** (`795b19d5-e14c-4c2e-b047-ee99e6e39a9c`) esteja vinculada ao **Rito Brasileiro** e migre automaticamente sessões e músicas de registros legados.
+- Filtragem de momentos ritualísticos por `rito_id` da Loja ativa e compartilhamento de músicas equivalentes via `canonico_id`, eliminando duplicidades visuais entre ritos.
+- Normalização de `rito_padrao` e `rito_id` em `ContextoTenant.tsx` e `PaginaDashboard.tsx`.
+
+### 3. Reestruturação Responsiva Mobile-First e Correções PWA
+- Adicionadas paletas `macaonico.*` e `primaria.*` em `frontend/tailwind.config.js`.
+- Layout responsivo `100dvh` em `App.tsx`, `Navbar.tsx`, `PaginaDashboard.tsx`, `PaginaPlayerHarmonia.tsx`, `PaginaSessoes.tsx`, `PaginaEventos.tsx`, `PaginaMusicas.tsx` e telas de administração.
+- Corrigido XML do `icone-harmonia.svg`, ocultado Google Login quando `VITE_GOOGLE_CLIENT_ID` não está configurado e ativados `skipWaiting` / `clientsClaim` no Workbox PWA.
+
+---
+
 ## [31 de Agosto de 2026] - Redesign Completo do Player: Interface Cyber-Maçônica com Card Litúrgico e Radial Progress Dial
 **Módulo:** `Frontend` / `Player UX` / `Cyber-HUD` / `Design System`
 
