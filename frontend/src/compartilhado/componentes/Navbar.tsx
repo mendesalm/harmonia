@@ -1,33 +1,47 @@
-import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import { PlayCircle, Library, LayoutTemplate, KeyRound, LogOut, Settings, Download } from 'lucide-react';
+import React from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { PlayCircle, Library, LayoutTemplate, LogOut, Shield, ListOrdered, Download } from 'lucide-react';
 import { useAuth } from '../contextos/ContextoAutenticacao';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 
 export const Navbar: React.FC = () => {
   const { usuario, logout } = useAuth();
   const { podeInstalar, dispararInstalacao } = usePwaInstall();
+  const location = useLocation();
   
   if (!usuario) return null;
   
-  const temAcessoFinanceiro = usuario?.permissoes?.includes('mestre_harmonia') || usuario?.permissoes?.includes('super_admin') || usuario?.role === 'super_admin';
+  const ehSuperAdmin =
+    usuario?.tipo === 'ADMIN' ||
+    usuario?.permissoes?.includes('super_admin') ||
+    (usuario as any)?.role === 'super_admin';
+
+  const possuiLojaVinculada = Boolean(usuario?.organizacao_id);
+  const emModoAdmin = location.pathname.startsWith('/admin');
+
   const linksMestre = [
     { to: '/', label: 'Player', icon: PlayCircle },
+    { to: '/sessoes', label: 'Sessões', icon: ListOrdered },
     { to: '/eventos', label: 'Momentos', icon: LayoutTemplate },
     { to: '/musicas', label: 'Acervo', icon: Library },
   ];
-  
-  if (temAcessoFinanceiro) {
-      linksMestre.push({ to: '/assinatura', label: 'Assinatura', icon: KeyRound });
+
+  if (ehSuperAdmin) {
+    linksMestre.push({ to: '/admin', label: 'Admin', icon: Shield });
   }
 
   const linksAdmin = [
-    { to: '/admin', label: 'Painel', icon: PlayCircle },
+    { to: '/admin', label: 'Painel', icon: Shield },
     { to: '/admin/lojas', label: 'Lojas', icon: LayoutTemplate },
     { to: '/admin/templates', label: 'Ritos', icon: Library },
+    { to: '/admin/eventos', label: 'Eventos', icon: ListOrdered },
   ];
 
-  const links = usuario?.tipo === 'ADMIN' ? linksAdmin : linksMestre;
+  if (possuiLojaVinculada) {
+    linksAdmin.push({ to: '/', label: 'Console Loja', icon: PlayCircle });
+  }
+
+  const links = (emModoAdmin || (ehSuperAdmin && !possuiLojaVinculada)) ? linksAdmin : linksMestre;
 
   return (
     <nav className="relative z-50 w-full min-h-[4rem] pb-safe bg-[#070e1c]/95 backdrop-blur-md border-t border-[rgba(221,185,107,0.2)] flex items-center justify-around px-2 shadow-[0_-10px_20px_rgba(0,0,0,0.8)] shrink-0">
@@ -38,6 +52,7 @@ export const Navbar: React.FC = () => {
           <NavLink
             key={link.to}
             to={link.to}
+            end={link.to === '/' || link.to === '/admin'}
             className={({ isActive }) =>
               `flex flex-col items-center justify-center w-20 h-full transition-all relative ${
                 isActive ? 'text-macaonico-dourado' : 'text-macaonico-inactive hover:text-slate-400'

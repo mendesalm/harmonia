@@ -1,28 +1,54 @@
+# EM CONFORMIDADE COM AS REGRAS DE OURO DO E-SIGMA
+"""
+Dependências de Autenticação e Controle de Acesso Baseado em Papéis (RBAC) do Harmonia.
+Todas as validações de identidade passam obrigatoriamente por `obter_usuario_esigma`
+contra `GET /api/v1/auth/validate` do e-Sigma IdP.
+"""
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from backend.nucleo.seguranca import decodificar_token_acesso
+from loguru import logger
+from backend.nucleo.auth_esigma import UsuarioEsigma, obter_usuario_esigma
 
-oauth2_scheme = HTTPBearer(auto_error=False)
 
-def obter_usuario_logado(token: HTTPAuthorizationCredentials = Depends(oauth2_scheme)):
-    """Extrai e valida o token JWT do header."""
-    if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nao autenticado")
-    
-    payload = decodificar_token_acesso(token.credentials)
-    if not payload:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token invalido ou expirado")
-        
-    return payload
+def obter_usuario_logado(
+    usuario: UsuarioEsigma = Depends(obter_usuario_esigma),
+) -> UsuarioEsigma:
+    """
+    Retorna a identidade do usuário já validada pelo e-Sigma IdP.
+    """
+    return usuario
 
-def verificar_assinatura_ativa(usuario: dict = Depends(obter_usuario_logado)):
-    """Verifica se o JWT possui as claims necessarias de acesso ao Harmonia."""
-    harmonia_ativo = usuario.get("harmonia_ativo", False)
-    role = usuario.get("role", "admin")
-    
-    if not harmonia_ativo and role != "super_admin":
+
+def verificar_assinatura_ativa(
+    usuario: UsuarioEsigma = Depends(obter_usuario_esigma),
+) -> UsuarioEsigma:
+    """
+    Verifica se o módulo Harmonia está ativo para a Loja do usuário autenticado
+    (via `modulos_ativos` retornado pelo e-Sigma) ou se o usuário é SuperAdmin.
+    """
+    if not usuario.harmonia_ativo:
+        logger.warning(
+            f"Acesso negado ao Harmonia (assinatura inativa): user_id={usuario.user_id} "
+            f"org={usuario.organizacao_id} modulos={usuario.modulos_ativos}"
+        )
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, 
-            detail="O modulo Harmonia nao esta ativo ou a assinatura encontra-se pendente."
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="O módulo Harmonia não está ativo para esta Loja ou a assinatura encontra-se pendente.",
+        )
+    return usuario
+
+
+def exigir_super_admin(
+    usuario: UsuarioEsigma = Depends(obter_usuario_esigma),
+) -> UsuarioEsigma:
+    """
+    Garante que apenas usuários com papel `super_admin` acessem rotas administrativas globais.
+    """
+    if not usuario.is_super_admin:
+        logger.warning(
+            f"Tentativa de acesso administrativo negada: user_id={usuario.user_id} role={usuario.role}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito ao Super Administrador do ecossistema Sigma.",
         )
     return usuario

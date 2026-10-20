@@ -3,6 +3,8 @@ Script de Inicialização e População Inicial (Seed) do Banco de Dados Harmoni
 Cria as tabelas no PostgreSQL e insere os ritos, eventos globais, templates de sessão e loja modelo.
 """
 import asyncio
+import os
+import secrets
 import sys
 import uuid
 from pathlib import Path
@@ -137,11 +139,12 @@ async def inicializar_banco():
                 ordem += 1
 
 
-        # 4. Lojas Modelo
+        # 4. Lojas Modelo (UUID sincronizado com o cadastro mestre no e-Sigma)
         print("Criando Lojas Modelo...")
         rito_br = ritos_obj["Rito Brasileiro"]
         loja_modelo = Organizacao(
-            nome="A.R.L.S. João Pedro Junqueira nº 2181",
+            id=uuid.UUID("795b19d5-e14c-4c2e-b047-ee99e6e39a9c"),
+            nome="ARLS João Pedro Junqueira nº 2181",
             slug_armazenamento="GOB_Loja2181",
             rito_id=rito_br.id,
             dados_especificos={"numero": "2181"}
@@ -165,23 +168,23 @@ async def inicializar_banco():
                 sessao_loja_id=sl.id,
                 evento_id=tse.evento_id,
                 ordem_execucao=tse.ordem_sequencia,
-                # Removido observacao_mestre_harmonia porque causava erro de lazy load no seed, pode ficar null padrao
             )
             db.add(sle)
 
-        # 5. Usuários
+        # 5. Usuários locais espelhados (autenticação real ocorre via e-Sigma IdP)
         print("Verificando usuarios...")
+        senha_seed = os.getenv("HARMONIA_SENHA_SEED") or secrets.token_urlsafe(16)
         novo_u1 = Pessoa(
-            nome="Demo Loja 2181", email="loja2181@harmonia.sigma.app",
-            senha_hash=gerar_hash_senha("harmonia@2026"), tipo="MESTRE_HARMONIA",
+            nome="Estação Harmonia - ARLS 2181", email="loja2181@harmonia.e-sigma.app",
+            senha_hash=gerar_hash_senha(senha_seed), tipo="MESTRE_HARMONIA",
             organizacao_id=loja_modelo.id, dados_civis={"permissoes_sistema": ["mestre_harmonia"]},
-            dados_especificos={}, status_acesso=True
+            dados_especificos={"numero_loja": "2181"}, status_acesso=True
         )
         db.add(novo_u1)
 
         novo_u2 = Pessoa(
             nome="SuperAdmin Sigma", email="sistema@e-sigma.app",
-            senha_hash=gerar_hash_senha("harmonia@2026"), tipo="ADMIN",
+            senha_hash=gerar_hash_senha(senha_seed), tipo="ADMIN",
             organizacao_id=None, dados_civis={"permissoes_sistema": ["admin"]},
             dados_especificos={}, status_acesso=True
         )

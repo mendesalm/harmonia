@@ -2,9 +2,10 @@
 Serviços para Gestão de Sessões (Templates) e Sessões da Loja.
 """
 import uuid
-from typing import List, Optional
+from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 
 from backend.modelos.sessao import TipoSessao, TipoSessaoEvento, SessaoLoja, SessaoLojaEvento
@@ -14,15 +15,22 @@ from backend.api.sessoes.schemas import SessaoLojaImportacao, SessaoLojaEventoAt
 async def listar_tipos_sessao_por_rito(db: AsyncSession, rito_id: uuid.UUID) -> List[TipoSessao]:
     """Retorna os templates globais (TiposSessao) disponíveis para um Rito específico."""
     result = await db.execute(
-        select(TipoSessao).where(TipoSessao.rito_id == rito_id)
+        select(TipoSessao)
+        .options(selectinload(TipoSessao.eventos))
+        .where(TipoSessao.rito_id == rito_id)
     )
     return list(result.scalars().all())
 
 
 async def listar_sessoes_loja(db: AsyncSession, loja_id: uuid.UUID) -> List[SessaoLoja]:
-    """Lista as sessões que a Loja já instanciou/importou."""
+    """Lista as sessões que a Loja já instanciou/importou, com os eventos customizados carregados."""
     result = await db.execute(
-        select(SessaoLoja).where(SessaoLoja.loja_id == loja_id)
+        select(SessaoLoja)
+        .options(
+            selectinload(SessaoLoja.tipo_sessao),
+            selectinload(SessaoLoja.eventos_customizados).selectinload(SessaoLojaEvento.evento),
+        )
+        .where(SessaoLoja.loja_id == loja_id)
     )
     return list(result.scalars().all())
 
@@ -52,6 +60,7 @@ async def importar_template_para_loja(
     # 3. Copia os Eventos do Template para permitir customização (reordenação, supressão)
     res_ev = await db.execute(
         select(TipoSessaoEvento)
+        .options(selectinload(TipoSessaoEvento.evento))
         .where(TipoSessaoEvento.tipo_sessao_id == template.id)
         .order_by(TipoSessaoEvento.ordem_sequencia)
     )
@@ -68,8 +77,16 @@ async def importar_template_para_loja(
         db.add(novo_ev_loja)
 
     await db.commit()
-    await db.refresh(nova_sessao)
-    return nova_sessao
+
+    res_final = await db.execute(
+        select(SessaoLoja)
+        .options(
+            selectinload(SessaoLoja.tipo_sessao),
+            selectinload(SessaoLoja.eventos_customizados).selectinload(SessaoLojaEvento.evento),
+        )
+        .where(SessaoLoja.id == nova_sessao.id)
+    )
+    return res_final.scalar_one()
 
 
 async def atualizar_evento_customizado_loja(

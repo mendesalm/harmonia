@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Organizacao } from '../tipos';
-import axios from 'axios';
 import clienteHttp from '../api/cliente_http';
 
 interface ContextoTenantTipo {
@@ -13,16 +12,27 @@ interface ContextoTenantTipo {
 
 const ContextoTenant = createContext<ContextoTenantTipo>({} as ContextoTenantTipo);
 
+/**
+ * Provedor de contexto Multi-Tenant (Lojas Maçônicas).
+ * Em conformidade com AGENTS.md, utiliza exclusivamente `clienteHttp` para
+ * que o interceptor de autenticação envie o token Bearer ao consultar organizações.
+ */
 export const ProvedorTenant: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [lojas, setLojas] = useState<Organizacao[]>([]);
   const [lojaAtiva, setLojaAtiva] = useState<Organizacao | null>(null);
   const [carregando, setCarregando] = useState(true);
 
   const carregarLojas = async () => {
+    const tokenSalvo = localStorage.getItem('@harmonia:token');
+    if (!tokenSalvo) {
+      setCarregando(false);
+      return;
+    }
+
     try {
       setCarregando(true);
       const baseUrlIdp = import.meta.env.VITE_URL_IDENTIDADE || 'https://e-sigma.app';
-      const resp = await axios.get<Organizacao[]>(`${baseUrlIdp}/api/v1/organizacoes`);
+      const resp = await clienteHttp.get<Organizacao[]>(`${baseUrlIdp}/api/v1/organizacoes`);
       setLojas(resp.data);
 
       if (resp.data.length > 0) {

@@ -4,9 +4,11 @@ from pathlib import Path
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
 
+from backend.nucleo.configuracoes import configuracoes
+
 async def run():
     # 1. Deletar do banco de dados a música de teste
-    engine = create_async_engine('postgresql+asyncpg://harmonia:BsysT23754RthfFg@69.62.89.211:5432/harmoniadb')
+    engine = create_async_engine(configuracoes.DATABASE_URL)
     async with engine.begin() as conn:
         await conn.execute(text("DELETE FROM musica_eventos WHERE musica_id = '03c38ad7-2301-45ba-9bab-3f7e397893d1'"))
         await conn.execute(text("DELETE FROM musicas WHERE id = '03c38ad7-2301-45ba-9bab-3f7e397893d1'"))

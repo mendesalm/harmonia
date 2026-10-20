@@ -9,9 +9,9 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class EventoBase(BaseModel):
     """Schema base para Evento / Momento Ritualístico."""
-    nome: str = Field(..., min_length=2, max_length=255, description="Nome do evento ritualístico", example="Entrada do Cortejo")
-    descricao: Optional[str] = Field(None, description="Descrição ou momento de execução", example="Música solene para o ingresso das Luzes no Templo")
-    categoria_rito: str = Field("Geral", description="Rito associado: REAA, York, Geral, etc.", example="REAA")
+    nome: str = Field(..., min_length=2, max_length=255, description="Nome do evento ritualístico", examples=["Entrada do Cortejo"])
+    descricao: Optional[str] = Field(None, description="Descrição ou momento de execução", examples=["Música solene para o ingresso das Luzes no Templo"])
+    categoria_rito: str = Field("Geral", description="Rito associado: REAA, York, Geral, etc.", examples=["REAA"])
     compartilhado: bool = Field(True, description="Indica se o evento pode ser visualizado por outras lojas")
     ordem_sugerida: int = Field(0, description="Ordem sugerida na esteira ritualística")
 

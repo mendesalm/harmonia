@@ -6,10 +6,15 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.nucleo.banco import obter_banco_de_dados
+from backend.nucleo.dependencias import verificar_assinatura_ativa
 from backend.api.eventos.schemas import EventoCriacao, EventoAtualizacao, EventoResposta
 from backend.api.eventos.servicos import ServicoEvento
 
-roteador_eventos = APIRouter(prefix="/eventos", tags=["Eventos Ritualísticos (Playlists)"])
+roteador_eventos = APIRouter(
+    prefix="/eventos",
+    tags=["Eventos Ritualísticos (Playlists)"],
+    dependencies=[Depends(verificar_assinatura_ativa)],
+)
 
 
 @roteador_eventos.get(

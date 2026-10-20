@@ -13,8 +13,13 @@ from backend.api.admin.schemas import (
     RitoSchema, TipoSessaoCanonicoSchema, MomentoCanonicoSchema,
     CriarRitoSchema, CriarSessaoSchema, SalvarSequenciaSchema, TipoSessaoSchema
 )
+from backend.nucleo.dependencias import exigir_super_admin
 
-roteador_admin = APIRouter(prefix="/admin", tags=["Administração Global"])
+roteador_admin = APIRouter(
+    prefix="/admin",
+    tags=["Administração Global"],
+    dependencies=[Depends(exigir_super_admin)],
+)
 
 @roteador_admin.get("/ritos", response_model=List[RitoSchema], summary="Listar Ritos")
 async def listar_ritos(db: AsyncSession = Depends(obter_banco_de_dados)):

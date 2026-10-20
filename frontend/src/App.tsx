@@ -20,7 +20,7 @@ import { useAuth } from './compartilhado/contextos/ContextoAutenticacao';
 
 const RotaRaiz = () => {
   const { usuario } = useAuth();
-  if (usuario?.tipo === 'ADMIN') {
+  if (usuario?.tipo === 'ADMIN' && !usuario?.organizacao_id) {
     return <Navigate to="/admin" replace />;
   }
   return <PaginaDashboard />;

@@ -18,8 +18,7 @@ class SalvarEventoGlobalSchema(BaseModel):
 
 class MusicaSugeridaRefSchema(BaseModel):
     musica_id: uuid.UUID
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class EventoSchema(BaseModel):
     id: uuid.UUID
@@ -27,9 +26,7 @@ class EventoSchema(BaseModel):
     rito_id: uuid.UUID
     observacao_padrao_mestre_harmonia: Optional[str] = None
     musicas_sugeridas: List[MusicaSugeridaRefSchema] = []
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class MomentoCanonicoSchema(BaseModel):
     id: uuid.UUID
@@ -40,22 +37,13 @@ class MomentoCanonicoSchema(BaseModel):
     grau_aplicado: int = 0
     ativo: bool
     eventos: List[EventoSchema] = []
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TipoSessaoCanonicoSchema(BaseModel):
     id: uuid.UUID
     nome: str
     descricao: Optional[str] = None
     ativo: bool
-    model_config = ConfigDict(from_attributes=True)
-
-class EventoSchema(BaseModel):
-    id: uuid.UUID
-    nome: str
-    canonico_id: Optional[uuid.UUID]
-    canonico: Optional[MomentoCanonicoSchema] = None
     model_config = ConfigDict(from_attributes=True)
 
 class TipoSessaoSchema(BaseModel):
