@@ -22,6 +22,9 @@ export const PaginaLogin: React.FC = () => {
   const [erro, setErro] = useState<string | null>(null);
 
   const destino = (location.state as any)?.from?.pathname || '/';
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  const googleOAuthAtivo =
+    Boolean(googleClientId) && googleClientId !== 'COLOQUE_SEU_CLIENT_ID_AQUI';
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     if (!credentialResponse.credential) return;
@@ -201,24 +204,28 @@ export const PaginaLogin: React.FC = () => {
               {carregando ? 'Autenticando...' : 'Entrar'}
             </button>
 
-            {/* Divisor "ou" */}
-            <div className="flex items-center my-4 w-full">
-              <div className="flex-1 h-px bg-white/10"></div>
-              <span className="px-3 text-xs text-slate-400">ou</span>
-              <div className="flex-1 h-px bg-white/10"></div>
-            </div>
+            {googleOAuthAtivo && (
+              <>
+                {/* Divisor "ou" */}
+                <div className="flex items-center my-4 w-full">
+                  <div className="flex-1 h-px bg-white/10"></div>
+                  <span className="px-3 text-xs text-slate-400">ou</span>
+                  <div className="flex-1 h-px bg-white/10"></div>
+                </div>
 
-            {/* Google Login Restilizado e Responsivo */}
-            <div className="flex justify-center mb-3 w-full max-w-full rounded-full overflow-hidden border border-white/10 hover:border-white/30 transition-all opacity-90 hover:opacity-100">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => setErro('Ocorreu um erro ao tentar fazer login com o Google')}
-                theme="filled_black"
-                shape="pill"
-                text="continue_with"
-                width="280"
-              />
-            </div>
+                {/* Google Login Restilizado e Responsivo */}
+                <div className="flex justify-center mb-3 w-full max-w-full rounded-full overflow-hidden border border-white/10 hover:border-white/30 transition-all opacity-90 hover:opacity-100">
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => setErro('Ocorreu um erro ao tentar fazer login com o Google')}
+                    theme="filled_black"
+                    shape="pill"
+                    text="continue_with"
+                    width="280"
+                  />
+                </div>
+              </>
+            )}
 
             {/* Links Auxiliares no Rodapé */}
             <div className="text-center pt-1">
