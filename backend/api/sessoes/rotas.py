@@ -33,6 +33,21 @@ roteador_sessoes = APIRouter(
 
 
 @roteador_sessoes.get(
+    "",
+    response_model=List[SessaoLojaResposta],
+    summary="Compatibilidade: Listar Sessões por Query Param organizacao_id",
+    description="Rota de compatibilidade para clientes PWA com cache anterior que consultam GET /sessoes?organizacao_id=..."
+)
+async def get_sessoes_query_compat(
+    organizacao_id: Optional[uuid.UUID] = Query(None, description="UUID da Loja"),
+    db: AsyncSession = Depends(obter_banco_de_dados)
+):
+    if not organizacao_id:
+        return []
+    return await listar_sessoes_loja(db=db, loja_id=organizacao_id)
+
+
+@roteador_sessoes.get(
     "/templates",
     response_model=List[TipoSessaoResposta],
     summary="Listar Templates Globais de Sessão",

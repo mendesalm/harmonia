@@ -13,6 +13,19 @@ const googleOAuthHabilitado =
 inicializarDispositivoNativo();
 configurarBotaoVoltarNativo();
 
+// Força atualização imediata caso haja um Service Worker antigo retendo o bundle legado
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const reg of registrations) {
+      reg.update().then(() => {
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+      });
+    }
+  });
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     {googleOAuthHabilitado ? (
