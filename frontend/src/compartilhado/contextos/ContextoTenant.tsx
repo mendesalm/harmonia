@@ -24,6 +24,40 @@ export const ProvedorTenant: React.FC<{ children: React.ReactNode }> = ({ childr
   const [lojaAtiva, setLojaAtiva] = useState<Organizacao | null>(null);
   const [carregando, setCarregando] = useState(true);
 
+  const normalizarOrganizacao = (
+    org: any,
+    referenciaLocal?: Organizacao | null
+  ): Organizacao => {
+    const ehMesmaLoja = Boolean(referenciaLocal && org?.id === referenciaLocal.id);
+    const ritoExtraido =
+      org?.rito_padrao ||
+      org?.rito?.nome ||
+      org?.dados_especificos?.rito_padrao ||
+      org?.dados_especificos?.rito ||
+      (ehMesmaLoja ? referenciaLocal?.rito_padrao : undefined) ||
+      'Rito Brasileiro';
+
+    return {
+      ...org,
+      id: org.id,
+      nome: org.nome || (ehMesmaLoja ? referenciaLocal?.nome : 'Loja Maçônica'),
+      slug_armazenamento:
+        org.slug_armazenamento ||
+        (ehMesmaLoja ? referenciaLocal?.slug_armazenamento : undefined) ||
+        `loja_${org?.dados_especificos?.numero || String(org.id).slice(0, 8)}`,
+      rito_id:
+        org.rito_id ||
+        org?.dados_especificos?.rito_id ||
+        (ehMesmaLoja ? referenciaLocal?.rito_id : undefined),
+      rito_padrao: ritoExtraido,
+      status_assinatura:
+        org.status_assinatura ||
+        (ehMesmaLoja ? referenciaLocal?.status_assinatura : 'ATIVA') ||
+        'ATIVA',
+      ativo: org.ativo ?? true,
+    };
+  };
+
   const construirLojaDoUsuario = (): Organizacao | null => {
     if (!usuario?.organizacao_id) return null;
     return {
@@ -31,7 +65,10 @@ export const ProvedorTenant: React.FC<{ children: React.ReactNode }> = ({ childr
       nome: usuario.organizacao_nome || 'Loja Maçônica',
       slug_armazenamento: usuario.slug_armazenamento || 'loja',
       rito_id: usuario.dados_especificos?.rito_id || undefined,
-      rito_padrao: usuario.dados_especificos?.rito_padrao || 'Rito Escocês Antigo e Aceito',
+      rito_padrao:
+        usuario.dados_especificos?.rito_padrao ||
+        (usuario.dados_especificos as any)?.rito ||
+        'Rito Brasileiro',
       status_assinatura: (usuario as any).status_assinatura || 'ATIVA',
       ativo: true,
     };
@@ -65,19 +102,35 @@ export const ProvedorTenant: React.FC<{ children: React.ReactNode }> = ({ childr
 
     try {
       setCarregando(true);
-      const baseUrlIdp = import.meta.env.VITE_URL_IDENTIDADE || 'https://e-sigma.app';
-      const resp = await clienteHttp.get<Organizacao[]>(`${baseUrlIdp}/api/v1/organizacoes`);
-      if (Array.isArray(resp.data) && resp.data.length > 0) {
-        setLojas(resp.data);
-        const salvaId = localStorage.getItem('@harmonia:loja_id') || usuario?.organizacao_id;
-        const encontrada = resp.data.find((l) => l.id === salvaId);
-        const lojaPadrao = encontrada || lojaUsuario || resp.data[0];
+      const respLocal = await clienteHttp
+        .get<Organizacao[]>('/organizacoes?apenas_ativas=false')
+        .catch(() => ({ data: [] as Organizacao[] }));
+
+      let listaNormalizada: Organizacao[] = Array.isArray(respLocal.data)
+        ? respLocal.data.map((org) => normalizarOrganizacao(org, lojaUsuario))
+        : [];
+
+      if (listaNormalizada.length === 0) {
+        const baseUrlIdp = import.meta.env.VITE_URL_IDENTIDADE || 'https://e-sigma.app';
+        const respIdp = await clienteHttp.get<Organizacao[]>(`${baseUrlIdp}/api/v1/organizacoes`);
+        if (Array.isArray(respIdp.data)) {
+          listaNormalizada = respIdp.data.map((org) => normalizarOrganizacao(org, lojaUsuario));
+        }
+      }
+
+      if (listaNormalizada.length > 0) {
+        setLojas(listaNormalizada);
+        const salvaId = usuario?.organizacao_id || localStorage.getItem('@harmonia:loja_id');
+        const encontrada = listaNormalizada.find((l) => l.id === salvaId);
+        const lojaPadrao = encontrada
+          ? normalizarOrganizacao(encontrada, lojaUsuario)
+          : lojaUsuario || listaNormalizada[0];
         setLojaAtiva(lojaPadrao);
         localStorage.setItem('@harmonia:loja_id', lojaPadrao.id);
       }
     } catch (err) {
       if (!lojaUsuario) {
-        console.warn('Não foi possível listar todas as organizações no IdP; mantendo contexto local.');
+        console.warn('Não foi possível listar todas as organizações; mantendo contexto local.');
       }
     } finally {
       setCarregando(false);

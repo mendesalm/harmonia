@@ -14,7 +14,11 @@ export const PaginaDashboard: React.FC = () => {
   const [modalSessaoAberto, setModalSessaoAberto] = useState(false);
 
   const nomeLoja = lojaAtiva?.nome || "Loja Maçônica";
-  const rito = lojaAtiva?.rito_padrao || "Rito Escocês Antigo e Aceito";
+  const rito =
+    lojaAtiva?.rito_padrao ||
+    (lojaAtiva as any)?.dados_especificos?.rito_padrao ||
+    (lojaAtiva as any)?.dados_especificos?.rito ||
+    "Rito Brasileiro";
   const validade = lojaAtiva?.validade_assinatura
     ? new Date(lojaAtiva.validade_assinatura).toLocaleDateString('pt-BR')
     : 'Assinatura Ativa';

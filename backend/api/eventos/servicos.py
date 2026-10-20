@@ -13,6 +13,7 @@ from backend.modelos.organizacao import Organizacao
 from backend.modelos.musica import MusicaEventoSugerido
 from backend.api.eventos.schemas import EventoCriacao, EventoAtualizacao, EventoResposta
 from backend.nucleo.formatadores import formatar_titulo_inteligente
+from backend.nucleo.sincronizacao_tenant import obter_ou_sincronizar_organizacao
 
 
 class ServicoEvento:
@@ -43,8 +44,7 @@ class ServicoEvento:
             filtros.append(Evento.ativo == True)
 
         if organizacao_id:
-            res_org = await db.execute(select(Organizacao).where(Organizacao.id == organizacao_id))
-            org = res_org.scalar_one_or_none()
+            org = await obter_ou_sincronizar_organizacao(db, organizacao_id)
             if org and org.rito_id:
                 filtros.append(or_(Evento.rito_id == org.rito_id, Evento.rito_id.is_(None)))
 

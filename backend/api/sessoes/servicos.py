@@ -10,6 +10,7 @@ from fastapi import HTTPException
 
 from backend.modelos.sessao import TipoSessao, TipoSessaoEvento, SessaoLoja, SessaoLojaEvento
 from backend.api.sessoes.schemas import SessaoLojaImportacao, SessaoLojaEventoAtualizacao
+from backend.nucleo.sincronizacao_tenant import obter_ou_sincronizar_organizacao
 
 
 async def listar_tipos_sessao_por_rito(db: AsyncSession, rito_id: uuid.UUID) -> List[TipoSessao]:
@@ -24,6 +25,7 @@ async def listar_tipos_sessao_por_rito(db: AsyncSession, rito_id: uuid.UUID) -> 
 
 async def listar_sessoes_loja(db: AsyncSession, loja_id: uuid.UUID) -> List[SessaoLoja]:
     """Lista as sessões que a Loja já instanciou/importou, com os eventos customizados carregados."""
+    await obter_ou_sincronizar_organizacao(db, loja_id)
     result = await db.execute(
         select(SessaoLoja)
         .options(

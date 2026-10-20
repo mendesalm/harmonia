@@ -83,6 +83,8 @@ async def test_perfil_estacao_loja_2181_e_usuario_cim_272875(cliente_http: Async
         assert perfil_estacao["organizacao_id"] == LOJA_2181_UUID
         assert perfil_estacao["slug_armazenamento"] == "GOB_Loja2181"
         assert perfil_estacao["status_assinatura"] == "ATIVA"
+        assert perfil_estacao["dados_especificos"]["rito_padrao"] == "Rito Brasileiro"
+        assert perfil_estacao["dados_especificos"]["rito_id"] is not None
 
     mock_cim = _mock_validacao_esigma(
         email="mendesalm@gmail.com",
@@ -102,8 +104,20 @@ async def test_perfil_estacao_loja_2181_e_usuario_cim_272875(cliente_http: Async
         assert perfil_cim["nome"] == "André Luiz Mendes"
         assert perfil_cim["organizacao_id"] == LOJA_2181_UUID
         assert perfil_cim["dados_especificos"]["cim"] == "272875"
+        assert perfil_cim["dados_especificos"]["rito_padrao"] == "Rito Brasileiro"
         assert "super_admin" in perfil_cim["permissoes"]
         assert "mestre_harmonia" in perfil_cim["permissoes"]
+
+        resp_orgs = await cliente_http.get(
+            "/api/v1/organizacoes?apenas_ativas=false",
+            headers={"Authorization": "Bearer token-cim-272875"},
+        )
+        assert resp_orgs.status_code == 200
+        orgs = resp_orgs.json()
+        loja_2181 = next((o for o in orgs if o["id"] == LOJA_2181_UUID), None)
+        assert loja_2181 is not None
+        assert loja_2181["rito_padrao"] == "Rito Brasileiro"
+        assert loja_2181["rito_id"] is not None
 
 
 @pytest.mark.asyncio
