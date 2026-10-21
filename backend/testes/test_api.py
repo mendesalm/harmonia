@@ -149,4 +149,29 @@ async def test_listagem_eventos_sessoes_e_player_loja_2181(cliente_http: AsyncCl
         assert resp_player.status_code == 200
         dados_player = resp_player.json()
         assert dados_player["sessao_id"] == sessao_id
-        assert len(dados_player["esteira_ritualistica"]) >= 10
+        esteira = dados_player["esteira_ritualistica"]
+        assert len(esteira) >= 22
+        nomes_esteira = [m["evento_nome"] for m in esteira]
+        assert any("Irmãos" in n for n in nomes_esteira), "Deve conter Ingresso no Templo - Irmãos na esteira"
+        assert any("Cortejo" in n for n in nomes_esteira), "Deve conter Cortejo na esteira do Rito Brasileiro"
+
+        # Testa atualização completa da sessão da Loja
+        eventos_atuais = sessoes[0]["eventos_customizados"]
+        resp_update = await cliente_http.put(
+            f"/api/v1/sessoes/loja/{LOJA_2181_UUID}/{sessao_id}/completa",
+            headers=headers,
+            json={
+                "nome_personalizado": sessoes[0]["nome_personalizado"] or "Sessão Ordinária",
+                "eventos_customizados": [
+                    {
+                        "evento_id": ev["evento_id"],
+                        "ordem_execucao": idx + 1,
+                        "suprimido": ev["suprimido"],
+                        "observacao_mestre_harmonia": ev.get("observacao_mestre_harmonia"),
+                    }
+                    for idx, ev in enumerate(eventos_atuais)
+                ],
+            },
+        )
+        assert resp_update.status_code == 200
+        assert len(resp_update.json()["eventos_customizados"]) == len(eventos_atuais)

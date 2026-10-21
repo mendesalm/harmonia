@@ -49,7 +49,7 @@ export const Navbar: React.FC = () => {
   const links = (emModoAdmin || (ehSuperAdmin && !possuiLojaVinculada)) ? linksAdmin : linksMestre;
 
   return (
-    <nav className="relative z-50 w-full min-h-[3.75rem] sm:min-h-[4.25rem] pb-safe bg-[#070e1c]/95 backdrop-blur-md border-t border-[rgba(221,185,107,0.2)] flex items-stretch justify-around px-1 sm:px-4 shadow-[0_-10px_20px_rgba(0,0,0,0.8)] shrink-0">
+    <nav className="relative z-40 w-full min-h-[3.75rem] sm:min-h-[4.25rem] pb-safe bg-[#070e1c]/95 backdrop-blur-md border-t border-[rgba(221,185,107,0.2)] flex items-stretch justify-around px-1 sm:px-4 shadow-[0_-10px_20px_rgba(0,0,0,0.8)] shrink-0">
       
       {links.map((link) => {
         const Icon = link.icon;

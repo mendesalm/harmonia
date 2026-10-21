@@ -109,11 +109,16 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({ momentoId,
           const respMomento = await clienteHttp.get<any[]>('/admin/canonicos/momentos');
           const momento = respMomento.data.find(m => m.id === momentoId);
           if (momento) {
-            
-            // Buscar musicas sugeridas
+            // Buscar musicas sugeridas consolidadas de todas as variações do momento
             let musicasIds: string[] = [];
-            if (momento.eventos && momento.eventos.length > 0 && momento.eventos[0].musicas_sugeridas) {
-              musicasIds = momento.eventos[0].musicas_sugeridas.map((m: any) => m.musica_id);
+            if (Array.isArray(momento.eventos)) {
+              const conjuntoIds = new Set<string>();
+              momento.eventos.forEach((ev: any) => {
+                (ev.musicas_sugeridas || []).forEach((m: any) => {
+                  if (m.musica_id) conjuntoIds.add(m.musica_id);
+                });
+              });
+              musicasIds = Array.from(conjuntoIds);
             }
 
             setFormData({

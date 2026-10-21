@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
+from sqlalchemy import select, text, delete
 from sqlalchemy.orm import selectinload
 from typing import List
 import uuid
 from backend.nucleo.banco import obter_banco_de_dados
 from backend.modelos.canonico import TipoSessaoCanonico, MomentoCanonico
 from backend.modelos.rito import Rito
-from backend.modelos.sessao import TipoSessao, TipoSessaoEvento
+from backend.modelos.sessao import TipoSessao, TipoSessaoEvento, SessaoLoja, SessaoLojaEvento
 from backend.modelos.evento import Evento
 from backend.api.admin.schemas import (
     RitoSchema, TipoSessaoCanonicoSchema, MomentoCanonicoSchema,
@@ -75,41 +75,117 @@ async def obter_sequencia(sessao_id: uuid.UUID, db: AsyncSession = Depends(obter
 
 @roteador_admin.put("/ritos/{rito_id}/sessoes/{sessao_id}/sequencia", summary="Salvar Sequência do Ritual")
 async def salvar_sequencia(rito_id: uuid.UUID, sessao_id: uuid.UUID, payload: SalvarSequenciaSchema, db: AsyncSession = Depends(obter_banco_de_dados)):
-    # 1. Carregar rito
+    """
+    Salva a sequência de Momentos Canônicos de um Template de Sessão (`TipoSessao`) de um Rito,
+    vinculando sempre o `Evento` pertencente ao `rito_id` correspondente e sincronizando
+    eventuais sessões já instanciadas pelas Lojas.
+    """
     rito = await db.get(Rito, rito_id)
     if not rito:
         raise HTTPException(status_code=404, detail="Rito não encontrado")
-    
-    # 2. Deletar sequência anterior
-    await db.execute(text(f"DELETE FROM tipos_sessao_eventos WHERE tipo_sessao_id = '{sessao_id}'"))
-    
-    # 3. Reconstruir
+
+    await db.execute(delete(TipoSessaoEvento).where(TipoSessaoEvento.tipo_sessao_id == sessao_id))
+
     ordem = 1
+    eventos_sequencia: list[tuple[int, Evento]] = []
     for can_id in payload.canonicos_ids:
-        # Busca o canonico para saber o nome
         mcan = await db.get(MomentoCanonico, can_id)
         if not mcan:
             continue
-            
-        nome_esperado = f"{mcan.nome} ({rito.nome})"
-        stmt_ev = select(Evento).where(Evento.nome == nome_esperado)
+
+        stmt_ev = select(Evento).where(Evento.canonico_id == can_id, Evento.rito_id == rito_id)
         ev = (await db.execute(stmt_ev)).scalar_one_or_none()
-        
+
         if not ev:
-            ev = Evento(nome=nome_esperado, canonico_id=mcan.id, observacao_padrao_mestre_harmonia="")
+            ev = Evento(
+                nome=mcan.nome,
+                descricao=mcan.descricao,
+                rito_id=rito_id,
+                canonico_id=mcan.id,
+                observacao_padrao_mestre_harmonia=mcan.orientacao or "Aguardar comando do Venerável Mestre.",
+            )
             db.add(ev)
             await db.flush()
-            
+
         tse = TipoSessaoEvento(tipo_sessao_id=sessao_id, evento_id=ev.id, ordem_sequencia=ordem)
         db.add(tse)
+        eventos_sequencia.append((ordem, ev))
         ordem += 1
-        
+
+    # Garante que sessões de Lojas baseadas neste template recebam momentos que estavam faltando
+    res_sl = await db.execute(
+        select(SessaoLoja)
+        .options(selectinload(SessaoLoja.eventos_customizados))
+        .where(SessaoLoja.tipo_sessao_id == sessao_id)
+    )
+    for sl in res_sl.scalars().all():
+        ids_existentes = {item.evento_id for item in sl.eventos_customizados}
+        for ord_seq, ev_obj in eventos_sequencia:
+            if ev_obj.id not in ids_existentes:
+                db.add(
+                    SessaoLojaEvento(
+                        sessao_loja_id=sl.id,
+                        evento_id=ev_obj.id,
+                        ordem_execucao=ord_seq,
+                        observacao_mestre_harmonia=ev_obj.observacao_padrao_mestre_harmonia,
+                    )
+                )
+
     await db.commit()
     return {"status": "ok"}
 
 
 from backend.api.admin.schemas import SalvarEventoGlobalSchema
 from backend.modelos.musica import MusicaEventoSugerido
+
+
+async def _sincronizar_eventos_por_rito(
+    db: AsyncSession,
+    mcan: MomentoCanonico,
+    payload: SalvarEventoGlobalSchema,
+) -> None:
+    """
+    Atualiza ou cria os registros `Evento` de cada Rito para o `MomentoCanonico` informado
+    SEM executar DELETE destrutivo (preservando os UUIDs referenciados nas esteiras de sessão).
+    Se um Rito não tiver variação explícita em `payload.ritos`, utiliza o nome e orientação globais.
+    """
+    todos_ritos = list((await db.execute(select(Rito))).scalars().all())
+    mapa_variacoes = {v.rito_id: v for v in payload.ritos if v.rito_id}
+
+    res_existentes = await db.execute(select(Evento).where(Evento.canonico_id == mcan.id))
+    eventos_por_rito = {ev.rito_id: ev for ev in res_existentes.scalars().all() if ev.rito_id}
+
+    ritos_alvo_ids = {r.id for r in todos_ritos} | set(mapa_variacoes.keys())
+
+    for rito_id in ritos_alvo_ids:
+        variacao = mapa_variacoes.get(rito_id)
+        nome_efetivo = (variacao.nome.strip() if variacao and variacao.nome and variacao.nome.strip() else payload.nome)
+        obs_efetiva = (
+            variacao.observacao_padrao_mestre_harmonia
+            if variacao and variacao.observacao_padrao_mestre_harmonia is not None
+            else (payload.orientacao or "Aguardar comando do Venerável Mestre.")
+        )
+
+        ev = eventos_por_rito.get(rito_id)
+        if ev:
+            ev.nome = nome_efetivo
+            ev.descricao = payload.descricao
+            ev.observacao_padrao_mestre_harmonia = obs_efetiva
+        else:
+            ev = Evento(
+                nome=nome_efetivo,
+                descricao=payload.descricao,
+                rito_id=rito_id,
+                canonico_id=mcan.id,
+                observacao_padrao_mestre_harmonia=obs_efetiva,
+            )
+            db.add(ev)
+            await db.flush()
+
+        await db.execute(delete(MusicaEventoSugerido).where(MusicaEventoSugerido.evento_id == ev.id))
+        for mus_id in payload.musicas_sugeridas_ids:
+            db.add(MusicaEventoSugerido(musica_id=mus_id, evento_id=ev.id))
+
 
 @roteador_admin.post("/canonicos/momentos", response_model=MomentoCanonicoSchema, summary="Criar Evento Global")
 async def criar_evento_global(payload: SalvarEventoGlobalSchema, db: AsyncSession = Depends(obter_banco_de_dados)):
@@ -123,57 +199,29 @@ async def criar_evento_global(payload: SalvarEventoGlobalSchema, db: AsyncSessio
     db.add(mcan)
     await db.flush()
 
-    for rito in payload.ritos:
-        ev = Evento(
-            nome=rito.nome,
-            rito_id=rito.rito_id,
-            canonico_id=mcan.id,
-            observacao_padrao_mestre_harmonia=rito.observacao_padrao_mestre_harmonia
-        )
-        db.add(ev)
-        await db.flush()
-        
-        for mus_id in payload.musicas_sugeridas_ids:
-            mes = MusicaEventoSugerido(musica_id=mus_id, evento_id=ev.id)
-            db.add(mes)
-
+    await _sincronizar_eventos_por_rito(db, mcan, payload)
     await db.commit()
-    
+
     stmt = select(MomentoCanonico).options(selectinload(MomentoCanonico.eventos).selectinload(Evento.musicas_sugeridas)).where(MomentoCanonico.id == mcan.id)
     r = await db.execute(stmt)
     return r.scalar_one()
+
 
 @roteador_admin.put("/canonicos/momentos/{momento_id}", response_model=MomentoCanonicoSchema, summary="Editar Evento Global")
 async def editar_evento_global(momento_id: uuid.UUID, payload: SalvarEventoGlobalSchema, db: AsyncSession = Depends(obter_banco_de_dados)):
     mcan = await db.get(MomentoCanonico, momento_id)
     if not mcan:
         raise HTTPException(status_code=404, detail="Momento não encontrado")
-        
+
     mcan.nome = payload.nome
     mcan.descricao = payload.descricao
     mcan.orientacao = payload.orientacao
     mcan.ordem_sugerida = payload.ordem_sugerida
     mcan.grau_aplicado = payload.grau_aplicado
-    
-    # Clean up old events (and their music suggestions by cascade)
-    await db.execute(text(f"DELETE FROM eventos_ritualisticos WHERE canonico_id = '{momento_id}'"))
-    
-    for rito in payload.ritos:
-        ev = Evento(
-            nome=rito.nome,
-            rito_id=rito.rito_id,
-            canonico_id=mcan.id,
-            observacao_padrao_mestre_harmonia=rito.observacao_padrao_mestre_harmonia
-        )
-        db.add(ev)
-        await db.flush()
-        
-        for mus_id in payload.musicas_sugeridas_ids:
-            mes = MusicaEventoSugerido(musica_id=mus_id, evento_id=ev.id)
-            db.add(mes)
 
+    await _sincronizar_eventos_por_rito(db, mcan, payload)
     await db.commit()
-    
+
     stmt = select(MomentoCanonico).options(selectinload(MomentoCanonico.eventos).selectinload(Evento.musicas_sugeridas)).where(MomentoCanonico.id == mcan.id)
     r = await db.execute(stmt)
     return r.scalar_one()

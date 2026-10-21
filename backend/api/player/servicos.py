@@ -20,6 +20,7 @@ from backend.api.player.schemas import (
 from backend.modelos.evento import Evento
 from backend.modelos.musica import Musica, MusicaEvento, MusicaEventoSugerido
 from backend.modelos.sessao import SessaoLoja, SessaoLojaEvento, TipoSessao
+from backend.nucleo.sincronizacao_tenant import sincronizar_organizacoes_base
 
 
 def _converter_musica_para_info(musica: Musica, preferida: bool = False) -> MusicaSorteadaInfo:
@@ -110,6 +111,7 @@ class ServicoPlayer:
         Carrega a sessão da Loja, localiza todos os eventos não suprimidos em ordem sequencial e,
         para cada momento, sorteia aleatoriamente uma música elegível do acervo (priorizando a playlist da Loja).
         """
+        await sincronizar_organizacoes_base(db)
         stmt = (
             select(SessaoLoja)
             .where(SessaoLoja.id == sessao_id)

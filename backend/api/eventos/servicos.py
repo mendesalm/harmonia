@@ -75,7 +75,7 @@ class ServicoEvento:
             if chave not in agrupados:
                 agrupados[chave] = EventoResposta(
                     id=evento.id,
-                    nome=evento.canonico.nome if evento.canonico else evento.nome,
+                    nome=evento.nome or (evento.canonico.nome if evento.canonico else "Momento Ritualístico"),
                     descricao=evento.descricao or (evento.canonico.descricao if evento.canonico else None),
                     categoria_rito=nome_rito,
                     compartilhado=True,
