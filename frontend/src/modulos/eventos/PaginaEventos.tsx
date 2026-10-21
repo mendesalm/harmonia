@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Search, Music, ShieldCheck, Share2, Trash2, Edit3, Sparkles, UploadCloud } from 'lucide-react';
 import { Evento } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
@@ -280,62 +281,67 @@ export const PaginaEventos: React.FC = () => {
         />
       )}
 
-      {/* Modal de Criação / Edição */}
-      {modalAberto && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-sigma-bg/80 backdrop-blur-sm">
-          <div className="vidro-destaque rounded-t-3xl sm:rounded-3xl w-full max-w-lg p-5 sm:p-6 max-h-[90dvh] overflow-y-auto">
-            <h2 className="text-lg sm:text-xl font-bold text-white fonte-ritual mb-4">
-              {eventoEmEdicao ? 'Editar Evento Ritualístico' : 'Novo Evento Ritualístico'}
-            </h2>
+      {/* Modal de Criação / Edição Centralizado via Portal */}
+      {modalAberto &&
+        createPortal(
+          <div
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+            className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md"
+          >
+            <div className="bg-[#0a1428] border border-macaonico-dourado/45 rounded-2xl sm:rounded-3xl w-full max-w-lg p-5 sm:p-6 max-h-[88dvh] overflow-y-auto shadow-[0_20px_60px_rgba(0,0,0,0.9)]">
+              <h2 className="text-lg sm:text-xl font-bold text-white fonte-ritual mb-4">
+                {eventoEmEdicao ? 'Editar Evento Ritualístico' : 'Novo Evento Ritualístico'}
+              </h2>
 
-            <form onSubmit={salvarEvento} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Nome do Evento / Momento
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formNome}
-                  onChange={(e) => setFormNome(e.target.value)}
-                  placeholder="Ex: Recepção de Visitantes"
-                  className="w-full bg-primaria-800 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:border-macaonico-dourado outline-none"
-                />
-              </div>
+              <form onSubmit={salvarEvento} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Nome do Evento / Momento
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formNome}
+                    onChange={(e) => setFormNome(e.target.value)}
+                    placeholder="Ex: Recepção de Visitantes"
+                    className="w-full bg-primaria-800 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:border-macaonico-dourado outline-none"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Descrição Litúrgica (Opcional)
-                </label>
-                <textarea
-                  rows={3}
-                  value={formDescricao}
-                  onChange={(e) => setFormDescricao(e.target.value)}
-                  placeholder="Explique o momento ritualístico correspondente..."
-                  className="w-full bg-primaria-800 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:border-macaonico-dourado outline-none resize-none"
-                />
-              </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Descrição Litúrgica (Opcional)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={formDescricao}
+                    onChange={(e) => setFormDescricao(e.target.value)}
+                    placeholder="Explique o momento ritualístico correspondente..."
+                    className="w-full bg-primaria-800 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:border-macaonico-dourado outline-none resize-none"
+                  />
+                </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setModalAberto(false)}
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={salvando}
-                  className="bg-macaonico-dourado hover:bg-yellow-400 text-black font-bold px-5 py-2.5 rounded-xl text-sm transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {salvando ? 'Salvando...' : 'Salvar Evento'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setModalAberto(false)}
+                    className="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-white"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={salvando}
+                    className="bg-macaonico-dourado hover:bg-yellow-400 text-black font-bold px-5 py-2.5 rounded-xl text-sm transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {salvando ? 'Salvando...' : 'Salvar Evento'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

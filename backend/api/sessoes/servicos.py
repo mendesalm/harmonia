@@ -51,10 +51,18 @@ def _enriquecer_nomes_sessao_loja(sessoes: List[SessaoLoja]) -> List[SessaoLoja]
 
 
 async def listar_tipos_sessao_por_rito(
-    db: AsyncSession, rito_id: Optional[uuid.UUID] = None
+    db: AsyncSession,
+    rito_id: Optional[uuid.UUID] = None,
+    organizacao_id: Optional[uuid.UUID] = None,
 ) -> List[TipoSessao]:
-    """Retorna os templates globais (`TipoSessao`) disponíveis, filtrados opcionalmente pelo Rito."""
+    """Retorna os templates globais (`TipoSessao`) disponíveis, filtrados pelo Rito da Loja e sem duplicatas."""
     await sincronizar_organizacoes_base(db)
+
+    if not rito_id and organizacao_id:
+        org = await obter_ou_sincronizar_organizacao(db, organizacao_id)
+        if org and org.rito_id:
+            rito_id = org.rito_id
+
     stmt = select(TipoSessao).options(
         selectinload(TipoSessao.eventos).selectinload(TipoSessaoEvento.evento)
     )
@@ -63,7 +71,17 @@ async def listar_tipos_sessao_por_rito(
     stmt = stmt.order_by(TipoSessao.nome)
     result = await db.execute(stmt)
     templates = list(result.scalars().all())
-    return _enriquecer_nomes_template(templates)
+    _enriquecer_nomes_template(templates)
+
+    # Deduplica por nome normalizado priorizando o template com mais eventos configurados
+    unicos_por_nome: dict[str, TipoSessao] = {}
+    for t in templates:
+        chave = (t.nome or "").strip().lower()
+        existente = unicos_por_nome.get(chave)
+        if not existente or len(t.eventos) > len(existente.eventos):
+            unicos_por_nome[chave] = t
+
+    return list(unicos_por_nome.values())
 
 
 async def listar_sessoes_loja(

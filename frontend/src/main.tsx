@@ -13,8 +13,16 @@ const googleOAuthHabilitado =
 inicializarDispositivoNativo();
 configurarBotaoVoltarNativo();
 
-// Força atualização imediata caso haja um Service Worker antigo retendo o bundle legado
+// Força atualização imediata e recarregamento único quando um novo Service Worker assume o controle
 if ('serviceWorker' in navigator) {
+  let recarregandoPorAtualizacao = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!recarregandoPorAtualizacao) {
+      recarregandoPorAtualizacao = true;
+      window.location.reload();
+    }
+  });
+
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     for (const reg of registrations) {
       reg.update().then(() => {

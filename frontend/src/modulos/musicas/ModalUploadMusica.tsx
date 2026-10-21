@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Upload, Music, Youtube, DownloadCloud, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Evento } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
@@ -145,9 +146,12 @@ export const ModalUploadMusica: React.FC<Props> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-sigma-bg/85 backdrop-blur-md">
-      <div className="vidro-destaque rounded-t-3xl sm:rounded-3xl w-full max-w-2xl p-4 sm:p-6 max-h-[92dvh] flex flex-col">
+  return createPortal(
+    <div
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10000 }}
+      className="fixed inset-0 z-[130] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md"
+    >
+      <div className="bg-[#0a1428] border border-macaonico-dourado/45 rounded-2xl sm:rounded-3xl w-full max-w-2xl p-4 sm:p-6 max-h-[88dvh] flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.9)] overflow-hidden">
         {/* Cabeçalho */}
         <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3 shrink-0">
           <div className="min-w-0 pr-2">
@@ -161,6 +165,7 @@ export const ModalUploadMusica: React.FC<Props> = ({
           </div>
 
           <button
+            type="button"
             onClick={onFechar}
             className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
           >
@@ -380,6 +385,7 @@ export const ModalUploadMusica: React.FC<Props> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

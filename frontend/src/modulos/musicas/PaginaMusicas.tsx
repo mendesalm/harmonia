@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Plus,
   Search,
@@ -394,73 +395,80 @@ export const PaginaMusicas: React.FC = () => {
         </>
       )}
 
-      {/* Modal de Prévia de Streaming */}
-      {musicaStreamingPrevia && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sigma-bg/80 backdrop-blur-md">
-          <div className="vidro-destaque rounded-3xl w-full max-w-xl p-5 sm:p-6">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
-              <div className="min-w-0 pr-2">
-                <span className="text-[10px] font-bold text-macaonico-dourado uppercase tracking-wider">
-                  Prévia de Streaming
-                </span>
-                <h3 className="text-base sm:text-lg font-bold text-white truncate">
-                  {musicaStreamingPrevia.titulo}
-                </h3>
+      {/* Modal de Prévia de Streaming via Portal */}
+      {musicaStreamingPrevia &&
+        createPortal(
+          <div
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+            className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md"
+          >
+            <div className="bg-[#0a1428] border border-macaonico-dourado/45 rounded-2xl sm:rounded-3xl w-full max-w-xl p-5 sm:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9)]">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+                <div className="min-w-0 pr-2">
+                  <span className="text-[10px] font-bold text-macaonico-dourado uppercase tracking-wider">
+                    Prévia de Streaming
+                  </span>
+                  <h3 className="text-base sm:text-lg font-bold text-white truncate">
+                    {musicaStreamingPrevia.titulo}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMusicaStreamingPrevia(null)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                onClick={() => setMusicaStreamingPrevia(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
-              >
-                <X className="w-5 h-5" />
-              </button>
+
+              {musicaStreamingPrevia.tipo_midia === 'YOUTUBE' && (
+                <div className="rounded-2xl overflow-hidden aspect-video bg-sigma-bg/80 shadow-2xl mb-4 border border-white/10">
+                  <iframe
+                    title={musicaStreamingPrevia.titulo}
+                    src={`https://www.youtube.com/embed/${extrairIdYoutube(musicaStreamingPrevia.link_externo)}?autoplay=1&rel=0`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full"
+                  />
+                </div>
+              )}
+
+              {musicaStreamingPrevia.tipo_midia === 'SPOTIFY' && (
+                <div className="rounded-2xl overflow-hidden mb-4">
+                  <iframe
+                    title={musicaStreamingPrevia.titulo}
+                    src={extrairEmbedSpotify(musicaStreamingPrevia.link_externo) || ''}
+                    width="100%"
+                    height="152"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                    className="rounded-2xl"
+                  />
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-2">
+                <a
+                  href={musicaStreamingPrevia.link_externo}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-macaonico-dourado hover:underline flex items-center gap-1"
+                >
+                  Abrir link original <ExternalLink className="w-3 h-3" />
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => setMusicaStreamingPrevia(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-colors"
+                >
+                  Fechar Prévia
+                </button>
+              </div>
             </div>
-
-            {musicaStreamingPrevia.tipo_midia === 'YOUTUBE' && (
-              <div className="rounded-2xl overflow-hidden aspect-video bg-sigma-bg/80 shadow-2xl mb-4 border border-white/10">
-                <iframe
-                  title={musicaStreamingPrevia.titulo}
-                  src={`https://www.youtube.com/embed/${extrairIdYoutube(musicaStreamingPrevia.link_externo)}?autoplay=1&rel=0`}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full h-full"
-                />
-              </div>
-            )}
-
-            {musicaStreamingPrevia.tipo_midia === 'SPOTIFY' && (
-              <div className="rounded-2xl overflow-hidden mb-4">
-                <iframe
-                  title={musicaStreamingPrevia.titulo}
-                  src={extrairEmbedSpotify(musicaStreamingPrevia.link_externo) || ''}
-                  width="100%"
-                  height="152"
-                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                  loading="lazy"
-                  className="rounded-2xl"
-                />
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pt-2">
-              <a
-                href={musicaStreamingPrevia.link_externo}
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs text-macaonico-dourado hover:underline flex items-center gap-1"
-              >
-                Abrir link original <ExternalLink className="w-3 h-3" />
-              </a>
-
-              <button
-                onClick={() => setMusicaStreamingPrevia(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-colors"
-              >
-                Fechar Prévia
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       {/* Modal de Upload */}
       {modalUploadAberto && (
@@ -471,47 +479,61 @@ export const PaginaMusicas: React.FC = () => {
         />
       )}
 
-      {musicaEmEdicao && (
-        <div className="fixed inset-0 z-50 bg-sigma-bg/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-sigma-surface border border-macaonico-dourado/30 p-5 sm:p-6 rounded-2xl shadow-xl w-full max-w-md">
-            <h2 className="text-lg sm:text-xl font-bold text-white mb-4 font-cinzel">Editar Música</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1">Título da Música</label>
-                <input
-                  type="text"
-                  value={tituloEdit}
-                  onChange={(e) => setTituloEdit(e.target.value)}
-                  className="w-full bg-sigma-bg border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-macaonico-dourado"
-                />
+      {/* Modal de Edição de Música via Portal */}
+      {musicaEmEdicao &&
+        createPortal(
+          <div
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+            className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
+          >
+            <div className="bg-[#0a1428] border border-macaonico-dourado/45 p-5 sm:p-6 rounded-2xl sm:rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.9)] w-full max-w-md">
+              <h2 className="text-lg sm:text-xl font-bold text-white mb-4 font-cinzel">
+                Editar Música
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Título da Música
+                  </label>
+                  <input
+                    type="text"
+                    value={tituloEdit}
+                    onChange={(e) => setTituloEdit(e.target.value)}
+                    className="w-full bg-sigma-bg border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-macaonico-dourado"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Autor / Artista
+                  </label>
+                  <input
+                    type="text"
+                    value={autorEdit}
+                    onChange={(e) => setAutorEdit(e.target.value)}
+                    className="w-full bg-sigma-bg border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-macaonico-dourado"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1">Autor / Artista</label>
-                <input
-                  type="text"
-                  value={autorEdit}
-                  onChange={(e) => setAutorEdit(e.target.value)}
-                  className="w-full bg-sigma-bg border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-macaonico-dourado"
-                />
+              <div className="flex gap-3 justify-end mt-6">
+                <button
+                  type="button"
+                  onClick={() => setMusicaEmEdicao(null)}
+                  className="px-4 py-2 rounded-xl text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={salvarEdicaoMusica}
+                  className="px-5 py-2 rounded-xl bg-macaonico-dourado text-black text-sm font-bold hover:bg-yellow-400 transition-colors"
+                >
+                  Salvar Alterações
+                </button>
               </div>
             </div>
-            <div className="flex gap-3 justify-end mt-6">
-              <button
-                onClick={() => setMusicaEmEdicao(null)}
-                className="px-4 py-2 rounded-xl text-sm text-gray-400 hover:text-white transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={salvarEdicaoMusica}
-                className="px-5 py-2 rounded-xl bg-macaonico-dourado text-black text-sm font-bold hover:bg-yellow-400 transition-colors"
-              >
-                Salvar Alterações
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

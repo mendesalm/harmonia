@@ -54,13 +54,16 @@ async def get_sessoes_query_compat(
     "/templates",
     response_model=List[TipoSessaoResposta],
     summary="Listar Templates Globais de Sessão",
-    description="Lista os templates de sessão disponíveis para importação pelas Lojas, com filtro opcional por Rito.",
+    description="Lista os templates de sessão disponíveis para importação pelas Lojas, com filtro opcional por Rito ou Organização.",
 )
 async def listar_templates_disponiveis(
     rito_id: Optional[uuid.UUID] = Query(None, description="UUID opcional do Rito"),
+    organizacao_id: Optional[uuid.UUID] = Query(None, description="UUID opcional da Loja"),
     db: AsyncSession = Depends(obter_banco_de_dados),
 ):
-    return await listar_tipos_sessao_por_rito(db=db, rito_id=rito_id)
+    return await listar_tipos_sessao_por_rito(
+        db=db, rito_id=rito_id, organizacao_id=organizacao_id
+    )
 
 
 @roteador_sessoes.get(

@@ -86,7 +86,8 @@ export const PaginaSessoes: React.FC = () => {
     }
     try {
       setCarregando(true);
-      const paramsTemplate = lojaAtiva.rito_id ? { rito_id: lojaAtiva.rito_id } : {};
+      const paramsTemplate: Record<string, string> = { organizacao_id: lojaAtiva.id };
+      if (lojaAtiva.rito_id) paramsTemplate.rito_id = lojaAtiva.rito_id;
       const [respSessoes, respTemplates, respEventos] = await Promise.all([
         clienteHttp.get<SessaoLoja[]>(`/sessoes/loja/${lojaAtiva.id}`),
         clienteHttp.get<TemplateSessao[]>('/sessoes/templates', { params: paramsTemplate }),
@@ -408,7 +409,10 @@ export const PaginaSessoes: React.FC = () => {
       {/* Modal Centralizado (Portal) para Cadastrar / Editar Sessão Maçônica */}
       {modalAberto &&
         createPortal(
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md">
+          <div
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+            className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md"
+          >
             <form
               onSubmit={handleSalvarSessao}
               className="bg-[#0a1428] border border-macaonico-dourado/45 rounded-2xl sm:rounded-3xl w-full max-w-2xl max-h-[88dvh] flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.9)] overflow-hidden"
