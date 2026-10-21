@@ -182,7 +182,11 @@ async def atualizar_musica(
     dados: MusicaAtualizacao,
     db: AsyncSession = Depends(obter_banco_de_dados)
 ):
-    stmt = select(Musica).where(Musica.id == musica_id)
+    stmt = (
+        select(Musica)
+        .options(selectinload(Musica.eventos_sugeridos))
+        .where(Musica.id == musica_id)
+    )
     res = await db.execute(stmt)
     musica = res.scalars().first()
     if not musica:
@@ -192,6 +196,32 @@ async def atualizar_musica(
         musica.titulo = dados.titulo
     if dados.autor_artista is not None:
         musica.autor_artista = dados.autor_artista
+
+    # Atualiza vínculos com momentos litúrgicos caso informado
+    if dados.eventos_sugeridos_ids is not None:
+        # Remove vínculos antigos
+        for es in list(musica.eventos_sugeridos):
+            await db.delete(es)
+        await db.flush()
+
+        # Adiciona novos vínculos
+        for ev_id in dados.eventos_sugeridos_ids:
+            # Obtém o evento para verificar se possui equivalência canônica
+            ev_db = await db.get(Evento, ev_id)
+            if not ev_db:
+                continue
+            
+            # Se possui canonico_id, vincula a todos os eventos equivalentes entre os ritos
+            if ev_db.canonico_id:
+                res_eq = await db.execute(
+                    select(Evento).where(Evento.canonico_id == ev_db.canonico_id)
+                )
+                eventos_vincular = res_eq.scalars().all()
+            else:
+                eventos_vincular = [ev_db]
+
+            for ev_v in eventos_vincular:
+                db.add(MusicaEventoSugerido(musica_id=musica.id, evento_id=ev_v.id))
 
     await db.commit()
     await db.refresh(musica)

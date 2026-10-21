@@ -116,11 +116,21 @@ export const PaginaMusicas: React.FC = () => {
   const [musicaEmEdicao, setMusicaEmEdicao] = useState<Musica | null>(null);
   const [tituloEdit, setTituloEdit] = useState('');
   const [autorEdit, setAutorEdit] = useState('');
+  const [eventosEditIds, setEventosEditIds] = useState<string[]>([]);
 
   const abrirModalEditar = (musica: Musica) => {
     setMusicaEmEdicao(musica);
     setTituloEdit(musica.titulo);
     setAutorEdit(musica.autor_artista || '');
+    setEventosEditIds((musica.eventos || []).map((e) => e.evento_id));
+  };
+
+  const toggleEventoEdicao = (id: string) => {
+    if (eventosEditIds.includes(id)) {
+      setEventosEditIds(eventosEditIds.filter((eId) => eId !== id));
+    } else {
+      setEventosEditIds([...eventosEditIds, id]);
+    }
   };
 
   const salvarEdicaoMusica = async () => {
@@ -129,6 +139,7 @@ export const PaginaMusicas: React.FC = () => {
       await clienteHttp.put(`/musicas/${musicaEmEdicao.id}`, {
         titulo: tituloEdit,
         autor_artista: autorEdit || null,
+        eventos_sugeridos_ids: eventosEditIds,
       });
       setMusicaEmEdicao(null);
       carregarDados();
@@ -512,6 +523,46 @@ export const PaginaMusicas: React.FC = () => {
                     onChange={(e) => setAutorEdit(e.target.value)}
                     className="w-full bg-sigma-bg border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-macaonico-dourado"
                   />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-slate-300">
+                      Vincular aos Momentos Ritualísticos:
+                    </label>
+                    <span className="text-[11px] text-macaonico-dourado font-bold">
+                      {eventosEditIds.length} selecionado(s)
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-[#070e1c] rounded-2xl border border-white/10">
+                    {eventos.map((ev) => {
+                      const selecionado = eventosEditIds.includes(ev.id);
+                      return (
+                        <button
+                          key={ev.id}
+                          type="button"
+                          onClick={() => toggleEventoEdicao(ev.id)}
+                          className={`flex items-center justify-between p-2 rounded-xl text-left border transition-all text-xs min-h-[36px] ${
+                            selecionado
+                              ? 'bg-macaonico-dourado/20 border-macaonico-dourado text-white font-bold'
+                              : 'bg-white/5 border-white/5 text-slate-300 hover:bg-white/10'
+                          }`}
+                        >
+                          <span className="truncate mr-2">{ev.nome}</span>
+                          <span
+                            className={`w-4 h-4 rounded-md flex items-center justify-center border text-[10px] shrink-0 ${
+                              selecionado
+                                ? 'bg-macaonico-dourado text-black border-transparent font-black'
+                                : 'border-white/20'
+                            }`}
+                          >
+                            {selecionado ? '✓' : ''}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
               <div className="flex gap-3 justify-end mt-6">
