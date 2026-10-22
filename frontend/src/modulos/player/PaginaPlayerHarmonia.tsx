@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ListOrdered } from 'lucide-react';
+import { ListOrdered, Sparkles, ArrowLeft, Volume2, Pause, Play } from 'lucide-react';
 import { SessaoPlayerExecucao, Musica } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
@@ -10,6 +10,7 @@ import { MasonicTimeline } from './componentes/MasonicTimeline';
 import { MasonicTrackList } from './componentes/MasonicTrackList';
 import { MasonicControls } from './componentes/MasonicControls';
 import { ModalUploadMusica } from '../musicas/ModalUploadMusica';
+import { ModalInterludioFundo } from './ModalInterludioFundo';
 
 declare global {
   interface Window {
@@ -41,7 +42,17 @@ export const PaginaPlayerHarmonia: React.FC = () => {
 
   const [indiceAtual, setIndiceAtual] = useState(0);
   const [modalUploadAberto, setModalUploadAberto] = useState(false);
+  const [modalInterludioAberto, setModalInterludioAberto] = useState(false);
   const [musicasDoMomento, setMusicasDoMomento] = useState<Musica[]>([]);
+
+  // Estado do Modo Interlúdio / Trilha de Fundo
+  const [modoInterludioAtivo, setModoInterludioAtivo] = useState(false);
+  const [musicaFundoAtiva, setMusicaFundoAtiva] = useState<Musica | null>(null);
+  const [estadoAntesDoInterludio, setEstadoAntesDoInterludio] = useState<{
+    estavaTocando: boolean;
+    tempoPosicao: number;
+    indiceMomento: number;
+  } | null>(null);
 
   // Estado de reprodução de áudio
   const [tocando, setTocando] = useState(false);
@@ -130,7 +141,9 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   };
 
   const momentoAtual = dadosSessao?.esteira_ritualistica[indiceAtual];
-  const musicaAtual = momentoAtual?.musica_sorteada;
+  // Determina a música efetiva (seja do Modo Interlúdio ou da Esteira Ritualística)
+  const musicaAtivaEfetiva = modoInterludioAtivo ? musicaFundoAtiva : momentoAtual?.musica_sorteada;
+  const musicaAtual = musicaAtivaEfetiva;
 
   // Sincroniza a fonte de áudio ao trocar a música ativa
   useEffect(() => {
@@ -161,7 +174,75 @@ export const PaginaPlayerHarmonia: React.FC = () => {
       audio.pause();
       audio.src = '';
     }
-  }, [musicaAtual]);
+  }, [musicaAtual?.id, modoInterludioAtivo]);
+
+  // Função para ativar trilha de fundo memorizando o ponto da esteira
+  const ativarTrilhaFundo = (musicaFundo: Musica) => {
+    const audio = audioRef.current;
+    // Se não estava em modo interlúdio, memoriza o estado da esteira
+    if (!modoInterludioAtivo) {
+      setEstadoAntesDoInterludio({
+        estavaTocando: tocando,
+        tempoPosicao: audio?.currentTime || 0,
+        indiceMomento: indiceAtual,
+      });
+    }
+
+    setModoInterludioAtivo(true);
+    setMusicaFundoAtiva(musicaFundo);
+
+    if (audio) {
+      let caminho = musicaFundo.caminho_arquivo || '';
+      if (caminho && !caminho.startsWith('http') && !caminho.startsWith('/')) {
+        caminho = '/' + caminho;
+      }
+      audio.src = caminho;
+      audio.currentTime = 0;
+      audio.play().then(() => setTocando(true)).catch(() => setTocando(false));
+    }
+  };
+
+  // Função para retornar à esteira litúrgica restaurando o momento e a posição
+  const retornarParaEsteira = () => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+    }
+    setTocando(false);
+
+    const estadoAnterior = estadoAntesDoInterludio;
+    setModoInterludioAtivo(false);
+    setMusicaFundoAtiva(null);
+    setEstadoAntesDoInterludio(null);
+
+    // Se tínhamos um momento e faixa da esteira ritualística
+    if (estadoAnterior && dadosSessao) {
+      setIndiceAtual(estadoAnterior.indiceMomento);
+      const musicaEsteira = dadosSessao.esteira_ritualistica[estadoAnterior.indiceMomento]?.musica_sorteada;
+      if (musicaEsteira && musicaEsteira.caminho_arquivo && audio) {
+        let caminho = musicaEsteira.caminho_arquivo;
+        if (!caminho.startsWith('http') && !caminho.startsWith('/')) {
+          caminho = '/' + caminho;
+        }
+        audio.src = caminho;
+        audio.currentTime = estadoAnterior.tempoPosicao;
+        if (estadoAnterior.estavaTocando) {
+          audio.play().then(() => setTocando(true)).catch(() => {});
+        }
+      }
+    }
+  };
+
+  const alternarPlayPauseFundo = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (tocando) {
+      audio.pause();
+      setTocando(false);
+    } else {
+      audio.play().then(() => setTocando(true)).catch(() => setTocando(false));
+    }
+  };
 
   const alternarPlayPause = () => {
     if (!musicaAtual) return;
@@ -282,7 +363,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         onEnded={aoTerminarMusica}
       />
 
-      {/* Barra superior compacta de seleção de Sessão */}
+      {/* Barra superior compacta de seleção de Sessão e Botão de Trilha de Fundo */}
       <div className="relative z-20 flex items-center justify-between gap-2 px-3 sm:px-6 py-2 bg-[#070e1c]/90 border-b border-macaonico-dourado/20 shrink-0">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <ListOrdered className="w-4 h-4 text-macaonico-dourado shrink-0" />
@@ -305,12 +386,71 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           </select>
         </div>
 
-        {dadosSessao && dadosSessao.esteira_ritualistica.length > 0 && (
-          <span className="text-[11px] sm:text-xs font-cinzel text-macaonico-dourado/90 shrink-0 bg-macaonico-dourado/10 border border-macaonico-dourado/30 px-2.5 py-1 rounded-full">
-            Momento {indiceAtual + 1}/{dadosSessao.esteira_ritualistica.length}
-          </span>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Botão de Chamada Rápida: Música de Fundo / Interlúdio */}
+          <button
+            type="button"
+            onClick={() => setModalInterludioAberto(true)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all shadow-sm ${
+              modoInterludioAtivo
+                ? 'bg-macaonico-dourado text-black border-yellow-300 animate-pulse'
+                : 'bg-macaonico-dourado/15 text-macaonico-dourado border-macaonico-dourado/40 hover:bg-macaonico-dourado/25 hover:text-yellow-300'
+            }`}
+            title="Abrir trilhas de fundo para monólogo ou espera de irmãos"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Música de Fundo</span>
+            <span className="sm:hidden">Fundo</span>
+          </button>
+
+          {dadosSessao && dadosSessao.esteira_ritualistica.length > 0 && (
+            <span className="text-[11px] sm:text-xs font-cinzel text-macaonico-dourado/90 shrink-0 bg-macaonico-dourado/10 border border-macaonico-dourado/30 px-2.5 py-1 rounded-full">
+              Momento {indiceAtual + 1}/{dadosSessao.esteira_ritualistica.length}
+            </span>
+          )}
+        </div>
       </div>
+
+      {/* Banner ativo do Modo Interlúdio / Fundo com botão de retorno */}
+      {modoInterludioAtivo && musicaFundoAtiva && (
+        <div className="relative z-20 bg-gradient-to-r from-yellow-950/80 via-black to-yellow-950/80 border-b border-macaonico-dourado/40 px-3 sm:px-6 py-2 flex items-center justify-between gap-3 shrink-0 shadow-lg animate-in slide-in-from-top duration-200">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-macaonico-dourado/20 border border-macaonico-dourado/40 flex items-center justify-center shrink-0 text-macaonico-dourado">
+              <Volume2 className="w-4 h-4 animate-pulse" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] text-macaonico-dourado uppercase tracking-wider font-bold block">
+                Modo Interlúdio / Fundo Ativo
+              </span>
+              <p className="text-xs font-semibold text-white truncate">
+                {musicaFundoAtiva.titulo}
+                {musicaFundoAtiva.autor_artista ? ` • ${musicaFundoAtiva.autor_artista}` : ''}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={alternarPlayPauseFundo}
+              className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
+              title={tocando ? 'Pausar' : 'Tocar'}
+            >
+              {tocando ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+            </button>
+
+            <button
+              type="button"
+              onClick={retornarParaEsteira}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-macaonico-dourado hover:bg-yellow-400 text-black font-bold text-xs shadow-md transition-all"
+              title="Retomar a esteira ritualística de onde parou"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Retomar Esteira</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Eixo Superior: Linha do Tempo de Momentos */}
       {dadosSessao && dadosSessao.esteira_ritualistica.length > 0 ? (
@@ -397,6 +537,19 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           }}
         />
       )}
+
+      {/* Modal / Gaveta de Interlúdio / Trilha de Fundo */}
+      <ModalInterludioFundo
+        aberto={modalInterludioAberto}
+        onFechar={() => setModalInterludioAberto(false)}
+        onSelecionarTrilhaFundo={(musica) => {
+          ativarTrilhaFundo(musica);
+        }}
+        musicaFundoAtiva={musicaFundoAtiva}
+        tocandoFundo={modoInterludioAtivo && tocando}
+        onAlternarPlayPauseFundo={alternarPlayPauseFundo}
+        onRetomarEsteira={retornarParaEsteira}
+      />
     </div>
   );
 };
