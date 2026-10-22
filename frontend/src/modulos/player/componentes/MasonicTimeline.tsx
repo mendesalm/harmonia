@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info, Volume2 } from 'lucide-react';
 import { MomentoExecucao } from '../../../compartilhado/tipos';
 import { getMasonicIcon } from './MasonicIcons';
 
@@ -211,10 +211,31 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({
 
       {/* Rótulo do Momento Atual e Próximo (sempre visível e legível sem cortar no mobile) */}
       {momentoAtivo && (
-        <div className="px-4 pt-1 text-center">
-          <div className="font-cinzel text-xs sm:text-sm text-macaonico-dourado font-bold tracking-wider truncate">
-            {momentoAtivo.evento_nome}
+        <div className="px-3 sm:px-4 pt-1 text-center">
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <span className="font-cinzel text-xs sm:text-sm text-macaonico-dourado font-bold tracking-wider">
+              {momentoAtivo.evento_nome}
+            </span>
+            {momentoAtivo.observacao_ritual && (
+              momentoAtivo.observacao_ritual.toLowerCase().includes('surdina') ||
+              momentoAtivo.evento_nome.toLowerCase().includes('interlúdio') ||
+              momentoAtivo.evento_nome.toLowerCase().includes('interludio')
+            ) && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase tracking-wider">
+                <Volume2 className="w-3 h-3" />
+                Surdina
+              </span>
+            )}
           </div>
+
+          {/* Instrução ao Mestre de Harmonia */}
+          {momentoAtivo.observacao_ritual && (
+            <div className="mt-1 inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-lg bg-primaria-800/90 border border-macaonico-dourado/25 text-[11px] sm:text-xs text-amber-200/90 max-w-full">
+              <Info className="w-3.5 h-3.5 text-macaonico-dourado shrink-0" />
+              <span className="truncate">{momentoAtivo.observacao_ritual}</span>
+            </div>
+          )}
+
           {proximoMomento && (
             <div className="text-[10px] sm:text-xs text-slate-400 truncate mt-0.5">
               Próximo: <span className="text-slate-300">{proximoMomento.evento_nome}</span>

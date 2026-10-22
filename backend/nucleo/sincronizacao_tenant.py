@@ -150,6 +150,10 @@ async def _reparar_eventos_e_templates_ritos(db: AsyncSession) -> bool:
             if not (eh_ordinaria or eh_iniciacao):
                 continue
 
+            # Se o template já tiver eventos definidos, preserva a esteira cadastrada
+            if ts.eventos and len(ts.eventos) > 0:
+                continue
+
             eventos_atuais_ids = {tse.evento_id for tse in ts.eventos}
             eventos_esperados: list[Evento] = []
 
