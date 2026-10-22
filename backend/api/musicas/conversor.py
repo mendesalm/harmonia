@@ -29,8 +29,13 @@ def _executar_download_yt_dlp(
     caminho_template = os.path.join(pasta_destino, f"{nome_arquivo_base}.%(ext)s")
     
     # Suporte a cookies para evitar bloqueio de bot (Cloud/VPS)
-    # Procuramos o arquivo na raiz do projeto (onde o usuǭrio fez o upload)
-    caminho_cookies = Path(os.getcwd()) / "cookies.txt"
+    # Busca tanto na raiz do projeto quanto no diretório do processo atual
+    candidatos_cookies = [
+        Path(os.getcwd()) / "cookies.txt",
+        Path("/var/www/harmonia/cookies.txt"),
+        configuracoes.DIRETORIO_RAIZ / "cookies.txt",
+    ]
+    caminho_cookies = next((c for c in candidatos_cookies if c.exists()), None)
 
     ydl_opts = {
         'outtmpl': caminho_template,
@@ -57,7 +62,7 @@ def _executar_download_yt_dlp(
         'socket_timeout': 30,  # Adiciona timeout nativo na conexão de rede do ytdlp
     }
     
-    if caminho_cookies.exists():
+    if caminho_cookies:
         ydl_opts['cookiefile'] = str(caminho_cookies)
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
