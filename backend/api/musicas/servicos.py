@@ -8,6 +8,7 @@ from sqlalchemy import select, func, or_
 from fastapi import HTTPException
 
 from backend.modelos.musica import Musica, MusicaEventoSugerido, MusicaEvento
+from backend.modelos.evento import Evento
 from backend.api.musicas.schemas import MusicaUpload, MusicaAtualizacao
 
 
@@ -32,8 +33,17 @@ async def registrar_upload_musica(
     db.add(nova_musica)
     await db.flush()
 
-    # Registra o checklist de sugestões
+    # Registra o checklist de sugestões, expandindo equivalências canônicas
+    # para que ritos e sessões com os mesmos momentos compartilhem a playlist
+    ids_finais_eventos = set(dados.eventos_sugeridos_ids)
     for ev_id in dados.eventos_sugeridos_ids:
+        ev_db = await db.get(Evento, ev_id)
+        if ev_db and ev_db.canonico_id:
+            res_eq = await db.execute(select(Evento.id).where(Evento.canonico_id == ev_db.canonico_id))
+            for eq_id in res_eq.scalars().all():
+                ids_finais_eventos.add(eq_id)
+
+    for ev_id in ids_finais_eventos:
         db.add(MusicaEventoSugerido(
             musica_id=nova_musica.id,
             evento_id=ev_id

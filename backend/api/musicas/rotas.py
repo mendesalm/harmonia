@@ -20,7 +20,9 @@ from backend.modelos.evento import Evento
 from backend.api.musicas.schemas import (
     MusicaUpload,
     MusicaAtualizacao,
-    MusicaResposta
+    MusicaResposta,
+    MusicaDownloadYouTube,
+    MusicaLinkStreaming
 )
 from backend.api.musicas.servicos import (
     registrar_upload_musica,
@@ -28,6 +30,7 @@ from backend.api.musicas.servicos import (
     listar_arquivos_orfaos
 )
 from backend.api.musicas.extrator_metadados import extrair_metadados_arquivo_audio
+from backend.api.musicas.conversor import converter_youtube_para_mp3_async
 
 roteador_musicas = APIRouter(
     prefix="/musicas",
@@ -184,6 +187,86 @@ async def upload_musica(
         metadados=metadados_dict
     )
     return await registrar_upload_musica(db=db, dados=dados_upload, arquivo_url=caminho_salvo)
+
+
+@roteador_musicas.post(
+    "/converter-youtube",
+    response_model=MusicaResposta,
+    status_code=status.HTTP_201_CREATED,
+    summary="Baixar e Converter Áudio do YouTube para MP3 320kbps",
+    description="Baixa o áudio de uma URL do YouTube, converte com FFmpeg em MP3 de alta fidelidade e registra no acervo."
+)
+async def converter_youtube(
+    dados: MusicaDownloadYouTube,
+    db: AsyncSession = Depends(obter_banco_de_dados)
+):
+    logger.info(f"Iniciando conversão YouTube -> MP3: {dados.link_youtube} (Loja: {dados.organizacao_id})")
+    diretorio_destino = configuracoes.DIRETORIO_INSTANCIAS_PUBLIC / "musicas"
+    diretorio_destino.mkdir(parents=True, exist_ok=True)
+
+    try:
+        resultado = await converter_youtube_para_mp3_async(
+            url=dados.link_youtube,
+            pasta_destino=str(diretorio_destino),
+            titulo_sugerido=dados.titulo,
+            bitrate_kbps=dados.bitrate_kbps or 320
+        )
+    except Exception as exc:
+        logger.error(f"Erro na conversão YouTube: {exc}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Não foi possível converter o vídeo do YouTube: {str(exc)}"
+        )
+
+    nome_arquivo = resultado["nome_arquivo"]
+    caminho_salvo = f"/storage/instancias/public/musicas/{nome_arquivo}"
+
+    titulo_final = dados.titulo.strip() if dados.titulo and dados.titulo.strip() else resultado.get("titulo_original", "Música do YouTube")
+    autor_final = dados.autor_artista.strip() if dados.autor_artista and dados.autor_artista.strip() else resultado.get("autor_original")
+
+    metadados_dict = {
+        "duracao_segundos": resultado.get("duracao_segundos"),
+        "tamanho_bytes": resultado.get("tamanho_bytes"),
+        "bitrate_kbps": resultado.get("bitrate_kbps"),
+        "link_youtube": dados.link_youtube,
+        "tipo_midia": "ARQUIVO_LOCAL"
+    }
+
+    dados_upload = MusicaUpload(
+        titulo=titulo_final,
+        autor_artista=autor_final,
+        upload_por_loja_id=dados.organizacao_id,
+        eventos_sugeridos_ids=dados.eventos_sugeridos_ids,
+        metadados=metadados_dict
+    )
+    return await registrar_upload_musica(db=db, dados=dados_upload, arquivo_url=caminho_salvo)
+
+
+@roteador_musicas.post(
+    "/streaming",
+    response_model=MusicaResposta,
+    status_code=status.HTTP_201_CREATED,
+    summary="Cadastrar Link Externo de Streaming (YouTube)",
+    description="Registra uma música a partir de URL do YouTube para execução direta no Player."
+)
+async def cadastrar_link_streaming(
+    dados: MusicaLinkStreaming,
+    db: AsyncSession = Depends(obter_banco_de_dados)
+):
+    logger.info(f"Cadastrando streaming YouTube: {dados.titulo} ({dados.link_externo})")
+    metadados_dict = {
+        "tipo_midia": dados.tipo_midia or "YOUTUBE",
+        "link_externo": dados.link_externo
+    }
+
+    dados_upload = MusicaUpload(
+        titulo=dados.titulo.strip(),
+        autor_artista=dados.autor_artista.strip() if dados.autor_artista else None,
+        upload_por_loja_id=dados.organizacao_id,
+        eventos_sugeridos_ids=dados.eventos_sugeridos_ids,
+        metadados=metadados_dict
+    )
+    return await registrar_upload_musica(db=db, dados=dados_upload, arquivo_url=dados.link_externo)
 
 
 @roteador_musicas.get(

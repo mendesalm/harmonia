@@ -6,6 +6,15 @@ import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
 import { extrairMetadadosAudio } from '../../compartilhado/utilitarios/extratorMetadadosAudio';
 
+function extrairMensagemErro(err: any, mensagemPadrao: string): string {
+  const detail = err?.response?.data?.detail;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail) && detail.length > 0) {
+    return detail.map((d: any) => d?.msg || JSON.stringify(d)).join('; ');
+  }
+  return err?.message || mensagemPadrao;
+}
+
 interface Props {
   onFechar: () => void;
   onSalvo: (novaMusicaId?: string) => void;
@@ -104,7 +113,7 @@ export const ModalUploadMusica: React.FC<Props> = ({
         formData.append('eventos_sugeridos_ids', JSON.stringify(eventosSelecionados));
 
         const resp = await clienteHttp.post('/musicas/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
+          headers: { 'Content-Type': undefined },
         });
         novaMusicaId = resp.data?.id;
       } else {
@@ -141,7 +150,7 @@ export const ModalUploadMusica: React.FC<Props> = ({
       onSalvo(novaMusicaId);
       onFechar();
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Erro ao processar música.');
+      alert(extrairMensagemErro(err, 'Erro ao processar música.'));
     } finally {
       setSalvando(false);
       setMensagemStatus('');

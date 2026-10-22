@@ -30,6 +30,26 @@ class MusicaUpload(MusicaBase):
     eventos_sugeridos_ids: List[uuid.UUID] = Field(default_factory=list, description="IDs dos eventos sugeridos para esta música")
 
 
+class MusicaDownloadYouTube(BaseModel):
+    """Schema para solicitação de conversão de vídeo do YouTube para MP3."""
+    link_youtube: str = Field(..., description="URL do vídeo do YouTube")
+    titulo: Optional[str] = Field(None, description="Título opcional")
+    autor_artista: Optional[str] = Field(None, description="Autor/Artista opcional")
+    organizacao_id: Optional[uuid.UUID] = Field(None, description="UUID da Loja")
+    bitrate_kbps: int = Field(320, description="Qualidade de áudio em kbps")
+    eventos_sugeridos_ids: List[uuid.UUID] = Field(default_factory=list, description="IDs dos eventos sugeridos")
+
+
+class MusicaLinkStreaming(BaseModel):
+    """Schema para cadastro de link externo (ex: streaming YouTube sem conversão)."""
+    link_externo: str = Field(..., description="URL externa")
+    titulo: str = Field(..., min_length=1, max_length=255)
+    autor_artista: Optional[str] = None
+    tipo_midia: str = Field("YOUTUBE", description="Tipo de mídia externa")
+    organizacao_id: Optional[uuid.UUID] = None
+    eventos_sugeridos_ids: List[uuid.UUID] = Field(default_factory=list)
+
+
 class MusicaAtualizacao(BaseModel):
     """Schema para atualização de dados da Música."""
     titulo: Optional[str] = Field(None, min_length=1, max_length=255)
