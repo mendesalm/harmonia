@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Upload, Music, Youtube, DownloadCloud, Sparkles, CheckCircle2 } from 'lucide-react';
+import { X, Upload, Music, Youtube, DownloadCloud, Sparkles, CheckCircle2, Wand2 } from 'lucide-react';
 import { Evento } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
+import { extrairMetadadosAudio } from '../../compartilhado/utilitarios/extratorMetadadosAudio';
 
 interface Props {
   onFechar: () => void;
@@ -38,6 +39,7 @@ export const ModalUploadMusica: React.FC<Props> = ({
   );
   const [salvando, setSalvando] = useState(false);
   const [mensagemStatus, setMensagemStatus] = useState('');
+  const [lendoMetadados, setLendoMetadados] = useState(false);
 
   useEffect(() => {
     if (eventoIdPreSelecionado && !eventosSelecionados.includes(eventoIdPreSelecionado)) {
@@ -212,14 +214,23 @@ export const ModalUploadMusica: React.FC<Props> = ({
               <div className="border-2 border-dashed border-white/20 hover:border-macaonico-dourado/60 rounded-2xl p-4 sm:p-6 text-center bg-white/5 transition-colors cursor-pointer relative">
                 <input
                   type="file"
-                  accept="audio/mp3,audio/wav,audio/ogg,audio/mpeg"
+                  accept="audio/mp3,audio/wav,audio/ogg,audio/mpeg,audio/m4a"
                   required={!arquivo}
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     if (e.target.files && e.target.files[0]) {
                       const file = e.target.files[0];
                       setArquivo(file);
-                      if (!titulo) {
-                        setTitulo(file.name.substring(0, file.name.lastIndexOf('.')) || file.name);
+                      setLendoMetadados(true);
+                      try {
+                        const metadados = await extrairMetadadosAudio(file);
+                        if (metadados.titulo) {
+                          setTitulo(metadados.titulo);
+                        }
+                        if (metadados.autor_artista) {
+                          setAutor(metadados.autor_artista);
+                        }
+                      } finally {
+                        setLendoMetadados(false);
                       }
                     }
                   }}
@@ -227,15 +238,28 @@ export const ModalUploadMusica: React.FC<Props> = ({
                 />
                 <Upload className="w-7 h-7 text-macaonico-dourado mx-auto mb-1.5" />
                 {arquivo ? (
-                  <p className="text-xs sm:text-sm font-bold text-macaonico-dourado truncate">
-                    {arquivo.name} ({(arquivo.size / (1024 * 1024)).toFixed(2)} MB)
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-xs sm:text-sm font-bold text-macaonico-dourado truncate">
+                      {arquivo.name} ({(arquivo.size / (1024 * 1024)).toFixed(2)} MB)
+                    </p>
+                    {lendoMetadados ? (
+                      <p className="text-[11px] text-yellow-300 animate-pulse flex items-center justify-center gap-1">
+                        <Wand2 className="w-3 h-3 animate-spin" />
+                        Identificando título e artistas participantes...
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-emerald-400 flex items-center justify-center gap-1 font-medium">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Metadados identificados automaticamente
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   <>
                     <p className="text-xs sm:text-sm font-semibold text-white">
                       Toque para selecionar o arquivo de áudio
                     </p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">MP3, WAV ou OGG</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">MP3, WAV, OGG ou M4A</p>
                   </>
                 )}
               </div>

@@ -27,6 +27,7 @@ from backend.api.musicas.servicos import (
     buscar_musicas_sugeridas_para_evento,
     listar_arquivos_orfaos
 )
+from backend.api.musicas.extrator_metadados import extrair_metadados_arquivo_audio
 
 roteador_musicas = APIRouter(
     prefix="/musicas",
@@ -153,13 +154,34 @@ async def upload_musica(
     with open(caminho_completo, "wb") as buffer:
         shutil.copyfileobj(arquivo.file, buffer)
 
+    # Extração automática de metadados das tags de áudio caso não tenham sido informados
+    tag_titulo, tag_artista, duracao_seg = extrair_metadados_arquivo_audio(
+        str(caminho_completo),
+        nome_arquivo_original=arquivo.filename
+    )
+
+    # Se o título enviado for apenas o nome bruto do arquivo ou se tiver tags melhores, prioriza as tags
+    nome_sem_ext = arquivo.filename.rsplit(".", 1)[0].strip() if arquivo.filename else ""
+    titulo_final = titulo.strip() if titulo else ""
+    if (not titulo_final or titulo_final == arquivo.filename or titulo_final == nome_sem_ext) and tag_titulo:
+        titulo_final = tag_titulo
+    elif not titulo_final:
+        titulo_final = nome_sem_ext or "Música Sem Título"
+
+    autor_final = autor_artista.strip() if autor_artista and autor_artista.strip() else tag_artista
+
     caminho_salvo = f"/storage/instancias/public/musicas/{nome_arquivo_seguro}"
 
+    metadados_dict = {}
+    if duracao_seg:
+        metadados_dict["duracao_segundos"] = duracao_seg
+
     dados_upload = MusicaUpload(
-        titulo=titulo,
-        autor_artista=autor_artista,
+        titulo=titulo_final,
+        autor_artista=autor_final,
         upload_por_loja_id=upload_por_loja_id,
-        eventos_sugeridos_ids=lista_eventos
+        eventos_sugeridos_ids=lista_eventos,
+        metadados=metadados_dict
     )
     return await registrar_upload_musica(db=db, dados=dados_upload, arquivo_url=caminho_salvo)
 
