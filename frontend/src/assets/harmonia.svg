@@ -6,11 +6,26 @@ viewBox="0 0 19091.96 17642.44"
  xmlns:xlink="http://www.w3.org/1999/xlink"
  xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
  <defs>
+  <linearGradient id="harmoniaGoldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#FDE68A">
+      <animate attributeName="stop-color" values="#FDE68A;#FFFBEB;#FDE68A" dur="4s" repeatCount="indefinite" />
+    </stop>
+    <stop offset="35%" stop-color="#DDB96B">
+      <animate attributeName="stop-color" values="#DDB96B;#E8CB85;#DDB96B" dur="4s" repeatCount="indefinite" />
+    </stop>
+    <stop offset="70%" stop-color="#B8862D">
+      <animate attributeName="stop-color" values="#B8862D;#C99738;#B8862D" dur="4s" repeatCount="indefinite" />
+    </stop>
+    <stop offset="100%" stop-color="#785012">
+      <animate attributeName="stop-color" values="#785012;#8C5E16;#785012" dur="4s" repeatCount="indefinite" />
+    </stop>
+  </linearGradient>
+
   <style type="text/css">
    <![CDATA[
-    .str0 {stroke:#38bdf8;stroke-width:7.5;stroke-linejoin:round;stroke-miterlimit:22.9256}
-    .fil0 {fill:#38bdf8}
-    .fil1 {fill:#38bdf8;fill-rule:nonzero}
+    .str0 {stroke:#B8862D;stroke-width:7.5;stroke-linejoin:round;stroke-miterlimit:22.9256}
+    .fil0 {fill:url(#harmoniaGoldGradient)}
+    .fil1 {fill:url(#harmoniaGoldGradient);fill-rule:nonzero}
    ]]>
   </style>
  </defs>
