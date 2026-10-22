@@ -12,10 +12,12 @@ import {
   Disc,
   X,
   Edit2,
+  Globe,
 } from 'lucide-react';
 import { Musica, Evento } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
+import { useAuth } from '../../compartilhado/contextos/ContextoAutenticacao';
 import { ModalUploadMusica } from './ModalUploadMusica';
 import { extrairIdYoutube, extrairEmbedSpotify } from '../../compartilhado/formatadores/midia';
 
@@ -25,6 +27,13 @@ import { extrairIdYoutube, extrairEmbedSpotify } from '../../compartilhado/forma
  */
 export const PaginaMusicas: React.FC = () => {
   const { lojaAtiva } = useTenant();
+  const { usuario } = useAuth();
+  const ehSuperAdmin = Boolean(
+    usuario?.permissoes?.includes('super_admin') ||
+    usuario?.tipo === 'ADMIN' ||
+    usuario?.email?.toLowerCase() === 'mendesalm@gmail.com' ||
+    usuario?.dados_especificos?.cim === '272875'
+  );
   const [musicas, setMusicas] = useState<Musica[]>([]);
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -148,6 +157,17 @@ export const PaginaMusicas: React.FC = () => {
     }
   };
 
+  const promoverParaGlobal = async (musica: Musica) => {
+    if (!confirm(`Deseja promover a música "${musica.titulo}" para o Acervo Global de todas as Lojas?`)) return;
+    try {
+      await clienteHttp.post(`/musicas/${musica.id}/promover-global`);
+      alert(`Música "${musica.titulo}" promovida com sucesso para o Acervo Global!`);
+      await carregarDados();
+    } catch (err: any) {
+      alert('Erro ao promover música: ' + (err.response?.data?.detail || err.message));
+    }
+  };
+
   const musicasFiltradas = musicas.filter((m) => {
     const matchTexto =
       m.titulo.toLowerCase().includes(busca.toLowerCase()) ||
@@ -259,6 +279,16 @@ export const PaginaMusicas: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
+                      {ehSuperAdmin && m.upload_por_loja_id && (
+                        <button
+                          onClick={() => promoverParaGlobal(m)}
+                          className="p-2.5 rounded-lg text-macaonico-dourado hover:bg-macaonico-dourado/15"
+                          title="Tornar Associação Global (SuperAdmin)"
+                          aria-label="Tornar Associação Global"
+                        >
+                          <Globe className="w-4 h-4" />
+                        </button>
+                      )}
                       <button
                         onClick={() => abrirModalEditar(m)}
                         className="p-2.5 rounded-lg text-blue-400 hover:bg-blue-500/10"
@@ -381,6 +411,15 @@ export const PaginaMusicas: React.FC = () => {
 
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex justify-end gap-1">
+                          {ehSuperAdmin && m.upload_por_loja_id && (
+                            <button
+                              onClick={() => promoverParaGlobal(m)}
+                              className="p-2 rounded-lg text-macaonico-dourado hover:text-yellow-300 hover:bg-macaonico-dourado/15 transition-colors cursor-pointer"
+                              title="Tornar Associação Global (SuperAdmin)"
+                            >
+                              <Globe className="w-4 h-4" />
+                            </button>
+                          )}
                           <button
                             onClick={() => abrirModalEditar(m)}
                             className="p-2 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors cursor-pointer"

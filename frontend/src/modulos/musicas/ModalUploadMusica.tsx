@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Upload, Music, Youtube, DownloadCloud, Sparkles, CheckCircle2, Wand2 } from 'lucide-react';
+import { X, Upload, Music, Youtube, DownloadCloud, Sparkles, CheckCircle2, Wand2, Globe } from 'lucide-react';
 import { Evento } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
+import { useAuth } from '../../compartilhado/contextos/ContextoAutenticacao';
 import { extrairMetadadosAudio } from '../../compartilhado/utilitarios/extratorMetadadosAudio';
 
 function extrairMensagemErro(err: any, mensagemPadrao: string): string {
@@ -35,6 +36,15 @@ export const ModalUploadMusica: React.FC<Props> = ({
   esconderEventos,
 }) => {
   const { lojaAtiva } = useTenant();
+  const { usuario } = useAuth();
+  const ehSuperAdmin = Boolean(
+    isGlobalAdmin ||
+    usuario?.permissoes?.includes('super_admin') ||
+    usuario?.tipo === 'ADMIN' ||
+    usuario?.email?.toLowerCase() === 'mendesalm@gmail.com' ||
+    usuario?.dados_especificos?.cim === '272875'
+  );
+  const [associacaoGlobal, setAssociacaoGlobal] = useState(ehSuperAdmin);
   const [abaAtiva, setAbaAtiva] = useState<'ARQUIVO' | 'YOUTUBE'>('ARQUIVO');
   const [eventosDisponiveis, setEventosDisponiveis] = useState<Evento[]>([]);
 
@@ -104,7 +114,8 @@ export const ModalUploadMusica: React.FC<Props> = ({
 
         setMensagemStatus('Enviando arquivo de áudio para o servidor...');
         const formData = new FormData();
-        if (lojaAtiva) {
+        // Se associacaoGlobal estiver ativa (SuperAdmin), não envia upload_por_loja_id (torna-se acervo global)
+        if (lojaAtiva && !associacaoGlobal) {
           formData.append('upload_por_loja_id', lojaAtiva.id);
         }
         formData.append('arquivo', arquivo);
@@ -122,10 +133,12 @@ export const ModalUploadMusica: React.FC<Props> = ({
           return;
         }
 
+        const orgDestino = (lojaAtiva && !associacaoGlobal) ? lojaAtiva.id : undefined;
+
         if (converterParaMp3) {
           setMensagemStatus('Baixando áudio e convertendo para MP3 no servidor...');
           const resp = await clienteHttp.post('/musicas/converter-youtube', {
-            organizacao_id: lojaAtiva ? lojaAtiva.id : undefined,
+            organizacao_id: orgDestino,
             link_youtube: linkStreaming.trim(),
             titulo: titulo.trim() || undefined,
             autor_artista: autor.trim() || undefined,
@@ -136,7 +149,7 @@ export const ModalUploadMusica: React.FC<Props> = ({
         } else {
           setMensagemStatus('Cadastrando link de streaming...');
           const resp = await clienteHttp.post('/musicas/streaming', {
-            organizacao_id: lojaAtiva ? lojaAtiva.id : undefined,
+            organizacao_id: orgDestino,
             titulo: titulo.trim() || 'Música do YouTube',
             autor_artista: autor.trim() || null,
             tipo_midia: 'YOUTUBE',
@@ -379,6 +392,29 @@ export const ModalUploadMusica: React.FC<Props> = ({
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Campo Exclusivo para SuperAdmin: Tornar Associação Global */}
+          {ehSuperAdmin && !esconderEventos && (
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-transparent border border-macaonico-dourado/40">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={associacaoGlobal}
+                  onChange={(e) => setAssociacaoGlobal(e.target.checked)}
+                  className="mt-0.5 rounded accent-macaonico-dourado w-4 h-4 cursor-pointer shrink-0"
+                />
+                <div>
+                  <span className="text-xs font-bold text-macaonico-dourado flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5" />
+                    Tornar Associação Global (SuperAdmin)
+                  </span>
+                  <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                    Disponibiliza esta música e suas sugestões de momentos como matriz pública para todas as Lojas da federação.
+                  </p>
+                </div>
+              </label>
             </div>
           )}
 

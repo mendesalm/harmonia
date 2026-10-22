@@ -14,6 +14,7 @@ from loguru import logger
 
 from backend.nucleo.banco import obter_banco_de_dados
 from backend.nucleo.configuracoes import configuracoes
+from backend.nucleo.auth_esigma import UsuarioEsigma, obter_usuario_esigma
 from backend.nucleo.dependencias import verificar_assinatura_ativa
 from backend.modelos.musica import Musica, MusicaEventoSugerido
 from backend.modelos.evento import Evento
@@ -330,6 +331,60 @@ async def atualizar_musica(
 
     await db.commit()
     await db.refresh(musica)
+    return musica
+
+
+@roteador_musicas.post(
+    "/{musica_id}/promover-global",
+    response_model=MusicaResposta,
+    summary="SuperAdmin: Promover Associação de Música para o Acervo Global",
+    description="Permite exclusivamente ao SuperAdmin transformar uma associação local de música em sugestão global para todas as Lojas."
+)
+async def promover_musica_global(
+    musica_id: uuid.UUID,
+    eventos_ids: Optional[List[uuid.UUID]] = Query(None, description="Eventos aos quais associar globalmente (opcional)"),
+    usuario: UsuarioEsigma = Depends(obter_usuario_esigma),
+    db: AsyncSession = Depends(obter_banco_de_dados)
+):
+    if not usuario.is_super_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas o SuperAdmin pode promover músicas para o Acervo Global."
+        )
+
+    stmt = (
+        select(Musica)
+        .options(selectinload(Musica.eventos_sugeridos))
+        .where(Musica.id == musica_id)
+    )
+    res = await db.execute(stmt)
+    musica = res.scalars().first()
+    if not musica:
+        raise HTTPException(status_code=404, detail="Música não encontrada")
+
+    # Torna a música global desvinculando de uma loja específica
+    musica.upload_por_loja_id = None
+
+    if eventos_ids:
+        ids_existentes = {es.evento_id for es in musica.eventos_sugeridos}
+        for ev_id in eventos_ids:
+            ev_db = await db.get(Evento, ev_id)
+            if not ev_db:
+                continue
+            if ev_db.canonico_id:
+                res_eq = await db.execute(select(Evento.id).where(Evento.canonico_id == ev_db.canonico_id))
+                evs_vinc = res_eq.scalars().all()
+            else:
+                evs_vinc = [ev_db.id]
+
+            for eq_id in evs_vinc:
+                if eq_id not in ids_existentes:
+                    db.add(MusicaEventoSugerido(musica_id=musica.id, evento_id=eq_id))
+                    ids_existentes.add(eq_id)
+
+    await db.commit()
+    await db.refresh(musica)
+    logger.info(f"Música {musica.titulo} ({musica.id}) promovida com sucesso para o Acervo Global pelo SuperAdmin.")
     return musica
 
 
