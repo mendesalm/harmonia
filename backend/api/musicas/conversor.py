@@ -35,13 +35,19 @@ def _executar_download_yt_dlp(
     ydl_opts = {
         'outtmpl': caminho_template,
         'ffmpeg_location': ffmpeg_exe,
+        'format': 'ba/b',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': str(bitrate_kbps),
         }],
         'postprocessor_args': ['-nostdin'],
-        'extractor_args': {'youtube': ['client=android,mweb,ios']},
+        # Utiliza múltiplos clientes modernos (Android e iOS) para contornar verificações de bot do YouTube
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'ios', 'mweb', 'web']
+            }
+        },
         'quiet': True,
         'noprogress': True,
         'no_warnings': True,
