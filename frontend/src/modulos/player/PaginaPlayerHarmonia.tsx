@@ -166,6 +166,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         audio.pause();
         if (musicaAtual.duracao_segundos) setDuracaoTotal(musicaAtual.duracao_segundos);
       } else {
+        // Mídia externa (YouTube)
         audio.pause();
         audio.src = '';
         if (musicaAtual.duracao_segundos) setDuracaoTotal(musicaAtual.duracao_segundos);
@@ -175,6 +176,46 @@ export const PaginaPlayerHarmonia: React.FC = () => {
       audio.src = '';
     }
   }, [musicaAtual?.id, modoInterludioAtivo]);
+
+  // Inicialização e controle do YouTube Player API
+  useEffect(() => {
+    if (musicaAtual?.tipo_midia !== 'YOUTUBE' || !musicaAtual.link_externo) return;
+
+    const inicializarPlayerYT = () => {
+      const iframe = document.getElementById('yt-player-hidden') as HTMLIFrameElement;
+      if (iframe && (window as any).YT && (window as any).YT.Player) {
+        try {
+          ytPlayerRef.current = new (window as any).YT.Player('yt-player-hidden', {
+            events: {
+              onReady: () => {
+                if (tocando) {
+                  ytPlayerRef.current?.playVideo();
+                }
+              },
+              onStateChange: (event: any) => {
+                // 0 = ENDED, 1 = PLAYING, 2 = PAUSED
+                if (event.data === 0) {
+                  aoTerminarMusica();
+                } else if (event.data === 1) {
+                  setTocando(true);
+                } else if (event.data === 2) {
+                  setTocando(false);
+                }
+              },
+            },
+          });
+        } catch (e) {
+          console.debug('Aviso ao inicializar YT Player:', e);
+        }
+      }
+    };
+
+    if ((window as any).YT && (window as any).YT.Player) {
+      inicializarPlayerYT();
+    } else {
+      (window as any).onYouTubeIframeAPIReady = inicializarPlayerYT;
+    }
+  }, [musicaAtual?.id]);
 
   // Função para ativar trilha de fundo memorizando o ponto da esteira
   const ativarTrilhaFundo = (musicaFundo: Musica) => {
@@ -509,14 +550,25 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         />
       </div>
 
-      {/* Iframe Oculto para reprodução YouTube */}
+      {/* Reprodutor YouTube Iframe mantido em off-screen ativo (sem display:none para permitir reprodução de áudio sem bloqueio do navegador) */}
       {musicaAtual?.tipo_midia === 'YOUTUBE' && musicaAtual.link_externo && (
-        <div className="hidden">
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '-100px',
+            right: '-100px',
+            width: '1px',
+            height: '1px',
+            opacity: 0,
+            pointerEvents: 'none',
+            zIndex: -1,
+          }}
+        >
           <iframe
             id="yt-player-hidden"
             title="Reprodutor YouTube Harmonia"
-            src={`https://www.youtube.com/embed/${extrairIdYoutube(musicaAtual.link_externo)}?enablejsapi=1&autoplay=0&controls=0`}
-            allow="autoplay"
+            src={`https://www.youtube.com/embed/${extrairIdYoutube(musicaAtual.link_externo)}?enablejsapi=1&autoplay=${tocando ? '1' : '0'}&controls=0`}
+            allow="autoplay; encrypted-media"
           ></iframe>
         </div>
       )}
