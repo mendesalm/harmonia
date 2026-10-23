@@ -52,7 +52,7 @@ export const ModalUploadMusica: React.FC<Props> = ({
   const [autor, setAutor] = useState('');
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [linkStreaming, setLinkStreaming] = useState('');
-  const [converterParaMp3, setConverterParaMp3] = useState(true);
+  const [converterParaMp3, setConverterParaMp3] = useState(false);
   const [eventosSelecionados, setEventosSelecionados] = useState<string[]>(
     eventoIdPreSelecionado ? [eventoIdPreSelecionado] : []
   );

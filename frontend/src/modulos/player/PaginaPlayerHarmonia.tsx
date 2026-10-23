@@ -181,25 +181,81 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   useEffect(() => {
     if (musicaAtual?.tipo_midia !== 'YOUTUBE' || !musicaAtual.link_externo) return;
 
+    const ytVideoId = extrairIdYoutube(musicaAtual.link_externo);
+    if (!ytVideoId) return;
+
+    let timerProgresso: any = null;
+
+    const iniciarTimerProgresso = () => {
+      pararTimerProgresso();
+      timerProgresso = setInterval(() => {
+        if (ytPlayerRef.current && typeof ytPlayerRef.current.getCurrentTime === 'function') {
+          try {
+            const cur = ytPlayerRef.current.getCurrentTime();
+            if (typeof cur === 'number' && !isNaN(cur)) {
+              setTempoAtual(cur);
+            }
+          } catch {}
+        }
+      }, 500);
+    };
+
+    const pararTimerProgresso = () => {
+      if (timerProgresso) {
+        clearInterval(timerProgresso);
+        timerProgresso = null;
+      }
+    };
+
     const inicializarPlayerYT = () => {
-      const iframe = document.getElementById('yt-player-hidden') as HTMLIFrameElement;
-      if (iframe && (window as any).YT && (window as any).YT.Player) {
+      const container = document.getElementById('yt-player-container');
+      if (!container) return;
+
+      // Destrói instância anterior se existir
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.destroy === 'function') {
         try {
-          ytPlayerRef.current = new (window as any).YT.Player('yt-player-hidden', {
+          ytPlayerRef.current.destroy();
+        } catch {
+          // ignora
+        }
+        ytPlayerRef.current = null;
+      }
+
+      // Recria o elemento div para ancorar o player
+      container.innerHTML = '<div id="yt-player-target"></div>';
+
+      if ((window as any).YT && (window as any).YT.Player) {
+        try {
+          ytPlayerRef.current = new (window as any).YT.Player('yt-player-target', {
+            videoId: ytVideoId,
+            playerVars: {
+              autoplay: tocando ? 1 : 0,
+              controls: 0,
+              enablejsapi: 1,
+              origin: window.location.origin,
+            },
             events: {
-              onReady: () => {
+              onReady: (event: any) => {
                 if (tocando) {
-                  ytPlayerRef.current?.playVideo();
+                  event.target.playVideo();
+                  iniciarTimerProgresso();
                 }
+                const dur = event.target.getDuration();
+                if (dur && dur > 0) setDuracaoTotal(dur);
               },
               onStateChange: (event: any) => {
                 // 0 = ENDED, 1 = PLAYING, 2 = PAUSED
                 if (event.data === 0) {
+                  pararTimerProgresso();
                   aoTerminarMusica();
                 } else if (event.data === 1) {
                   setTocando(true);
+                  iniciarTimerProgresso();
+                  const dur = event.target.getDuration();
+                  if (dur && dur > 0) setDuracaoTotal(dur);
                 } else if (event.data === 2) {
                   setTocando(false);
+                  pararTimerProgresso();
                 }
               },
             },
@@ -215,7 +271,11 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     } else {
       (window as any).onYouTubeIframeAPIReady = inicializarPlayerYT;
     }
-  }, [musicaAtual?.id]);
+
+    return () => {
+      pararTimerProgresso();
+    };
+  }, [musicaAtual?.id, musicaAtual?.link_externo]);
 
   // Função para ativar trilha de fundo memorizando o ponto da esteira
   const ativarTrilhaFundo = (musicaFundo: Musica) => {
@@ -297,11 +357,22 @@ export const PaginaPlayerHarmonia: React.FC = () => {
       } else {
         audio.play().then(() => setTocando(true)).catch(() => setTocando(false));
       }
-    } else if (musicaAtual.tipo_midia === 'YOUTUBE' && ytPlayerRef.current) {
-      if (tocando) {
-        ytPlayerRef.current.pauseVideo();
+    } else if (musicaAtual.tipo_midia === 'YOUTUBE') {
+      if (ytPlayerRef.current) {
+        if (tocando) {
+          if (typeof ytPlayerRef.current.pauseVideo === 'function') {
+            ytPlayerRef.current.pauseVideo();
+          }
+          setTocando(false);
+        } else {
+          if (typeof ytPlayerRef.current.playVideo === 'function') {
+            ytPlayerRef.current.playVideo();
+          }
+          setTocando(true);
+        }
       } else {
-        ytPlayerRef.current.playVideo();
+        // Se o player ainda está carregando o iframe, alterna o estado
+        setTocando(!tocando);
       }
     }
   };
@@ -551,27 +622,19 @@ export const PaginaPlayerHarmonia: React.FC = () => {
       </div>
 
       {/* Reprodutor YouTube Iframe mantido em off-screen ativo (sem display:none para permitir reprodução de áudio sem bloqueio do navegador) */}
-      {musicaAtual?.tipo_midia === 'YOUTUBE' && musicaAtual.link_externo && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '-100px',
-            right: '-100px',
-            width: '1px',
-            height: '1px',
-            opacity: 0,
-            pointerEvents: 'none',
-            zIndex: -1,
-          }}
-        >
-          <iframe
-            id="yt-player-hidden"
-            title="Reprodutor YouTube Harmonia"
-            src={`https://www.youtube.com/embed/${extrairIdYoutube(musicaAtual.link_externo)}?enablejsapi=1&autoplay=${tocando ? '1' : '0'}&controls=0`}
-            allow="autoplay; encrypted-media"
-          ></iframe>
-        </div>
-      )}
+      <div
+        id="yt-player-container"
+        style={{
+          position: 'fixed',
+          bottom: '-150px',
+          right: '-150px',
+          width: '200px',
+          height: '200px',
+          opacity: 0.01,
+          pointerEvents: 'none',
+          zIndex: -1,
+        }}
+      />
 
       {/* Modal de Upload Rápido */}
       {modalUploadAberto && dadosSessao && (
