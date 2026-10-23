@@ -229,17 +229,16 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           ytPlayerRef.current = new (window as any).YT.Player('yt-player-target', {
             videoId: ytVideoId,
             playerVars: {
-              autoplay: tocando ? 1 : 0,
+              autoplay: 1,
               controls: 0,
               enablejsapi: 1,
               origin: window.location.origin,
             },
             events: {
               onReady: (event: any) => {
-                if (tocando) {
-                  event.target.playVideo();
-                  iniciarTimerProgresso();
-                }
+                event.target.playVideo();
+                setTocando(true);
+                iniciarTimerProgresso();
                 const dur = event.target.getDuration();
                 if (dur && dur > 0) setDuracaoTotal(dur);
               },
@@ -257,6 +256,9 @@ export const PaginaPlayerHarmonia: React.FC = () => {
                   setTocando(false);
                   pararTimerProgresso();
                 }
+              },
+              onError: (err: any) => {
+                console.warn('Erro na reprodução YouTube:', err);
               },
             },
           });
@@ -626,13 +628,13 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         id="yt-player-container"
         style={{
           position: 'fixed',
-          bottom: '-150px',
-          right: '-150px',
-          width: '200px',
-          height: '200px',
+          bottom: '10px',
+          right: '10px',
+          width: '64px',
+          height: '64px',
           opacity: 0.01,
           pointerEvents: 'none',
-          zIndex: -1,
+          zIndex: 0,
         }}
       />
 
