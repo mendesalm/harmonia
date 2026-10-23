@@ -30,10 +30,12 @@ def _executar_download_yt_dlp(
     
     # Suporte a cookies para evitar bloqueio de bot (Cloud/VPS)
     # Busca tanto na raiz do projeto quanto no diretório do processo atual
+    diretorio_raiz = getattr(configuracoes, "DIRETORIO_RAIZ", Path(__file__).resolve().parent.parent.parent.parent)
     candidatos_cookies = [
         Path(os.getcwd()) / "cookies.txt",
         Path("/var/www/harmonia/cookies.txt"),
-        configuracoes.DIRETORIO_RAIZ / "cookies.txt",
+        diretorio_raiz / "cookies.txt",
+        configuracoes.DIRETORIO_BASE / "cookies.txt",
     ]
     caminho_cookies = next((c for c in candidatos_cookies if c.exists()), None)
 

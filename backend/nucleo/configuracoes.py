@@ -38,6 +38,7 @@ class Configuracoes(BaseSettings):
 
     # Diretórios de Armazenamento
     DIRETORIO_BASE: Path = Path(__file__).resolve().parent.parent
+    DIRETORIO_RAIZ: Path = DIRETORIO_BASE.parent  # Raiz do repositório
     DIRETORIO_ARMAZENAMENTO: Path = DIRETORIO_BASE / "armazenamento"
     DIRETORIO_INSTANCIAS_PUBLIC: Path = DIRETORIO_BASE / "armazenamento" / "instancias" / "public"
     DIRETORIO_INSTANCIAS_PRIVATE: Path = DIRETORIO_BASE / "armazenamento" / "instancias" / "private"
