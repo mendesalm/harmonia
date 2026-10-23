@@ -70,11 +70,20 @@ def obter_token_autenticado() -> str:
 
         try:
             print("Autenticando no e-Sigma...")
+            # e-Sigma utiliza o padrão OAuth2 (username e password via Form ou JSON)
             res = requests.post(
                 ESIGMA_LOGIN_URL,
-                json={"email": email, "senha": senha},
+                data={"username": email, "password": senha},
                 timeout=10
             )
+            if res.status_code != 200:
+                # Fallback em JSON caso a rota aceite JSON
+                res = requests.post(
+                    ESIGMA_LOGIN_URL,
+                    json={"username": email, "password": senha},
+                    timeout=10
+                )
+
             if res.status_code == 200:
                 dados = res.json()
                 token = dados.get("access_token") or dados.get("token")
