@@ -1,7 +1,7 @@
 # Harmonia - Guia de Handoff e Inicialização
 
-**Última Atualização:** 20 de Outubro de 2026  
-**Status da Sessão:** 🟢 **Produção Ativa e Sincronizada (`https://harmonia.e-sigma.app`)** — Fase 1 (Segurança SSO/RBAC), Auto-Provisionamento SaaS no e-Sigma, Redesign Responsivo Mobile-First (PWA), Desduplicação Canônica de Momentos por Rito e Autocorreção (Self-Healing) de Tenant/Rito Brasileiro concluídos e publicados.
+**Última Atualização:** 26 de Outubro de 2026  
+**Status da Sessão:** 🟢 **Produção Ativa e Sincronizada (`https://harmonia.e-sigma.app`)** — Redesign do Player Litúrgico com Paleta Nobre e-Sigma (Preto, Azul Noturno e Dourado), Persistência de Surdina por Momento Ritualístico, Normalizador Web Audio API contra Oscilações, Carrossel Horizontal com Visibilidade Periférica, Menu Sanduíche no Topo e Correção de Inicialização na VPS concluídos e publicados.
 
 ---
 
@@ -80,12 +80,20 @@ Harmonia/
    - Criado `backend/nucleo/sincronizacao_tenant.py` (executado no `lifespan` do FastAPI e nas consultas de tenant) para garantir que a Loja 2181 em produção migre qualquer registro legado para o UUID `795b19d5-e14c-4c2e-b047-ee99e6e39a9c` com **Rito Brasileiro** e Sessão Ordinária instanciada.
    - Normalização de `rito_padrao` e `rito_id` no `ContextoTenant.tsx` e `PaginaDashboard.tsx`.
 
+5. **Redesign Litúrgico do Player e Otimizações de Áudio (26/10/2026)**:
+   - **Paleta Nobre e-Sigma:** Substituição completa do tom ciano/neon por Azul Noturno (`#070F1E` / `#0A1428` / `#0E1A2F`), Dourado Maçônico (`#DDB96B`) e Slate discreto, eliminando fadiga visual no templo.
+   - **Surdina por Momento Ritualístico:** Persistência no banco (`SessaoLojaEvento.em_surdina`) com endpoint `PATCH /api/v1/player/sessao/{sessao_id}/momento/{evento_id}/surdina`, permitindo definir momentos específicos como surdina (ex: Palavra a Bem da Ordem).
+   - **Normalizador de Áudio (Web Audio API):** `DynamicsCompressorNode` acoplado ao elemento de áudio com rampa linear (`linearRampToValueAtTime`) de 40ms no `GainNode`, eliminando oscilações e nivelando faixas de diferentes origens.
+   - **Visibilidade do Carrossel:** Redução da largura do card central (`258px`), passo horizontal (`182px`) e opacidade dos vizinhos (`0.75`), tornando os cards anterior e seguinte claramente perceptíveis nas bordas da tela.
+   - **Controles e Layout:** Reposicionamento do menu sanduíche para o cabeçalho superior direito (desafogando o botão de Orientação Litúrgica), adição de botões de ajuste fino de volume na barra de controle e indicador de volume de execução direto no card da faixa.
+   - **Resiliência e Correção VPS:** Resolução do `ReferenceError: audioRef is not defined` e encapsulamento no `ErrorBoundary`.
+
 ---
 
 ## 🧪 Como Executar e Testar Localmente
 
 ```powershell
-# Rodar suíte de testes automatizados (9 testes passando)
+# Rodar suíte de testes automatizados (29 testes passando)
 .\venv\Scripts\pytest.exe backend/testes -q
 
 # Build de validação do Frontend + PWA
