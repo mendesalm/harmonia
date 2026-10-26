@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ProvedorAutenticacao } from './compartilhado/contextos/ContextoAutenticacao';
 import { ProvedorTenant } from './compartilhado/contextos/ContextoTenant';
 import { RotaProtegida } from './compartilhado/componentes/RotaProtegida';
+import { ErrorBoundary } from './compartilhado/componentes/ErrorBoundary';
 import { Navbar } from './compartilhado/componentes/Navbar';
 import { PaginaLogin } from './modulos/auth/PaginaLogin';
 import { PaginaPlayerHarmonia } from './modulos/player/PaginaPlayerHarmonia';
@@ -28,12 +29,13 @@ const RotaRaiz = () => {
 
 export const App: React.FC = () => {
   return (
-    <ProvedorAutenticacao>
-      <ProvedorTenant>
-        <Router>
-          <div className="h-[100dvh] max-h-[100dvh] w-full overflow-hidden flex flex-col bg-sigma-bg text-slate-100 selection:bg-macaonico-dourado selection:text-black font-inter">
-            <main className="flex-1 min-h-0 overflow-hidden relative">
-              <Routes>
+    <ErrorBoundary>
+      <ProvedorAutenticacao>
+        <ProvedorTenant>
+          <Router>
+            <div className="h-[100dvh] max-h-[100dvh] w-full overflow-hidden flex flex-col bg-sigma-bg text-slate-100 selection:bg-macaonico-dourado selection:text-black font-inter">
+              <main className="flex-1 min-h-0 overflow-hidden relative">
+                <Routes>
                 {/* Rota Pública de Login */}
                 <Route path="/login" element={<PaginaLogin />} />
 
@@ -146,6 +148,7 @@ export const App: React.FC = () => {
         </Router>
       </ProvedorTenant>
     </ProvedorAutenticacao>
+  </ErrorBoundary>
   );
 };
 

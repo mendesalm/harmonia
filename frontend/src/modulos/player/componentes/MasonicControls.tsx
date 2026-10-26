@@ -26,10 +26,10 @@ import { MomentoExecucao } from '../../../compartilhado/tipos';
 interface MasonicControlsProps {
   tocando: boolean;
   onPlayPause: () => void;
-  onPrevTrack: () => void;
-  onNextTrack: () => void;
-  onPrevMoment: () => void;
-  onNextMoment: () => void;
+  onPrevTrack?: () => void;
+  onNextTrack?: () => void;
+  onPrevMoment?: () => void;
+  onNextMoment?: () => void;
   tempoAtual: number;
   duracaoTotal: number;
   onSeek: (novoTempo: number) => void;
@@ -48,9 +48,8 @@ interface MasonicControlsProps {
 
 /**
  * Painel inferior de controles de reprodução do Player Harmonia.
- * - Botão central Play/Pause circular 76x76 garantido por inline style.
- * - Linha de apoio: Orientação, Surdina configurável e Informação do Próximo Evento (ícone de interrogação/ajuda).
- * - Controles de Volume (+ / -) elegantes integrados com display de nível.
+ * - Pílula moderna tátil: Volume Down (alto-falante esquerdo), Botão central Play/Pause circular 76x76 com anéis concêntricos dourados, Volume Up (alto-falante direito).
+ * - Linha de apoio: Orientação, Surdina configurável e Informação do Próximo Evento (ícone de ajuda/interrogação).
  */
 export const MasonicControls: React.FC<MasonicControlsProps> = ({
   tocando,
@@ -143,86 +142,49 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
           </div>
         </div>
 
-        {/* Painel Principal de Controles Táteis (Play/Pause circular fixo 76x76 + Asas) */}
+        {/* Painel Principal de Controles Táteis (Pílula com Vol- / Play-Pause Concêntrico / Vol+) */}
         <div
-          className="relative w-full max-w-[390px] sm:max-w-[430px] flex items-center justify-center shrink-0 my-0.5"
-          style={{ height: 78 }}
+          className="relative w-full max-w-[340px] sm:max-w-[380px] flex items-center justify-center shrink-0 my-1 select-none"
+          style={{ height: 76 }}
         >
           {/* Barra contínua em formato pílula atrás do botão central */}
           <div
-            className="absolute inset-x-0 bg-macaonico-surface rounded-full border border-macaonico-dourado/30 flex items-center justify-between z-0 shadow-[inset_0_0_15px_rgba(212,175,55,0.05)]"
-            style={{ height: 50 }}
+            className="absolute inset-x-0 bg-[#070F1E] rounded-full border border-[#DDB96B]/35 flex items-center justify-between px-5 sm:px-7 z-0 shadow-[0_4px_20px_rgba(0,0,0,0.5),inset_0_0_15px_rgba(221,185,107,0.06)]"
+            style={{ height: 52 }}
           >
-            {/* Metade Esquerda (Anterior) */}
-            <div
-              className="flex items-center justify-evenly h-full pl-2 pr-1"
-              style={{ width: 'calc(50% - 40px)' }}
+            {/* Lado Esquerdo: Diminuir Volume */}
+            <button
+              type="button"
+              onClick={() => {
+                feedbackTatil.clique();
+                onAjustarVolumeRelativo(-5);
+              }}
+              className="text-[#DDB96B]/85 hover:text-[#DDB96B] transition-transform active:scale-85 p-2 rounded-full hover:bg-white/5 flex items-center justify-center"
+              title={`Diminuir Volume (-5%) - Atual: ${volumeGeral}%`}
+              aria-label="Diminuir Volume"
             >
-              <button
-                type="button"
-                onClick={() => {
-                  feedbackTatil.clique();
-                  onPrevMoment();
-                }}
-                className="text-macaonico-dourado/85 hover:text-macaonico-dourado transition-colors flex flex-col items-center justify-center py-1 px-1.5 active:scale-95"
-              >
-                <Rewind className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
-                <span className="text-[8px] sm:text-[9px] font-cinzel mt-0.5 tracking-wider opacity-80 leading-none">
-                  Momento
-                </span>
-              </button>
+              <Volume1 className="w-6 h-6 sm:w-7 sm:h-7 drop-shadow-[0_0_6px_rgba(221,185,107,0.4)]" />
+            </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  feedbackTatil.clique();
-                  onPrevTrack();
-                }}
-                className="text-macaonico-dourado/85 hover:text-macaonico-dourado transition-colors flex flex-col items-center justify-center py-1 px-1.5 active:scale-95"
-              >
-                <SkipBack className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
-                <span className="text-[8px] sm:text-[9px] font-cinzel mt-0.5 tracking-wider opacity-80 leading-none">
-                  Faixa
-                </span>
-              </button>
-            </div>
+            {/* Espaço central reservado para o botão circular de Play/Pause */}
+            <div style={{ width: 76 }} />
 
-            {/* Metade Direita (Próximo) */}
-            <div
-              className="flex items-center justify-evenly h-full pl-1 pr-2"
-              style={{ width: 'calc(50% - 40px)' }}
+            {/* Lado Direito: Aumentar Volume */}
+            <button
+              type="button"
+              onClick={() => {
+                feedbackTatil.clique();
+                onAjustarVolumeRelativo(5);
+              }}
+              className="text-[#DDB96B]/85 hover:text-[#DDB96B] transition-transform active:scale-85 p-2 rounded-full hover:bg-white/5 flex items-center justify-center"
+              title={`Aumentar Volume (+5%) - Atual: ${volumeGeral}%`}
+              aria-label="Aumentar Volume"
             >
-              <button
-                type="button"
-                onClick={() => {
-                  feedbackTatil.clique();
-                  onNextTrack();
-                }}
-                className="text-macaonico-dourado/85 hover:text-macaonico-dourado transition-colors flex flex-col items-center justify-center py-1 px-1.5 active:scale-95"
-              >
-                <SkipForward className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
-                <span className="text-[8px] sm:text-[9px] font-cinzel mt-0.5 tracking-wider opacity-80 leading-none">
-                  Faixa
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  feedbackTatil.clique();
-                  onNextMoment();
-                }}
-                className="text-macaonico-dourado/85 hover:text-macaonico-dourado transition-colors flex flex-col items-center justify-center py-1 px-1.5 active:scale-95"
-              >
-                <FastForward className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
-                <span className="text-[8px] sm:text-[9px] font-cinzel mt-0.5 tracking-wider opacity-80 leading-none">
-                  Momento
-                </span>
-              </button>
-            </div>
+              <Volume2 className="w-6 h-6 sm:w-7 sm:h-7 drop-shadow-[0_0_6px_rgba(221,185,107,0.4)]" />
+            </button>
           </div>
 
-          {/* Botão Central Play/Pause: 76x76px garantido por inline style */}
+          {/* Botão Central Circular Play/Pause (76x76px) com Anéis Dourados Concêntricos */}
           <button
             type="button"
             onClick={() => {
@@ -239,40 +201,39 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
               borderRadius: '9999px',
               flexShrink: 0,
             }}
-            className={`relative z-10 border-2 flex flex-col items-center justify-center transition-all duration-300 active:scale-95
+            className={`relative z-10 border-2 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95 shadow-xl bg-[#070F1E]
               ${
                 tocando
-                  ? 'bg-[#121a2d] border-macaonico-dourado shadow-[0_0_25px_rgba(212,175,55,0.35)]'
-                  : 'bg-[#0a1020] border-macaonico-dourado/75 hover:border-macaonico-dourado shadow-lg'
+                  ? 'border-[#DDB96B] shadow-[0_0_25px_rgba(221,185,107,0.45)]'
+                  : 'border-[#DDB96B]/80 hover:border-[#DDB96B] shadow-[0_0_15px_rgba(0,0,0,0.7)]'
               }
             `}
+            title={tocando ? 'Pausar música ritualística' : 'Tocar música ritualística'}
+            aria-label={tocando ? 'Pausar' : 'Tocar'}
           >
+            {/* Anel dourado fino concêntrico interno */}
             <div
-              className="absolute rounded-full border border-macaonico-dourado/30 pointer-events-none"
+              className="absolute rounded-full border border-[#DDB96B]/50 pointer-events-none"
               style={{ inset: 4, borderRadius: '9999px' }}
-            ></div>
+            />
 
-            <div className="flex items-center justify-center mt-0.5">
+            {/* Ícone Play/Pause dourado maciço */}
+            <div className="flex items-center justify-center">
               {tocando ? (
                 <Pause
-                  className="w-7 h-7 text-macaonico-dourado drop-shadow-[0_0_8px_rgba(212,175,55,0.8)]"
-                  fill="currentColor"
+                  className="w-8 h-8 text-[#DDB96B] fill-[#DDB96B] drop-shadow-[0_0_8px_rgba(221,185,107,0.7)]"
                 />
               ) : (
                 <Play
-                  className="w-7 h-7 text-macaonico-dourado ml-0.5"
-                  fill="currentColor"
+                  className="w-8 h-8 text-[#DDB96B] fill-[#DDB96B] ml-1 drop-shadow-[0_0_8px_rgba(221,185,107,0.7)]"
                 />
               )}
             </div>
-            <span className="text-[8px] font-cinzel text-macaonico-dourado/80 mt-0.5 tracking-widest uppercase leading-none">
-              {tocando ? 'Pausar' : 'Tocar'}
-            </span>
           </button>
         </div>
 
-        {/* Linha Compacta de Botões de Apoio: Orientação, Surdina, Informação do Próximo e Controles de Volume */}
-        <div className="w-full max-w-[390px] sm:max-w-[430px] flex items-center justify-between gap-1.5 sm:gap-2 mt-1 px-1 shrink-0">
+        {/* Linha Compacta de Botões de Apoio: Orientação, Surdina e Informação do Próximo */}
+        <div className="w-full max-w-[340px] sm:max-w-[380px] flex items-center justify-between gap-1.5 sm:gap-2 mt-1 px-1 shrink-0">
           {/* Botão 1: Orientação ao Mestre de Harmonia */}
           <button
             type="button"
@@ -357,35 +318,15 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
             </span>
           </button>
 
-          {/* Botão 4: Controles de Volume (+ / -) com display de nível */}
-          <div className="flex items-center rounded-xl bg-white/5 border border-white/15 px-1 py-1 shrink-0 gap-0.5">
-            <button
-              type="button"
-              onClick={() => onAjustarVolumeRelativo(-5)}
-              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors active:scale-90"
-              title="Diminuir volume (-5%)"
-            >
-              <Minus className="w-3 h-3" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSliderVolumeAberto((v) => !v)}
-              className="px-1 text-[10px] font-mono font-bold text-slate-300 hover:text-macaonico-dourado transition-colors"
-              title="Toque para abrir controle fino de volume"
-            >
-              {volumeGeral}%
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onAjustarVolumeRelativo(5)}
-              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors active:scale-90"
-              title="Aumentar volume (+5%)"
-            >
-              <Plus className="w-3 h-3" />
-            </button>
-          </div>
+          {/* Indicador sutil de Nível de Volume Master (clique para abrir controle fino) */}
+          <button
+            type="button"
+            onClick={() => setSliderVolumeAberto((v) => !v)}
+            className="px-2 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-[10px] font-mono font-bold text-slate-300 hover:text-macaonico-dourado transition-all shrink-0 active:scale-95"
+            title="Toque para abrir ajuste fino do volume master"
+          >
+            {volumeGeral}%
+          </button>
         </div>
 
         {/* Popover / Slider expansível de Volume Geral */}

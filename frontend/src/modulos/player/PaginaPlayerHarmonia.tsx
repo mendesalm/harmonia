@@ -62,17 +62,28 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const [tocando, setTocando] = useState(false);
   const [tempoAtual, setTempoAtual] = useState(0);
   const [duracaoTotal, setDuracaoTotal] = useState(0);
+  // Funções seguras de leitura/gravação local
+  const lerNumeroStorage = (chave: string, padrao: number, min: number, max: number): number => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const salvo = localStorage.getItem(chave);
+        if (salvo !== null) {
+          const n = Number(salvo);
+          if (!isNaN(n) && n >= min && n <= max) return n;
+        }
+      }
+    } catch {
+      /* storage desabilitado ou restrito */
+    }
+    return padrao;
+  };
+
   // Surdina: limita o volume (ativada automaticamente em momentos de surdina/interlúdio)
   const [surdinaAtiva, setSurdinaAtiva] = useState(false);
   // Percentual configurável de volume de surdina (padrão 25%, adaptável para 3%, 5%, etc., persistido localmente)
-  const [percentualSurdina, setPercentualSurdina] = useState<number>(() => {
-    const salvo = localStorage.getItem('harmonia_volume_surdina');
-    if (salvo) {
-      const n = Number(salvo);
-      if (!isNaN(n) && n >= 1 && n <= 100) return n;
-    }
-    return 25;
-  });
+  const [percentualSurdina, setPercentualSurdina] = useState<number>(() =>
+    lerNumeroStorage('harmonia_volume_surdina', 25, 1, 100)
+  );
 
   const atualizarPercentualSurdina = (novoPercentual: number) => {
     const seguro = Math.max(1, Math.min(100, Math.round(novoPercentual)));
@@ -85,14 +96,9 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   };
 
   // Volume mestre geral (0 a 100%, padrão 100%)
-  const [volumeGeral, setVolumeGeral] = useState<number>(() => {
-    const salvo = localStorage.getItem('harmonia_volume_geral');
-    if (salvo) {
-      const n = Number(salvo);
-      if (!isNaN(n) && n >= 0 && n <= 100) return n;
-    }
-    return 100;
-  });
+  const [volumeGeral, setVolumeGeral] = useState<number>(() =>
+    lerNumeroStorage('harmonia_volume_geral', 100, 0, 100)
+  );
 
   const alterarVolumeGeral = (novoVolume: number) => {
     const seguro = Math.max(0, Math.min(100, Math.round(novoVolume)));
@@ -108,6 +114,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     alterarVolumeGeral(volumeGeral + delta);
     feedbackTatil.clique();
   };
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const ytPlayerRef = useRef<any>(null);
   /** O player do YouTube já disparou `onReady` (só então play/pause/seek são seguros). */
   const ytProntoRef = useRef(false);

@@ -66,12 +66,16 @@ export interface Musica {
   autor_artista?: string;
   tipo_midia: 'ARQUIVO_LOCAL' | 'YOUTUBE' | 'SPOTIFY';
   caminho_arquivo?: string;
+  arquivo_url?: string;
   link_externo?: string;
   duracao_segundos?: number;
   tamanho_bytes?: number;
   tipo_mime?: string;
   metadados: Record<string, any>;
   ativo: boolean;
+  preferida?: boolean;
+  surdina?: boolean;
+  upload_por_loja_id?: string;
   eventos: EventoAssociadoInfo[];
   criado_em: string;
   atualizado_em: string;

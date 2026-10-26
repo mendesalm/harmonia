@@ -295,6 +295,7 @@ export const ModalInterludioFundo: React.FC<ModalInterludioFundoProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
