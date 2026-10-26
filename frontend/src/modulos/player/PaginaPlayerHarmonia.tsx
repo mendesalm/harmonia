@@ -62,8 +62,27 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const [tocando, setTocando] = useState(false);
   const [tempoAtual, setTempoAtual] = useState(0);
   const [duracaoTotal, setDuracaoTotal] = useState(0);
-  // Surdina: limita o volume a 25% (ativada automaticamente em momentos de surdina/interlúdio)
+  // Surdina: limita o volume (ativada automaticamente em momentos de surdina/interlúdio)
   const [surdinaAtiva, setSurdinaAtiva] = useState(false);
+  // Percentual configurável de volume de surdina (padrão 25%, adaptável para 3%, 5%, etc., persistido localmente)
+  const [percentualSurdina, setPercentualSurdina] = useState<number>(() => {
+    const salvo = localStorage.getItem('harmonia_volume_surdina');
+    if (salvo) {
+      const n = Number(salvo);
+      if (!isNaN(n) && n >= 1 && n <= 100) return n;
+    }
+    return 25;
+  });
+
+  const atualizarPercentualSurdina = (novoPercentual: number) => {
+    const seguro = Math.max(1, Math.min(100, Math.round(novoPercentual)));
+    setPercentualSurdina(seguro);
+    try {
+      localStorage.setItem('harmonia_volume_surdina', String(seguro));
+    } catch {
+      /* storage desabilitado */
+    }
+  };
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ytPlayerRef = useRef<any>(null);
@@ -169,10 +188,10 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     }
   }, [indiceAtual, modoInterludioAtivo, momentoAtual?.em_surdina]);
 
-  // Aplica o volume instantaneamente (25% ou 100%) em áudio HTML5 e no YouTube IFrame
+  // Aplica o volume instantaneamente (percentualSurdina% ou 100%) em áudio HTML5 e no YouTube IFrame
   useEffect(() => {
-    const volFloat = surdinaAtiva ? 0.25 : 1.0;
-    const volInt = surdinaAtiva ? 25 : 100;
+    const volFloat = surdinaAtiva ? percentualSurdina / 100 : 1.0;
+    const volInt = surdinaAtiva ? percentualSurdina : 100;
 
     if (audioRef.current) {
       audioRef.current.volume = volFloat;
@@ -184,7 +203,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         /* ignora se player ainda não está pronto */
       }
     }
-  }, [surdinaAtiva]);
+  }, [surdinaAtiva, percentualSurdina]);
 
   // Sincroniza a fonte de áudio ao trocar a música ativa
   useEffect(() => {
@@ -207,7 +226,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           caminho = '/' + caminho;
         }
         audio.src = caminho;
-        audio.volume = surdinaAtiva ? 0.25 : 1.0;
+        audio.volume = surdinaAtiva ? percentualSurdina / 100 : 1.0;
         audio.currentTime = 0;
         audio.pause();
         if (musicaAtual.duracao_segundos) setDuracaoTotal(musicaAtual.duracao_segundos);
@@ -296,7 +315,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             onReady: (event: any) => {
               ytProntoRef.current = true;
               try {
-                event.target.setVolume(surdinaAtiva ? 25 : 100);
+                event.target.setVolume(surdinaAtiva ? percentualSurdina : 100);
               } catch {
                 /* ignora */
               }
@@ -732,6 +751,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           proximoMomento={dadosSessao?.esteira_ritualistica[indiceAtual + 1] ?? null}
           surdinaAtiva={surdinaAtiva}
           onAlternarSurdina={() => setSurdinaAtiva((v) => !v)}
+          percentualSurdina={percentualSurdina}
+          onAlterarPercentualSurdina={atualizarPercentualSurdina}
         />
       </div>
 
