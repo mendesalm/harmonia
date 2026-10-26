@@ -179,14 +179,14 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const musicaAtivaEfetiva = modoInterludioAtivo ? musicaFundoAtiva : momentoAtual?.musica_sorteada;
   const musicaAtual = musicaAtivaEfetiva;
 
-  // Ativa automaticamente a Surdina (25%) em momentos classificados como surdina ou no modo interlúdio
+  // Ativa automaticamente a Surdina se a música atual for surdina, se o momento for surdina ou no modo interlúdio
   useEffect(() => {
-    if (modoInterludioAtivo || momentoAtual?.em_surdina) {
+    if (modoInterludioAtivo || momentoAtual?.em_surdina || musicaAtual?.surdina) {
       setSurdinaAtiva(true);
     } else {
       setSurdinaAtiva(false);
     }
-  }, [indiceAtual, modoInterludioAtivo, momentoAtual?.em_surdina]);
+  }, [indiceAtual, modoInterludioAtivo, momentoAtual?.em_surdina, musicaAtual?.id, musicaAtual?.surdina]);
 
   // Aplica o volume instantaneamente (percentualSurdina% ou 100%) em áudio HTML5 e no YouTube IFrame
   useEffect(() => {
@@ -574,6 +574,53 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     }
   };
 
+  /**
+   * Salva a configuração permanente de uma música como Surdina (ou desfaz),
+   * persistindo no backend para que seja lembrada em todas as próximas sessões.
+   */
+  const alternarMusicaSurdinaPermanente = async (musicaId: string, surdina: boolean) => {
+    // Atualização otimista local
+    setDadosSessao((anterior) => {
+      if (!anterior) return anterior;
+      const esteira = anterior.esteira_ritualistica.map((m) => ({
+        ...m,
+        candidatas: m.candidatas.map((c) => (c.id === musicaId ? { ...c, surdina } : c)),
+        musica_sorteada:
+          m.musica_sorteada?.id === musicaId
+            ? { ...m.musica_sorteada, surdina }
+            : m.musica_sorteada,
+      }));
+      return { ...anterior, esteira_ritualistica: esteira };
+    });
+
+    if (surdina) {
+      setSurdinaAtiva(true);
+    }
+
+    try {
+      await clienteHttp.patch(`/musicas/${musicaId}/surdina`, null, {
+        params: { surdina },
+      });
+      feedbackTatil.sucesso();
+    } catch (e) {
+      // Desfaz em caso de falha
+      setDadosSessao((anterior) => {
+        if (!anterior) return anterior;
+        const esteira = anterior.esteira_ritualistica.map((m) => ({
+          ...m,
+          candidatas: m.candidatas.map((c) => (c.id === musicaId ? { ...c, surdina: !surdina } : c)),
+          musica_sorteada:
+            m.musica_sorteada?.id === musicaId
+              ? { ...m.musica_sorteada, surdina: !surdina }
+              : m.musica_sorteada,
+        }));
+        return { ...anterior, esteira_ritualistica: esteira };
+      });
+      feedbackTatil.erro();
+      setAvisoErro(extrairMensagemErro(e, 'Não foi possível salvar a configuração de surdina da música.'));
+    }
+  };
+
   const onSeek = (novoTempo: number) => {
     if (musicaAtual?.tipo_midia === 'ARQUIVO_LOCAL' && audioRef.current) {
       audioRef.current.currentTime = novoTempo;
@@ -753,6 +800,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           onAlternarSurdina={() => setSurdinaAtiva((v) => !v)}
           percentualSurdina={percentualSurdina}
           onAlterarPercentualSurdina={atualizarPercentualSurdina}
+          musicaAtualSurdina={Boolean(musicaAtual?.surdina)}
+          onAlternarMusicaSurdinaPermanente={alternarMusicaSurdinaPermanente}
         />
       </div>
 

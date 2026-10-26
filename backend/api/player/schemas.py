@@ -17,6 +17,7 @@ class MusicaSorteadaInfo(BaseModel):
     link_externo: Optional[str]
     duracao_segundos: Optional[int]
     preferida: bool = False
+    surdina: bool = Field(False, description="Indica se a música é configurada como Surdina permanente.")
 
     model_config = ConfigDict(from_attributes=True)
 

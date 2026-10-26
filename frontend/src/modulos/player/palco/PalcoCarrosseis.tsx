@@ -479,7 +479,17 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
           className="absolute inset-x-3 text-center"
           style={{ top: 12 + DISCO_BASE + 12, opacity: f.intensidade }}
         >
-          <p className="truncate text-[16px] font-bold leading-tight text-cyan-200">{faixa.titulo}</p>
+          <div className="flex items-center justify-center gap-1.5 min-w-0">
+            <p className="truncate text-[16px] font-bold leading-tight text-cyan-200">{faixa.titulo}</p>
+            {faixa.surdina && (
+              <span
+                className="shrink-0 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/40"
+                title="Música configurada com perfil Surdina permanente"
+              >
+                SURDINA
+              </span>
+            )}
+          </div>
           <p className="mt-1 truncate text-[12px] font-semibold text-white">
             {faixa.autor_artista || 'Acervo Harmonia'}
             {duracao ? <span className="font-normal text-slate-400"> • {duracao}</span> : null}

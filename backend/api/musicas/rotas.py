@@ -392,6 +392,43 @@ async def promover_musica_global(
     return musica
 
 
+@roteador_musicas.patch(
+    "/{musica_id}/surdina",
+    summary="Configurar Música como Surdina Permanente",
+    description="Salva a configuração da música com o perfil Surdina (execução em volume atenuado) para todas as próximas sessões.",
+    responses={
+        200: {"description": "Configuração de surdina salva com sucesso."},
+        404: {"description": "Música não encontrada."},
+    }
+)
+async def configurar_musica_surdina(
+    musica_id: uuid.UUID,
+    surdina: bool = Query(..., description="True para marcar como música de surdina permanente, False para normal"),
+    usuario: UsuarioEsigma = Depends(obter_usuario_esigma),
+    db: AsyncSession = Depends(obter_banco_de_dados)
+):
+    stmt = select(Musica).where(Musica.id == musica_id)
+    res = await db.execute(stmt)
+    musica = res.scalars().first()
+    if not musica:
+        raise HTTPException(status_code=404, detail="Música não encontrada")
+
+    meta = dict(musica.metadados or {})
+    meta["surdina"] = surdina
+    musica.metadados = meta
+    await db.commit()
+    await db.refresh(musica)
+    logger.info(
+        f"Música {musica.id} ({musica.titulo}) configurada com surdina={surdina} por {usuario.email}"
+    )
+    return {
+        "status": "ok",
+        "musica_id": str(musica.id),
+        "surdina": surdina,
+        "titulo": musica.titulo,
+    }
+
+
 @roteador_musicas.delete("/{musica_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def deletar_musica(
     musica_id: uuid.UUID,

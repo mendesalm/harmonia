@@ -35,6 +35,8 @@ interface MasonicControlsProps {
   onAlternarSurdina: () => void;
   percentualSurdina: number;
   onAlterarPercentualSurdina: (novoPercentual: number) => void;
+  musicaAtualSurdina?: boolean;
+  onAlternarMusicaSurdinaPermanente?: (musicaId: string, surdina: boolean) => void;
 }
 
 /**
@@ -59,6 +61,8 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
   onAlternarSurdina,
   percentualSurdina,
   onAlterarPercentualSurdina,
+  musicaAtualSurdina = false,
+  onAlternarMusicaSurdinaPermanente,
 }) => {
   const [modalOrientacaoAberto, setModalOrientacaoAberto] = useState(false);
   const [modalProximoAberto, setModalProximoAberto] = useState(false);
@@ -633,6 +637,37 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
                     ))}
                   </div>
                 </div>
+
+                {/* Configuração Permanente para a Música Atual */}
+                {momentoAtual?.musica_sorteada && onAlternarMusicaSurdinaPermanente && (
+                  <div className="pt-2 border-t border-white/10 space-y-1.5">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-amber-300 font-bold block">
+                      Memorização para Próximas Sessões
+                    </span>
+                    <label className="flex items-start gap-2.5 p-2.5 rounded-xl bg-black/40 border border-white/10 cursor-pointer hover:border-amber-400/40 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={musicaAtualSurdina}
+                        onChange={(e) => {
+                          feedbackTatil.acaoMedia();
+                          onAlternarMusicaSurdinaPermanente(
+                            momentoAtual.musica_sorteada!.id,
+                            e.target.checked
+                          );
+                        }}
+                        className="mt-0.5 accent-amber-400 h-4 w-4 rounded cursor-pointer shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs font-semibold text-white block">
+                          Definir "{momentoAtual.musica_sorteada.titulo}" como Música de Surdina
+                        </span>
+                        <span className="text-[11px] text-slate-400 block leading-tight mt-0.5">
+                          Sempre que esta faixa for sorteada ou executada em qualquer sessão, iniciará automaticamente no volume de surdina ({percentualSurdina}%).
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                )}
               </div>
 
               {/* Rodapé com botão Fechar */}

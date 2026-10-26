@@ -86,6 +86,7 @@ export interface MusicaSorteada {
   link_externo?: string;
   duracao_segundos?: number;
   preferida?: boolean;
+  surdina?: boolean;
 }
 
 export interface MomentoExecucao {

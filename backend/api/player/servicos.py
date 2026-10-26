@@ -45,6 +45,7 @@ def _converter_musica_para_info(musica: Musica, preferida: bool = False) -> Musi
         link_externo=midia["link_externo"],
         duracao_segundos=meta.get("duracao_segundos"),
         preferida=preferida,
+        surdina=bool(meta.get("surdina", False)),
     )
 
 
