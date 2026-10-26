@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ListOrdered, Sparkles, ArrowLeft, Volume2, Pause, Play } from 'lucide-react';
-import { SessaoPlayerExecucao, Musica } from '../../compartilhado/tipos';
+import { SessaoPlayerExecucao, Musica, MusicaSorteada } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
 import { extrairIdYoutube } from '../../compartilhado/formatadores/midia';
+import { extrairMensagemErro } from '../../compartilhado/utilitarios/mensagensErro';
+import { feedbackTatil } from '../../compartilhado/utilitarios/dispositivoNativo';
 
-import { MasonicTimeline } from './componentes/MasonicTimeline';
-import { MasonicTrackList } from './componentes/MasonicTrackList';
+import { PalcoCarrosseis } from './palco/PalcoCarrosseis';
 import { MasonicControls } from './componentes/MasonicControls';
 import { ModalUploadMusica } from '../musicas/ModalUploadMusica';
 import { ModalInterludioFundo } from './ModalInterludioFundo';
@@ -26,8 +27,11 @@ interface SessaoLojaResumo {
 
 /**
  * Console do Player Sequencial Ritualístico (Mobile-First & Desktop).
- * Proporciona condução ágil dos momentos da sessão com linha do tempo superior,
- * lista central rolável de faixas e controles táteis ergonômicos na base.
+ *
+ * Interface em Palco de Carrosséis 3D: os momentos formam um carrossel horizontal e, dentro do
+ * momento ativo, as faixas formam um carrossel vertical. O momento e a faixa ativos ficam sempre
+ * no centro; os demais esmaecem progressivamente. Esta página concentra o ESTADO (sessão,
+ * reprodução de áudio local/YouTube, preferências); `PalcoCarrosseis` é puramente visual.
  */
 export const PaginaPlayerHarmonia: React.FC = () => {
   const navigate = useNavigate();
@@ -43,7 +47,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const [indiceAtual, setIndiceAtual] = useState(0);
   const [modalUploadAberto, setModalUploadAberto] = useState(false);
   const [modalInterludioAberto, setModalInterludioAberto] = useState(false);
-  const [musicasDoMomento, setMusicasDoMomento] = useState<Musica[]>([]);
+  const [avisoErro, setAvisoErro] = useState<string | null>(null);
 
   // Estado do Modo Interlúdio / Trilha de Fundo
   const [modoInterludioAtivo, setModoInterludioAtivo] = useState(false);
@@ -61,6 +65,14 @@ export const PaginaPlayerHarmonia: React.FC = () => {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ytPlayerRef = useRef<any>(null);
+  /** O player do YouTube já disparou `onReady` (só então play/pause/seek são seguros). */
+  const ytProntoRef = useRef(false);
+  /** Intenção de iniciar a reprodução assim que a próxima faixa carregar (tocar ao selecionar). */
+  const tocarAoCarregarRef = useRef(false);
+  /** Mesma intenção repassada ao player do YouTube (consumida no `onReady`). */
+  const reproduzirYtRef = useRef(false);
+  /** Sempre aponta para o callback mais recente de "fim da faixa" (evita closures obsoletas no YouTube). */
+  const aoTerminarRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     const tag = document.createElement('script');
@@ -70,6 +82,13 @@ export const PaginaPlayerHarmonia: React.FC = () => {
       firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
     }
   }, []);
+
+  // Aviso (toast) transitório para erros de ações do usuário
+  useEffect(() => {
+    if (!avisoErro) return;
+    const t = window.setTimeout(() => setAvisoErro(null), 4500);
+    return () => window.clearTimeout(t);
+  }, [avisoErro]);
 
   useEffect(() => {
     if (lojaAtiva?.id) {
@@ -102,41 +121,35 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     }
   };
 
-  const carregarEsteira = async (idSessao: string) => {
+  /**
+   * Carrega a esteira da sessão. Com `preservar`, mantém o momento atual e a faixa já escolhida
+   * em cada momento (usado após catalogar uma música, sem "embaralhar" o que o Mestre já definiu).
+   */
+  const carregarEsteira = async (idSessao: string, preservar = false) => {
     try {
-      setCarregandoSessao(true);
+      if (!preservar) setCarregandoSessao(true);
       const res = await clienteHttp.get<SessaoPlayerExecucao>(`/player/sessao/${idSessao}`);
-      setDadosSessao(res.data);
-      if (res.data.esteira_ritualistica.length > 0) {
+      const nova = res.data;
+
+      setDadosSessao((anterior) => {
+        if (!preservar || !anterior || anterior.sessao_id !== nova.sessao_id) return nova;
+        const esteira = nova.esteira_ritualistica.map((momento) => {
+          const antigo = anterior.esteira_ritualistica.find((m) => m.evento_id === momento.evento_id);
+          const idEscolhido = antigo?.musica_sorteada?.id;
+          const mantida = idEscolhido ? momento.candidatas.find((c) => c.id === idEscolhido) : undefined;
+          return mantida ? { ...momento, musica_sorteada: mantida } : momento;
+        });
+        return { ...nova, esteira_ritualistica: esteira };
+      });
+
+      if (!preservar && nova.esteira_ritualistica.length > 0) {
         setIndiceAtual(0);
       }
     } catch (e) {
       console.error('Erro ao carregar esteira da sessão:', e);
+      setAvisoErro(extrairMensagemErro(e, 'Não foi possível carregar a esteira da sessão.'));
     } finally {
       setCarregandoSessao(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!dadosSessao || !dadosSessao.esteira_ritualistica[indiceAtual]) return;
-    const momento = dadosSessao.esteira_ritualistica[indiceAtual];
-    // Preenche imediatamente com as candidatas já retornadas pela esteira enquanto busca a lista completa
-    if (momento.candidatas && momento.candidatas.length > 0) {
-      setMusicasDoMomento(momento.candidatas);
-    }
-    carregarMusicasDoMomento(momento.evento_id, momento.candidatas || []);
-  }, [indiceAtual, dadosSessao]);
-
-  const carregarMusicasDoMomento = async (eventoId: string, fallbackCandidatas: Musica[]) => {
-    try {
-      const res = await clienteHttp.get<Musica[]>(`/musicas?evento_id=${eventoId}`);
-      if (res.data && res.data.length > 0) {
-        setMusicasDoMomento(res.data);
-      } else {
-        setMusicasDoMomento(fallbackCandidatas);
-      }
-    } catch {
-      setMusicasDoMomento(fallbackCandidatas);
     }
   };
 
@@ -149,6 +162,11 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+
+    // Consome a intenção de "tocar ao carregar" definida pela ação do usuário (toque no card, botões de faixa)
+    const tocarAgora = tocarAoCarregarRef.current;
+    tocarAoCarregarRef.current = false;
+    reproduzirYtRef.current = tocarAgora;
 
     setTocando(false);
     setTempoAtual(0);
@@ -165,8 +183,11 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         audio.currentTime = 0;
         audio.pause();
         if (musicaAtual.duracao_segundos) setDuracaoTotal(musicaAtual.duracao_segundos);
+        if (tocarAgora) {
+          audio.play().then(() => setTocando(true)).catch(() => setTocando(false));
+        }
       } else {
-        // Mídia externa (YouTube)
+        // Mídia externa (YouTube): o áudio nativo fica mudo e o IFrame API assume
         audio.pause();
         audio.src = '';
         if (musicaAtual.duracao_segundos) setDuracaoTotal(musicaAtual.duracao_segundos);
@@ -179,26 +200,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
 
   // Inicialização e controle do YouTube Player API
   useEffect(() => {
-    if (musicaAtual?.tipo_midia !== 'YOUTUBE' || !musicaAtual.link_externo) return;
-
-    const ytVideoId = extrairIdYoutube(musicaAtual.link_externo);
-    if (!ytVideoId) return;
-
     let timerProgresso: any = null;
-
-    const iniciarTimerProgresso = () => {
-      pararTimerProgresso();
-      timerProgresso = setInterval(() => {
-        if (ytPlayerRef.current && typeof ytPlayerRef.current.getCurrentTime === 'function') {
-          try {
-            const cur = ytPlayerRef.current.getCurrentTime();
-            if (typeof cur === 'number' && !isNaN(cur)) {
-              setTempoAtual(cur);
-            }
-          } catch {}
-        }
-      }, 500);
-    };
 
     const pararTimerProgresso = () => {
       if (timerProgresso) {
@@ -207,64 +209,92 @@ export const PaginaPlayerHarmonia: React.FC = () => {
       }
     };
 
-    const inicializarPlayerYT = () => {
-      const container = document.getElementById('yt-player-container');
-      if (!container) return;
+    const iniciarTimerProgresso = () => {
+      pararTimerProgresso();
+      timerProgresso = setInterval(() => {
+        const player = ytPlayerRef.current;
+        if (player && typeof player.getCurrentTime === 'function') {
+          try {
+            const cur = player.getCurrentTime();
+            if (typeof cur === 'number' && !isNaN(cur)) setTempoAtual(cur);
+          } catch {
+            /* player ainda inicializando */
+          }
+        }
+      }, 500);
+    };
 
-      // Destrói instância anterior se existir
+    const destruirPlayerYt = () => {
+      ytProntoRef.current = false;
       if (ytPlayerRef.current && typeof ytPlayerRef.current.destroy === 'function') {
         try {
           ytPlayerRef.current.destroy();
         } catch {
-          // ignora
+          /* ignora */
         }
-        ytPlayerRef.current = null;
       }
+      ytPlayerRef.current = null;
+    };
 
-      // Recria o elemento div para ancorar o player
+    // Ao trocar de faixa (ou ao sair de uma faixa do YouTube), encerra o player anterior
+    destruirPlayerYt();
+
+    if (musicaAtual?.tipo_midia !== 'YOUTUBE' || !musicaAtual.link_externo) return;
+    const ytVideoId = extrairIdYoutube(musicaAtual.link_externo);
+    if (!ytVideoId) return;
+
+    const inicializarPlayerYT = () => {
+      const container = document.getElementById('yt-player-container');
+      if (!container || !(window as any).YT || !(window as any).YT.Player) return;
+
+      // Recria o elemento que o YouTube substitui pelo iframe
       container.innerHTML = '<div id="yt-player-target"></div>';
+      ytProntoRef.current = false;
 
-      if ((window as any).YT && (window as any).YT.Player) {
-        try {
-          ytPlayerRef.current = new (window as any).YT.Player('yt-player-target', {
-            videoId: ytVideoId,
-            playerVars: {
-              autoplay: 1,
-              controls: 0,
-              enablejsapi: 1,
-              origin: window.location.origin,
-            },
-            events: {
-              onReady: (event: any) => {
+      try {
+        ytPlayerRef.current = new (window as any).YT.Player('yt-player-target', {
+          videoId: ytVideoId,
+          playerVars: {
+            autoplay: reproduzirYtRef.current ? 1 : 0,
+            controls: 0,
+            enablejsapi: 1,
+            origin: window.location.origin,
+          },
+          events: {
+            onReady: (event: any) => {
+              ytProntoRef.current = true;
+              if (reproduzirYtRef.current) {
                 event.target.playVideo();
+                setTocando(true);
+                iniciarTimerProgresso();
+              }
+              const dur = event.target.getDuration();
+              if (dur && dur > 0) setDuracaoTotal(dur);
+            },
+            onStateChange: (event: any) => {
+              // 0 = ENDED, 1 = PLAYING, 2 = PAUSED
+              if (event.data === 0) {
+                pararTimerProgresso();
+                aoTerminarRef.current();
+              } else if (event.data === 1) {
                 setTocando(true);
                 iniciarTimerProgresso();
                 const dur = event.target.getDuration();
                 if (dur && dur > 0) setDuracaoTotal(dur);
-              },
-              onStateChange: (event: any) => {
-                // 0 = ENDED, 1 = PLAYING, 2 = PAUSED
-                if (event.data === 0) {
-                  pararTimerProgresso();
-                  aoTerminarMusica();
-                } else if (event.data === 1) {
-                  setTocando(true);
-                  iniciarTimerProgresso();
-                  const dur = event.target.getDuration();
-                  if (dur && dur > 0) setDuracaoTotal(dur);
-                } else if (event.data === 2) {
-                  setTocando(false);
-                  pararTimerProgresso();
-                }
-              },
-              onError: (err: any) => {
-                console.warn('Erro na reprodução YouTube:', err);
-              },
+              } else if (event.data === 2) {
+                setTocando(false);
+                pararTimerProgresso();
+              }
             },
-          });
-        } catch (e) {
-          console.debug('Aviso ao inicializar YT Player:', e);
-        }
+            onError: (err: any) => {
+              console.warn('Erro na reprodução YouTube:', err);
+              setTocando(false);
+              setAvisoErro('Não foi possível reproduzir este vídeo do YouTube (pode estar indisponível ou bloqueado para incorporação).');
+            },
+          },
+        });
+      } catch (e) {
+        console.debug('Aviso ao inicializar YT Player:', e);
       }
     };
 
@@ -360,20 +390,18 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         audio.play().then(() => setTocando(true)).catch(() => setTocando(false));
       }
     } else if (musicaAtual.tipo_midia === 'YOUTUBE') {
-      if (ytPlayerRef.current) {
+      const player = ytPlayerRef.current;
+      if (player && ytProntoRef.current) {
         if (tocando) {
-          if (typeof ytPlayerRef.current.pauseVideo === 'function') {
-            ytPlayerRef.current.pauseVideo();
-          }
+          player.pauseVideo?.();
           setTocando(false);
         } else {
-          if (typeof ytPlayerRef.current.playVideo === 'function') {
-            ytPlayerRef.current.playVideo();
-          }
+          player.playVideo?.();
           setTocando(true);
         }
       } else {
-        // Se o player ainda está carregando o iframe, alterna o estado
+        // O IFrame ainda está carregando: registra a intenção e o `onReady` inicia a reprodução
+        reproduzirYtRef.current = !tocando;
         setTocando(!tocando);
       }
     }
@@ -386,6 +414,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     setTempoAtual(0);
     avancarProximo();
   };
+  aoTerminarRef.current = aoTerminarMusica;
 
   const avancarProximo = () => {
     if (!dadosSessao) return;
@@ -400,59 +429,89 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     }
   };
 
-  const pularFaixa = () => {
-    if (!musicaAtual || musicasDoMomento.length <= 1) return;
-    const idx = musicasDoMomento.findIndex((m) => m.id === musicaAtual.id);
-    const proxIdx = (idx + 1) % musicasDoMomento.length;
-    selecionarMusicaDaLista(proxIdx);
+  /** Substitui (de forma imutável) a faixa escolhida de um momento da esteira. */
+  const definirMusicaDoMomento = (indiceMomento: number, musica: MusicaSorteada) => {
+    setDadosSessao((anterior) => {
+      if (!anterior) return anterior;
+      const esteira = anterior.esteira_ritualistica.map((m, i) =>
+        i === indiceMomento ? { ...m, musica_sorteada: musica } : m
+      );
+      return { ...anterior, esteira_ritualistica: esteira };
+    });
   };
 
-  const voltarFaixa = () => {
-    if (!musicaAtual || musicasDoMomento.length <= 1) return;
-    const idx = musicasDoMomento.findIndex((m) => m.id === musicaAtual.id);
-    const prevIdx = idx <= 0 ? musicasDoMomento.length - 1 : idx - 1;
-    selecionarMusicaDaLista(prevIdx);
+  /** Seleciona uma faixa do momento ativo; `tocar` define se a reprodução já começa/continua. */
+  const trocarFaixaDoMomento = (indiceFaixa: number, tocar: boolean) => {
+    const nova = momentoAtual?.candidatas[indiceFaixa];
+    if (!nova || musicaAtual?.id === nova.id) return;
+    tocarAoCarregarRef.current = tocar;
+    definirMusicaDoMomento(indiceAtual, nova);
   };
 
-  const selecionarMusicaDaLista = (idx: number) => {
-    if (!dadosSessao || !musicasDoMomento[idx]) return;
-    const musicaEscolhida = musicasDoMomento[idx];
+  /** Botões "Faixa" do painel de controles: navegam na lista circular tocando a nova faixa. */
+  const navegarFaixa = (sentido: 1 | -1) => {
+    const faixas = momentoAtual?.candidatas ?? [];
+    if (faixas.length <= 1 || !musicaAtual) return;
+    const idx = faixas.findIndex((m) => m.id === musicaAtual.id);
+    const proximo = (idx + sentido + faixas.length) % faixas.length;
+    trocarFaixaDoMomento(proximo, true);
+  };
 
-    // Se clicou na música que já está selecionada, apenas alterna Play/Pause
-    if (musicaAtual?.id === musicaEscolhida.id) {
-      alternarPlayPause();
-      return;
+  /**
+   * Marca/desmarca uma música como preferida do momento atual (várias podem ser preferidas;
+   * o sorteio ocorre somente entre elas). Atualiza a interface de forma otimista e desfaz se
+   * o backend recusar.
+   */
+  const alternarPreferencia = async (musicaId: string, preferida: boolean) => {
+    if (!sessaoSelecionadaId || !momentoAtual) return;
+    const indiceMomento = indiceAtual;
+    const eventoId = momentoAtual.evento_id;
+
+    const aplicar = (valor: boolean) =>
+      setDadosSessao((anterior) => {
+        if (!anterior) return anterior;
+        const esteira = anterior.esteira_ritualistica.map((m, i) => {
+          if (i !== indiceMomento) return m;
+          return {
+            ...m,
+            candidatas: m.candidatas.map((c) => (c.id === musicaId ? { ...c, preferida: valor } : c)),
+            musica_sorteada:
+              m.musica_sorteada && m.musica_sorteada.id === musicaId
+                ? { ...m.musica_sorteada, preferida: valor }
+                : m.musica_sorteada,
+          };
+        });
+        return { ...anterior, esteira_ritualistica: esteira };
+      });
+
+    aplicar(preferida);
+    try {
+      await clienteHttp.patch(
+        `/player/sessao/${sessaoSelecionadaId}/momento/${eventoId}/musica/${musicaId}/preferencia`,
+        null,
+        { params: { preferida } }
+      );
+      feedbackTatil.sucesso();
+    } catch (e) {
+      aplicar(!preferida);
+      feedbackTatil.erro();
+      setAvisoErro(extrairMensagemErro(e, 'Não foi possível atualizar a preferência da música.'));
     }
-
-    const novaSessao = { ...dadosSessao };
-    novaSessao.esteira_ritualistica[indiceAtual].musica_sorteada = musicaEscolhida;
-    setDadosSessao(novaSessao);
-
-    setTimeout(() => {
-      setTocando(true);
-      if (musicaEscolhida.tipo_midia === 'ARQUIVO_LOCAL' && audioRef.current) {
-        audioRef.current.play().catch(() => {});
-      } else if (ytPlayerRef.current) {
-        ytPlayerRef.current.playVideo();
-      }
-    }, 100);
   };
 
   const onSeek = (novoTempo: number) => {
     if (musicaAtual?.tipo_midia === 'ARQUIVO_LOCAL' && audioRef.current) {
       audioRef.current.currentTime = novoTempo;
       setTempoAtual(novoTempo);
-    } else if (musicaAtual?.tipo_midia === 'YOUTUBE' && ytPlayerRef.current) {
+    } else if (musicaAtual?.tipo_midia === 'YOUTUBE' && ytPlayerRef.current && ytProntoRef.current) {
       try {
         ytPlayerRef.current.seekTo(novoTempo, true);
         setTempoAtual(novoTempo);
-      } catch {}
+      } catch {
+        /* ignora seek antes do player estar pronto */
+      }
     }
   };
-
-  const indiceTrackAtivo = musicasDoMomento.findIndex((m) => m.id === musicaAtual?.id);
-  const safeIndiceTrack = indiceTrackAtivo >= 0 ? indiceTrackAtivo : 0;
-  const progressoPercentual = duracaoTotal > 0 ? (tempoAtual / duracaoTotal) * 100 : 0;
 
   return (
     <div className="h-full w-full flex flex-col bg-macaonico-surface overflow-hidden text-slate-100 relative">
@@ -566,14 +625,20 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         </div>
       )}
 
-      {/* Eixo Superior: Linha do Tempo de Momentos */}
+      {/* Palco de Carrosséis 3D: momentos (horizontal) e faixas (vertical) */}
       {dadosSessao && dadosSessao.esteira_ritualistica.length > 0 ? (
-        <MasonicTimeline
-          momentos={dadosSessao.esteira_ritualistica}
-          indiceAtual={indiceAtual}
-          tocando={tocando}
-          onMudarMomento={setIndiceAtual}
-        />
+        <div className="relative z-10 flex-1 min-h-0 flex flex-col">
+          <PalcoCarrosseis
+            momentos={dadosSessao.esteira_ritualistica}
+            indiceMomento={indiceAtual}
+            tocando={tocando && !modoInterludioAtivo}
+            onMudarMomento={setIndiceAtual}
+            onTrocarFaixa={trocarFaixaDoMomento}
+            onAlternarPlayPause={alternarPlayPause}
+            onAlternarPreferencia={alternarPreferencia}
+            onAbrirUpload={() => setModalUploadAberto(true)}
+          />
+        </div>
       ) : (
         !carregandoSessao && (
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center z-10">
@@ -594,27 +659,13 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         )
       )}
 
-      {/* Eixo Central: Lista de Faixas do Momento Atual */}
-      {dadosSessao && dadosSessao.esteira_ritualistica.length > 0 && (
-        <div className="flex-1 min-h-0 overflow-hidden relative flex flex-col">
-          <MasonicTrackList
-            musicas={musicasDoMomento}
-            indiceAtivo={safeIndiceTrack}
-            tocando={tocando}
-            onSelecionarMusica={selecionarMusicaDaLista}
-            onAbrirUpload={() => setModalUploadAberto(true)}
-            progressoPercentual={progressoPercentual}
-          />
-        </div>
-      )}
-
-      {/* Eixo Inferior: Controles Táteis */}
+      {/* Eixo Inferior: Barra de progresso e controles táteis */}
       <div className="shrink-0 bg-macaonico-surface relative z-30">
         <MasonicControls
           tocando={tocando}
           onPlayPause={alternarPlayPause}
-          onPrevTrack={voltarFaixa}
-          onNextTrack={pularFaixa}
+          onPrevTrack={() => navegarFaixa(-1)}
+          onNextTrack={() => navegarFaixa(1)}
           onPrevMoment={voltarAnterior}
           onNextMoment={avancarProximo}
           tempoAtual={tempoAtual}
@@ -644,13 +695,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           eventoIdPreSelecionado={dadosSessao.esteira_ritualistica[indiceAtual]?.evento_id}
           onFechar={() => setModalUploadAberto(false)}
           onSalvo={async () => {
-            const momento = dadosSessao.esteira_ritualistica[indiceAtual];
-            if (momento) {
-              const resp = await clienteHttp.get<Musica[]>('/musicas', {
-                params: { evento_id: momento.evento_id },
-              });
-              setMusicasDoMomento(resp.data);
-            }
+            // Recarrega as candidatas (já filtradas pela Loja) preservando as escolhas atuais
+            if (sessaoSelecionadaId) await carregarEsteira(sessaoSelecionadaId, true);
           }}
         />
       )}
@@ -667,6 +713,16 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         onAlternarPlayPauseFundo={alternarPlayPauseFundo}
         onRetomarEsteira={retornarParaEsteira}
       />
+
+      {/* Aviso transitório de erro */}
+      {avisoErro && (
+        <div
+          role="alert"
+          className="harmonia-aviso fixed bottom-24 left-1/2 z-50 max-w-[90vw] -translate-x-1/2 rounded-xl border border-red-400/40 bg-red-950/90 px-4 py-2.5 text-xs font-medium text-red-100 shadow-xl backdrop-blur"
+        >
+          {avisoErro}
+        </div>
+      )}
     </div>
   );
 };

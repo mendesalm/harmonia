@@ -6,15 +6,7 @@ import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
 import { useAuth } from '../../compartilhado/contextos/ContextoAutenticacao';
 import { extrairMetadadosAudio } from '../../compartilhado/utilitarios/extratorMetadadosAudio';
-
-function extrairMensagemErro(err: any, mensagemPadrao: string): string {
-  const detail = err?.response?.data?.detail;
-  if (typeof detail === 'string') return detail;
-  if (Array.isArray(detail) && detail.length > 0) {
-    return detail.map((d: any) => d?.msg || JSON.stringify(d)).join('; ');
-  }
-  return err?.message || mensagemPadrao;
-}
+import { extrairMensagemErro } from '../../compartilhado/utilitarios/mensagensErro';
 
 interface Props {
   onFechar: () => void;

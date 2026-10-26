@@ -44,7 +44,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-px bg-gradient-to-r from-transparent via-macaonico-dourado/50 to-transparent"></div>
 
       <div className="w-full max-w-3xl mx-auto flex flex-col items-center">
-        {/* Barra de Progresso (Seek Bar) com área de toque ampliada */}
+        {/* Barra de Progresso (Seek Bar) com feixe luminoso e marcador */}
         <div className="w-full max-w-[440px] px-2 sm:px-4 mb-2 sm:mb-3">
           <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-inter text-macaonico-inactive font-medium mb-1 px-1">
             <span>{formatarTempo(tempoAtual)}</span>
@@ -52,7 +52,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
           </div>
 
           <div
-            className="relative w-full py-2 cursor-pointer"
+            className="relative w-full py-2.5 cursor-pointer group select-none"
             onClick={(e) => {
               if (duracaoTotal <= 0) return;
               const rect = e.currentTarget.getBoundingClientRect();
@@ -61,11 +61,20 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
               onSeek(percent * duracaoTotal);
             }}
           >
-            <div className="relative w-full h-1.5 sm:h-2 bg-sigma-elevated rounded-full overflow-hidden border border-white/10">
+            {/* Feixe de linhas paralelas douradas estilo partitura / horizonte */}
+            <div className="relative w-full h-2 bg-sigma-elevated/80 rounded-full overflow-hidden border border-macaonico-dourado/25">
               <div
-                className="absolute top-0 left-0 h-full bg-gold-gradient shadow-[0_0_10px_rgba(212,175,55,0.5)] transition-all duration-100 ease-linear rounded-r-full"
+                className="absolute top-0 left-0 h-full bg-gold-gradient shadow-[0_0_12px_rgba(221,185,107,0.65)] transition-all duration-100 ease-linear rounded-r-full"
                 style={{ width: `${progressoPercentual}%` }}
               ></div>
+            </div>
+
+            {/* Marcador circular luminoso (Thumb) */}
+            <div
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full bg-[#070F1E] border-2 border-macaonico-dourado shadow-[0_0_14px_rgba(221,185,107,0.9)] flex items-center justify-center transition-all duration-100 ease-linear pointer-events-none group-hover:scale-125"
+              style={{ left: `${Math.max(2, Math.min(98, progressoPercentual))}%` }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-macaonico-dourado" />
             </div>
           </div>
         </div>
