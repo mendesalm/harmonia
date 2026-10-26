@@ -20,8 +20,8 @@ const TRANSICAO_FAIXA =
 /** Distância máxima (em itens) renderizada: virtualização para sessões com muitos momentos/faixas. */
 const ALCANCE_RENDER = 3.2;
 /** Disco base (px de projeto) no card ativo ampliado; escala para baixo nos cards compactos. */
-const DISCO_BASE = 92;
-const LARGURA_CARD_FAIXA = M.larguraMoldura - 40;
+const DISCO_BASE = 104;
+const LARGURA_CARD_FAIXA = M.larguraMoldura - 32;
 
 const dois = (n: number) => String(n).padStart(2, '0');
 
@@ -81,11 +81,11 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   const refPalco = useRef<HTMLDivElement>(null);
   const { largura, altura } = useTamanho(refPalco);
 
-  // Escala uniforme: cabe a moldura na altura disponível e deixa espaço para os vizinhos na largura
+  // Escala uniforme: aproveita toda a altura disponível no celular sem comprimir a moldura
   const escala =
     largura > 0 && altura > 0
-      ? limitar(Math.min(altura / (M.alturaMoldura + 8), largura / (M.larguraMoldura * 1.12)), 0.58, 1.16)
-      : 0.9;
+      ? limitar(Math.min((altura - 4) / M.alturaMoldura, largura / (M.larguraMoldura * 1.05)), 0.65, 1.2)
+      : 0.92;
 
   const momentoAtivo = momentos[indiceMomento];
   const faixasAtivas = momentoAtivo?.candidatas ?? [];
@@ -413,8 +413,8 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
     : null;
 
   // Disco: do canto esquerdo (compacto) ao topo central (completo)
-  const escalaDisco = interpolar(0.46, 1, f.intensidade);
-  const centroX = interpolar(34, LARGURA_CARD_FAIXA / 2, f.intensidade);
+  const escalaDisco = interpolar(0.4, 1, f.intensidade);
+  const centroX = interpolar(32, LARGURA_CARD_FAIXA / 2 - 4, f.intensidade);
   const centroY = interpolar(f.altura / 2, 12 + DISCO_BASE / 2, f.intensidade);
 
   return (
@@ -468,7 +468,7 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
         {/* Texto compacto (faixa vizinha) */}
         <div
           className="absolute inset-y-0 right-3 flex flex-col justify-center"
-          style={{ left: 66, opacity: 1 - f.intensidade }}
+          style={{ left: 62, opacity: 1 - f.intensidade }}
         >
           <span className="truncate text-[12px] font-semibold text-slate-200">{faixa.titulo}</span>
           <span className="truncate text-[10px] text-slate-400">{faixa.autor_artista || 'Acervo Harmonia'}</span>
@@ -477,7 +477,7 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
         {/* Texto completo (faixa ativa) */}
         <div
           className="absolute inset-x-3 text-center"
-          style={{ top: 12 + DISCO_BASE + 8, opacity: f.intensidade }}
+          style={{ top: 12 + DISCO_BASE + 12, opacity: f.intensidade }}
         >
           <p className="truncate text-[16px] font-bold leading-tight text-cyan-200">{faixa.titulo}</p>
           <p className="mt-1 truncate text-[12px] font-semibold text-white">
@@ -485,8 +485,8 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
             {duracao ? <span className="font-normal text-slate-400"> • {duracao}</span> : null}
           </p>
         </div>
-        <div className="absolute inset-x-0 bottom-3" style={{ opacity: f.intensidade }}>
-          <Equalizador tocando={tocando} altura={20} />
+        <div className="absolute inset-x-0 bottom-3.5" style={{ opacity: f.intensidade }}>
+          <Equalizador tocando={tocando} altura={22} />
         </div>
 
         {/* Estrela de preferência (várias faixas podem ser preferidas; o sorteio ocorre entre elas) */}

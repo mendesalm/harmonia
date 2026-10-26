@@ -217,6 +217,10 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           try {
             const cur = player.getCurrentTime();
             if (typeof cur === 'number' && !isNaN(cur)) setTempoAtual(cur);
+            const dur = typeof player.getDuration === 'function' ? player.getDuration() : 0;
+            if (typeof dur === 'number' && !isNaN(dur) && dur > 0) {
+              setDuracaoTotal((antiga) => (antiga > 0 ? antiga : dur));
+            }
           } catch {
             /* player ainda inicializando */
           }
