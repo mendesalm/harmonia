@@ -4,7 +4,7 @@ import { Plus, Search, Music, ShieldCheck, Share2, Trash2, Edit3, Sparkles, Uplo
 import { Evento } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
-import { ModalUploadMusica } from '../musicas/ModalUploadMusica';
+import { ModalComporMomento } from './ModalComporMomento';
 
 /**
  * Catálogo de Eventos/Momentos Ritualísticos e vínculo rápido de músicas por playlist.
@@ -272,10 +272,11 @@ export const PaginaEventos: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de Upload Direto para Evento */}
+      {/* Modal de Composição de Músicas do Momento (Busca no Acervo + Upload) */}
       {eventoParaUploadId !== null && (
-        <ModalUploadMusica
-          eventoIdPreSelecionado={eventoParaUploadId || undefined}
+        <ModalComporMomento
+          eventoId={eventoParaUploadId}
+          nomeMomento={eventos.find((e) => e.id === eventoParaUploadId)?.nome}
           onFechar={() => setEventoParaUploadId(null)}
           onSalvo={carregarEventos}
         />

@@ -10,7 +10,7 @@ import { feedbackTatil } from '../../compartilhado/utilitarios/dispositivoNativo
 
 import { PalcoCarrosseis } from './palco/PalcoCarrosseis';
 import { MasonicControls } from './componentes/MasonicControls';
-import { ModalUploadMusica } from '../musicas/ModalUploadMusica';
+import { ModalComporMomento } from '../eventos/ModalComporMomento';
 import { ModalInterludioFundo } from './ModalInterludioFundo';
 import { normalizadorAudio } from '../../compartilhado/audio/normalizadorAudio';
 
@@ -881,10 +881,12 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         }}
       />
 
-      {/* Modal de Upload Rápido */}
+      {/* Modal de Composição de Músicas do Momento (Busca no Acervo + Upload) */}
       {modalUploadAberto && dadosSessao && (
-        <ModalUploadMusica
-          eventoIdPreSelecionado={dadosSessao.esteira_ritualistica[indiceAtual]?.evento_id}
+        <ModalComporMomento
+          eventoId={dadosSessao.esteira_ritualistica[indiceAtual]?.evento_id}
+          nomeMomento={dadosSessao.esteira_ritualistica[indiceAtual]?.evento_nome}
+          sessaoId={sessaoSelecionadaId || undefined}
           onFechar={() => setModalUploadAberto(false)}
           onSalvo={async () => {
             // Recarrega as candidatas (já filtradas pela Loja) preservando as escolhas atuais

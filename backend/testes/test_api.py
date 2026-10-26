@@ -175,3 +175,25 @@ async def test_listagem_eventos_sessoes_e_player_loja_2181(cliente_http: AsyncCl
         )
         assert resp_update.status_code == 200
         assert len(resp_update.json()["eventos_customizados"]) == len(eventos_atuais)
+
+        # Testa vinculação e desvinculação de música do acervo ao evento ritualístico
+        resp_musicas = await cliente_http.get("/api/v1/musicas", headers=headers)
+        assert resp_musicas.status_code == 200
+        musicas = resp_musicas.json()
+        if musicas and eventos_atuais:
+            ev_id = eventos_atuais[0]["evento_id"]
+            mus_id = musicas[0]["id"]
+            resp_vinc = await cliente_http.post(
+                f"/api/v1/eventos/{ev_id}/musicas/{mus_id}",
+                headers=headers
+            )
+            assert resp_vinc.status_code == 200
+            assert resp_vinc.json()["status"] == "ok"
+
+            # Desvinculação
+            resp_desv = await cliente_http.delete(
+                f"/api/v1/eventos/{ev_id}/musicas/{mus_id}",
+                headers=headers
+            )
+            assert resp_desv.status_code == 200
+            assert resp_desv.json()["status"] == "ok"

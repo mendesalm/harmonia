@@ -3,11 +3,15 @@ Controlador de Rotas RESTful para Eventos Ritualísticos (Playlists).
 """
 import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+from loguru import logger
 from backend.nucleo.auth_esigma import UsuarioEsigma, obter_usuario_esigma
 from backend.nucleo.banco import obter_banco_de_dados
 from backend.nucleo.dependencias import verificar_assinatura_ativa
+from backend.modelos.evento import Evento
+from backend.modelos.musica import Musica, MusicaEventoSugerido
 from backend.api.eventos.schemas import EventoCriacao, EventoAtualizacao, EventoResposta
 from backend.api.eventos.servicos import ServicoEvento
 
@@ -97,3 +101,99 @@ async def deletar_evento(
     db: AsyncSession = Depends(obter_banco_de_dados)
 ):
     return await ServicoEvento.deletar(db=db, evento_id=evento_id)
+
+
+@roteador_eventos.post(
+    "/{evento_id}/musicas/{musica_id}",
+    summary="Vincular Música do Acervo ao Momento Ritualístico",
+    description="Associa uma música já salva no acervo a este momento litúrgico, replicando para equivalentes canônicos.",
+    responses={
+        200: {"description": "Música vinculada com sucesso."},
+        404: {"description": "Evento ou Música não encontrados."},
+    }
+)
+async def vincular_musica_ao_evento(
+    evento_id: uuid.UUID,
+    musica_id: uuid.UUID,
+    usuario: UsuarioEsigma = Depends(obter_usuario_esigma),
+    db: AsyncSession = Depends(obter_banco_de_dados)
+):
+    ev = await db.get(Evento, evento_id)
+    if not ev:
+        raise HTTPException(status_code=404, detail="Momento ritualístico não encontrado.")
+
+    musica = await db.get(Musica, musica_id)
+    if not musica or not musica.ativo:
+        raise HTTPException(status_code=404, detail="Música não encontrada no acervo.")
+
+    if ev.canonico_id:
+        res_eq = await db.execute(select(Evento.id).where(Evento.canonico_id == ev.canonico_id))
+        ids_alvo = set(res_eq.scalars().all()) | {ev.id}
+    else:
+        ids_alvo = {ev.id}
+
+    res_exist = await db.execute(
+        select(MusicaEventoSugerido.evento_id).where(
+            MusicaEventoSugerido.musica_id == musica_id,
+            MusicaEventoSugerido.evento_id.in_(ids_alvo)
+        )
+    )
+    existentes = set(res_exist.scalars().all())
+
+    novos = ids_alvo - existentes
+    for n_id in novos:
+        db.add(MusicaEventoSugerido(musica_id=musica.id, evento_id=n_id))
+
+    await db.commit()
+    logger.info(
+        f"Música '{musica.titulo}' ({musica.id}) associada ao momento '{ev.nome}' ({ev.id}) por {usuario.email}"
+    )
+    return {
+        "status": "ok",
+        "musica_id": str(musica.id),
+        "evento_id": str(evento_id),
+        "vinculos_adicionados": len(novos),
+        "titulo": musica.titulo
+    }
+
+
+@roteador_eventos.delete(
+    "/{evento_id}/musicas/{musica_id}",
+    summary="Desvincular Música do Momento Ritualístico",
+    description="Remove a associação da música deste momento ritualístico.",
+    responses={
+        200: {"description": "Música desvinculada com sucesso."},
+        404: {"description": "Evento não encontrado."},
+    }
+)
+async def desvincular_musica_do_evento(
+    evento_id: uuid.UUID,
+    musica_id: uuid.UUID,
+    usuario: UsuarioEsigma = Depends(obter_usuario_esigma),
+    db: AsyncSession = Depends(obter_banco_de_dados)
+):
+    ev = await db.get(Evento, evento_id)
+    if not ev:
+        raise HTTPException(status_code=404, detail="Momento ritualístico não encontrado.")
+
+    if ev.canonico_id:
+        res_eq = await db.execute(select(Evento.id).where(Evento.canonico_id == ev.canonico_id))
+        ids_alvo = set(res_eq.scalars().all()) | {ev.id}
+    else:
+        ids_alvo = {ev.id}
+
+    await db.execute(
+        delete(MusicaEventoSugerido).where(
+            MusicaEventoSugerido.musica_id == musica_id,
+            MusicaEventoSugerido.evento_id.in_(ids_alvo)
+        )
+    )
+    await db.commit()
+    logger.info(
+        f"Música {musica_id} desvinculada do momento '{ev.nome}' ({ev.id}) por {usuario.email}"
+    )
+    return {
+        "status": "ok",
+        "musica_id": str(musica_id),
+        "evento_id": str(evento_id)
+    }

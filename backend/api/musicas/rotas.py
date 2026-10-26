@@ -7,7 +7,7 @@ import json
 import shutil
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form, status
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from loguru import logger
@@ -44,10 +44,11 @@ roteador_musicas = APIRouter(
 @roteador_musicas.get(
     "",
     summary="Listar Acervo",
-    description="Retorna as músicas do acervo com filtro opcional por evento ritualístico (incluindo equivalência canônica)."
+    description="Retorna as músicas do acervo com filtro opcional por evento ritualístico (incluindo equivalência canônica) e busca textual por título ou autor."
 )
 async def listar_musicas(
     evento_id: Optional[uuid.UUID] = Query(None, description="Filtrar músicas sugeridas para um evento ritualístico"),
+    busca: Optional[str] = Query(None, description="Filtro textual para busca por título ou autor/artista"),
     db: AsyncSession = Depends(obter_banco_de_dados)
 ):
     ids_eventos_filtro = None
@@ -70,8 +71,12 @@ async def listar_musicas(
             .selectinload(MusicaEventoSugerido.evento)
             .selectinload(Evento.canonico),
         )
-        .order_by(Musica.titulo)
     )
+    if busca and busca.strip():
+        termo = f"%{busca.strip()}%"
+        stmt = stmt.where(or_(Musica.titulo.ilike(termo), Musica.autor_artista.ilike(termo)))
+
+    stmt = stmt.order_by(Musica.titulo)
     res = await db.execute(stmt)
     musicas = res.scalars().all()
 
