@@ -45,6 +45,8 @@ interface PalcoCarrosseisProps {
   momentos: MomentoExecucao[];
   indiceMomento: number;
   tocando: boolean;
+  /** Progresso da faixa atual entre 0 e 1 (para o braço de vitrola). */
+  progressoFaixa: number;
   /** Vai para um momento pelo índice absoluto. */
   onMudarMomento: (indice: number) => void;
   /** Seleciona a faixa pelo índice dentro do momento ativo. `tocar` indica se deve iniciar/continuar a reprodução. */
@@ -69,6 +71,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   momentos,
   indiceMomento,
   tocando,
+  progressoFaixa,
   onMudarMomento,
   onTrocarFaixa,
   onAlternarPlayPause,
@@ -193,6 +196,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                   ativo={ativo}
                   intensidade={t.intensidade}
                   tocando={ativo && tocando}
+                  progressoFaixa={ativo ? progressoFaixa : 0}
                   offsetFaixa={ativo ? offsetY : 0}
                   arrastando={arrastando}
                   onIr={() => {
@@ -222,6 +226,7 @@ interface MolduraMomentoProps {
   /** 1 quando centralizado, 0 quando afastado (controla o cross-fade entre as duas faces). */
   intensidade: number;
   tocando: boolean;
+  progressoFaixa: number;
   offsetFaixa: number;
   arrastando: boolean;
   onIr: () => void;
@@ -243,6 +248,7 @@ const MolduraMomento: React.FC<MolduraMomentoProps> = ({
   ativo,
   intensidade,
   tocando,
+  progressoFaixa,
   offsetFaixa,
   arrastando,
   onIr,
@@ -340,6 +346,7 @@ const MolduraMomento: React.FC<MolduraMomentoProps> = ({
                     distancia={dv}
                     ativa={i === idxAtiva}
                     tocando={tocando && i === idxAtiva}
+                    progresso={i === idxAtiva ? progressoFaixa : 0}
                     arrastando={arrastando}
                     onClicar={() => onClicarFaixa(i)}
                     onAlternarPreferencia={onAlternarPreferencia}
@@ -378,6 +385,7 @@ interface CardFaixaProps {
   distancia: number;
   ativa: boolean;
   tocando: boolean;
+  progresso: number;
   arrastando: boolean;
   onClicar: () => void;
   onAlternarPreferencia: (musicaId: string, preferida: boolean) => void;
@@ -393,6 +401,7 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
   distancia,
   ativa,
   tocando,
+  progresso,
   arrastando,
   onClicar,
   onAlternarPreferencia,
@@ -437,7 +446,7 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
         }`}
         style={{ background: ativa ? '#0a1b30' : '#07121f' }}
       >
-        {/* Disco (preferida = bordas e centro dourados) */}
+        {/* Disco (preferida = bordas e centro dourados) + Braço de Vitrola proporcional na faixa ativa */}
         <div
           className="absolute left-0 top-0"
           style={{
@@ -447,7 +456,13 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
             transition: arrastando ? 'none' : 'transform 0.5s cubic-bezier(0.22, 0.9, 0.25, 1)',
           }}
         >
-          <DiscoFaixa preferida={preferida} girando={tocando} tamanho={DISCO_BASE} />
+          <DiscoFaixa
+            preferida={preferida}
+            girando={tocando}
+            tamanho={DISCO_BASE}
+            mostrarBraco={f.intensidade > 0.65}
+            progresso={progresso}
+          />
         </div>
 
         {/* Texto compacto (faixa vizinha) */}

@@ -459,8 +459,9 @@ export const PaginaPlayerHarmonia: React.FC = () => {
 
   /**
    * Marca/desmarca uma música como preferida do momento atual (várias podem ser preferidas;
-   * o sorteio ocorre somente entre elas). Atualiza a interface de forma otimista e desfaz se
-   * o backend recusar.
+   * o sorteio ocorre somente entre elas). Se o usuário marcar uma faixa como preferida e a
+   * faixa atualmente ativa não era preferida (ou o player está parado), posiciona imediatamente
+   * a preferida no centro do carrossel vertical.
    */
   const alternarPreferencia = async (musicaId: string, preferida: boolean) => {
     if (!sessaoSelecionadaId || !momentoAtual) return;
@@ -472,13 +473,31 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         if (!anterior) return anterior;
         const esteira = anterior.esteira_ritualistica.map((m, i) => {
           if (i !== indiceMomento) return m;
+          const novasCandidatas = m.candidatas.map((c) =>
+            c.id === musicaId ? { ...c, preferida: valor } : c
+          );
+          const faixaAlvo = novasCandidatas.find((c) => c.id === musicaId) ?? null;
+
+          let novaSorteada =
+            m.musica_sorteada && m.musica_sorteada.id === musicaId
+              ? { ...m.musica_sorteada, preferida: valor }
+              : m.musica_sorteada;
+
+          // Se acabou de marcar como preferida e a ativa não era preferida (ou player parado), prioriza a preferida
+          if (valor && faixaAlvo && (!tocando || !novaSorteada?.preferida)) {
+            novaSorteada = faixaAlvo;
+          } else if (!valor && !tocando && novaSorteada?.id === musicaId) {
+            // Se desmarcou a ativa e existem outras preferidas no momento, seleciona uma das preferidas restantes
+            const outrasPreferidas = novasCandidatas.filter((c) => c.preferida);
+            if (outrasPreferidas.length > 0) {
+              novaSorteada = outrasPreferidas[0];
+            }
+          }
+
           return {
             ...m,
-            candidatas: m.candidatas.map((c) => (c.id === musicaId ? { ...c, preferida: valor } : c)),
-            musica_sorteada:
-              m.musica_sorteada && m.musica_sorteada.id === musicaId
-                ? { ...m.musica_sorteada, preferida: valor }
-                : m.musica_sorteada,
+            candidatas: novasCandidatas,
+            musica_sorteada: novaSorteada,
           };
         });
         return { ...anterior, esteira_ritualistica: esteira };
@@ -632,6 +651,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             momentos={dadosSessao.esteira_ritualistica}
             indiceMomento={indiceAtual}
             tocando={tocando && !modoInterludioAtivo}
+            progressoFaixa={duracaoTotal > 0 ? tempoAtual / duracaoTotal : 0}
             onMudarMomento={setIndiceAtual}
             onTrocarFaixa={trocarFaixaDoMomento}
             onAlternarPlayPause={alternarPlayPause}
@@ -659,7 +679,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         )
       )}
 
-      {/* Eixo Inferior: Barra de progresso e controles táteis */}
+      {/* Eixo Inferior: Barra de progresso, controles táteis e box de orientação ao Mestre de Harmonia */}
       <div className="shrink-0 bg-macaonico-surface relative z-30">
         <MasonicControls
           tocando={tocando}
@@ -671,6 +691,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           tempoAtual={tempoAtual}
           duracaoTotal={duracaoTotal}
           onSeek={onSeek}
+          momentoAtual={momentoAtual ?? null}
+          proximoMomento={dadosSessao?.esteira_ritualistica[indiceAtual + 1] ?? null}
         />
       </div>
 
