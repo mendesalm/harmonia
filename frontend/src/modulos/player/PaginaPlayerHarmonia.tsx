@@ -12,6 +12,7 @@ import { PalcoCarrosseis } from './palco/PalcoCarrosseis';
 import { MasonicControls } from './componentes/MasonicControls';
 import { ModalUploadMusica } from '../musicas/ModalUploadMusica';
 import { ModalInterludioFundo } from './ModalInterludioFundo';
+import { normalizadorAudio } from '../../compartilhado/audio/normalizadorAudio';
 
 declare global {
   interface Window {
@@ -210,25 +211,26 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const musicaAtivaEfetiva = modoInterludioAtivo ? musicaFundoAtiva : momentoAtual?.musica_sorteada;
   const musicaAtual = musicaAtivaEfetiva;
 
-  // Ativa automaticamente a Surdina se a música atual for surdina, se o momento for surdina ou no modo interlúdio
+  // Ativa automaticamente a Surdina com base na classificação do Momento ritualístico ou Modo Interlúdio
   useEffect(() => {
-    if (modoInterludioAtivo || momentoAtual?.em_surdina || musicaAtual?.surdina) {
+    if (modoInterludioAtivo) {
       setSurdinaAtiva(true);
-    } else {
-      setSurdinaAtiva(false);
+      return;
     }
-  }, [indiceAtual, modoInterludioAtivo, momentoAtual?.em_surdina, musicaAtual?.id, musicaAtual?.surdina]);
+    if (momentoAtual) {
+      setSurdinaAtiva(Boolean(momentoAtual.em_surdina));
+    }
+  }, [indiceAtual, modoInterludioAtivo, momentoAtual?.em_surdina]);
 
-  // Aplica o volume instantaneamente em áudio HTML5 e no YouTube IFrame
+  // Aplica o volume com normalização dinâmica e estabilização de ganho (elimina oscilações)
   useEffect(() => {
-    // Fator de escala da surdina (ex: 25% = 0.25)
     const fatorSurdina = surdinaAtiva ? percentualSurdina / 100 : 1.0;
-    // Volume final ponderado pelo volume geral do mestre (0 a 1)
     const volFinalFloat = Math.max(0, Math.min(1, (volumeGeral / 100) * fatorSurdina));
     const volFinalInt = Math.round(volFinalFloat * 100);
 
     if (audioRef.current) {
-      audioRef.current.volume = volFinalFloat;
+      normalizadorAudio.inicializar(audioRef.current);
+      normalizadorAudio.aplicarVolume(volFinalFloat, audioRef.current);
     }
     if (ytPlayerRef.current && typeof ytPlayerRef.current.setVolume === 'function') {
       try {
@@ -260,11 +262,15 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           caminho = '/' + caminho;
         }
         audio.src = caminho;
-        audio.volume = surdinaAtiva ? percentualSurdina / 100 : 1.0;
+        const fatorSurdina = surdinaAtiva ? percentualSurdina / 100 : 1.0;
+        const volFinalFloat = Math.max(0, Math.min(1, (volumeGeral / 100) * fatorSurdina));
+        normalizadorAudio.inicializar(audio);
+        normalizadorAudio.aplicarVolume(volFinalFloat, audio);
         audio.currentTime = 0;
         audio.pause();
         if (musicaAtual.duracao_segundos) setDuracaoTotal(musicaAtual.duracao_segundos);
         if (tocarAgora) {
+          normalizadorAudio.retomarContexto();
           audio.play().then(() => setTocando(true)).catch(() => setTocando(false));
         }
       } else {
@@ -465,6 +471,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
       audio.pause();
       setTocando(false);
     } else {
+      normalizadorAudio.retomarContexto();
       audio.play().then(() => setTocando(true)).catch(() => setTocando(false));
     }
   };
@@ -479,6 +486,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         audio.pause();
         setTocando(false);
       } else {
+        normalizadorAudio.retomarContexto();
         audio.play().then(() => setTocando(true)).catch(() => setTocando(false));
       }
     } else if (musicaAtual.tipo_midia === 'YOUTUBE') {
@@ -657,6 +665,37 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     }
   };
 
+  const alternarSurdinaMomentoPermanente = async (emSurdina: boolean) => {
+    if (!sessaoSelecionadaId || !momentoAtual) return;
+    setSurdinaAtiva(emSurdina);
+    const eventoId = momentoAtual.evento_id;
+
+    setDadosSessao((antiga) => {
+      if (!antiga) return antiga;
+      const esteira = antiga.esteira_ritualistica.map((m) =>
+        m.evento_id === eventoId ? { ...m, em_surdina: emSurdina } : m
+      );
+      return { ...antiga, esteira_ritualistica: esteira };
+    });
+
+    try {
+      await clienteHttp.patch(
+        `/player/sessao/${sessaoSelecionadaId}/momento/${eventoId}/surdina?em_surdina=${emSurdina}`
+      );
+    } catch (e) {
+      console.error('Erro ao salvar surdina do momento:', e);
+      setAvisoErro('Não foi possível salvar a configuração de surdina deste momento.');
+      setDadosSessao((antiga) => {
+        if (!antiga) return antiga;
+        const esteira = antiga.esteira_ritualistica.map((m) =>
+          m.evento_id === eventoId ? { ...m, em_surdina: !emSurdina } : m
+        );
+        return { ...antiga, esteira_ritualistica: esteira };
+      });
+      setSurdinaAtiva(!emSurdina);
+    }
+  };
+
   const onSeek = (novoTempo: number) => {
     if (musicaAtual?.tipo_midia === 'ARQUIVO_LOCAL' && audioRef.current) {
       audioRef.current.currentTime = novoTempo;
@@ -820,6 +859,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           onAlterarPercentualSurdina={atualizarPercentualSurdina}
           musicaAtualSurdina={Boolean(musicaAtual?.surdina)}
           onAlternarMusicaSurdinaPermanente={alternarMusicaSurdinaPermanente}
+          onAlternarMomentoSurdinaPermanente={alternarSurdinaMomentoPermanente}
           volumeGeral={volumeGeral}
           onAjustarVolumeRelativo={ajustarVolumeRelativo}
           onAlterarVolumeGeral={alterarVolumeGeral}

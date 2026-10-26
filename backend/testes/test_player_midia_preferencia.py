@@ -258,3 +258,42 @@ def test_classificar_momento_surdina():
     assert classificar_momento_surdina("Entrada do Cortejo") is False
     assert classificar_momento_surdina("Abertura do Livro da Lei") is False
     assert classificar_momento_surdina("Marcha do Mestre") is False
+
+
+@pytest.mark.asyncio
+async def test_endpoint_momento_surdina(cliente_http: AsyncClient):
+    """Testa o endpoint de configuração persistente de surdina para momentos da sessão."""
+    with patch("backend.nucleo.auth_esigma.requests.get", return_value=_mock_validacao(LOJA_2181_UUID)):
+        headers = {"Authorization": "Bearer t"}
+        sessoes = (await cliente_http.get(f"/api/v1/sessoes/loja/{LOJA_2181_UUID}", headers=headers)).json()
+        sessao_id = sessoes[0]["id"]
+        esteira = (await cliente_http.get(f"/api/v1/player/sessao/{sessao_id}", headers=headers)).json()[
+            "esteira_ritualistica"
+        ]
+        momento = esteira[0]
+        evento_id = momento["evento_id"]
+
+        # Ativa surdina no momento
+        url_on = f"/api/v1/player/sessao/{sessao_id}/momento/{evento_id}/surdina?em_surdina=true"
+        resp_on = await cliente_http.patch(url_on, headers=headers)
+        assert resp_on.status_code == 200
+        assert resp_on.json()["em_surdina"] is True
+
+        # Confere que reflete na esteira do player
+        esteira_on = (await cliente_http.get(f"/api/v1/player/sessao/{sessao_id}", headers=headers)).json()[
+            "esteira_ritualistica"
+        ]
+        assert esteira_on[0]["em_surdina"] is True
+
+        # Desativa surdina no momento
+        url_off = f"/api/v1/player/sessao/{sessao_id}/momento/{evento_id}/surdina?em_surdina=false"
+        resp_off = await cliente_http.patch(url_off, headers=headers)
+        assert resp_off.status_code == 200
+        assert resp_off.json()["em_surdina"] is False
+
+        # Confere que reflete na esteira do player
+        esteira_off = (await cliente_http.get(f"/api/v1/player/sessao/{sessao_id}", headers=headers)).json()[
+            "esteira_ritualistica"
+        ]
+        assert esteira_off[0]["em_surdina"] is False
+

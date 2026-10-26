@@ -12,21 +12,21 @@
 
 /** Medidas de projeto do palco (px). */
 export const MEDIDAS_PALCO = {
-  larguraMoldura: 300,
+  larguraMoldura: 258,
   alturaMoldura: 380,
   alturaCabecalho: 48,
   /** Card ativo ocupa ~68% da área interna da moldura (224px de 332px) para ficar grande mesmo em telas móveis. */
   alturaCardAtivo: 224,
   alturaCardCompacto: 56,
-  /** Deslocamento horizontal do 1º vizinho de momento. */
-  passoMomento: 212,
+  /** Deslocamento horizontal do 1º vizinho de momento (aproxima para ficarem nitidamente visíveis nas laterais). */
+  passoMomento: 182,
   /** Deslocamento vertical do 1º e 2º vizinho de faixa. */
   passoFaixa1: 128,
   passoFaixa2: 36,
 } as const;
 
 /** Opacidade de momentos por distância inteira: centro, 1º, 2º vizinho (depois zera). */
-const OPACIDADE_MOMENTOS = [1, 0.55, 0.22] as const;
+const OPACIDADE_MOMENTOS = [1, 0.75, 0.38] as const;
 /** Opacidade de faixas por distância inteira: centro, 1ª, 2ª vizinha (depois zera). */
 const OPACIDADE_FAIXAS = [1, 0.6, 0.28] as const;
 

@@ -118,6 +118,7 @@ class SessaoLojaEvento(Base):
     ordem_execucao: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     suprimido: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     observacao_mestre_harmonia: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    em_surdina: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=None)
 
     # Relacionamentos
     sessao_loja: Mapped["SessaoLoja"] = relationship("SessaoLoja", back_populates="eventos_customizados")

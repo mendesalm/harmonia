@@ -85,11 +85,11 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   const refPalco = useRef<HTMLDivElement>(null);
   const { largura, altura } = useTamanho(refPalco);
 
-  // Escala uniforme: aproveita toda a altura disponível no celular sem comprimir a moldura
+  // Escala uniforme: ajustada para que os momentos vizinhos fiquem claramente visíveis nas laterais
   const escala =
     largura > 0 && altura > 0
-      ? limitar(Math.min((altura - 4) / M.alturaMoldura, largura / (M.larguraMoldura * 1.05)), 0.65, 1.2)
-      : 0.92;
+      ? limitar(Math.min((altura - 4) / M.alturaMoldura, largura / (M.larguraMoldura * 1.34)), 0.60, 1.05)
+      : 0.88;
 
   const momentoAtivo = momentos[indiceMomento];
   const faixasAtivas = momentoAtivo?.candidatas ?? [];
@@ -310,9 +310,19 @@ const MolduraMomento: React.FC<MolduraMomentoProps> = ({
             className="harmonia-entrar absolute inset-x-0 top-0 flex flex-col items-center justify-center border-b border-cyan-400/20 px-4 text-center"
             style={{ height: M.alturaCabecalho }}
           >
-            <h3 className="line-clamp-2 text-[13px] font-extrabold uppercase leading-tight tracking-wide text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.35)]">
-              {momento.evento_nome}
-            </h3>
+            <div className="flex items-center justify-center gap-1.5 max-w-full px-2">
+              <h3 className="line-clamp-1 text-[13px] font-extrabold uppercase leading-tight tracking-wide text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.35)] truncate">
+                {momento.evento_nome}
+              </h3>
+              {momento.em_surdina && (
+                <span
+                  className="shrink-0 text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/25 text-amber-300 border border-amber-400/40 shadow-sm"
+                  title="Momento ritualístico classificado como Surdina permanente"
+                >
+                  SURDINA
+                </span>
+              )}
+            </div>
             <span className="mt-0.5 font-mono text-[10px] font-bold tracking-widest text-cyan-300/90">
               {faixas.length} {faixas.length === 1 ? 'FAIXA' : 'FAIXAS'} • {indice + 1}/{total}
             </span>
@@ -520,16 +530,8 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
           className="absolute inset-x-3 text-center"
           style={{ top: 12 + DISCO_BASE + 12, opacity: f.intensidade }}
         >
-          <div className="flex items-center justify-center gap-1.5 min-w-0">
+          <div className="flex items-center justify-center min-w-0">
             <p className="truncate text-[16px] font-bold leading-tight text-cyan-200">{faixa.titulo}</p>
-            {faixa.surdina && (
-              <span
-                className="shrink-0 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/40"
-                title="Música configurada com perfil Surdina permanente"
-              >
-                SURDINA
-              </span>
-            )}
           </div>
           <p className="mt-1 truncate text-[12px] font-semibold text-white">
             {faixa.autor_artista || 'Acervo Harmonia'}

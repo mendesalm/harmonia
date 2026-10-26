@@ -109,3 +109,36 @@ async def alternar_preferencia_musica(
         preferida=preferida,
         usuario=usuario,
     )
+
+
+@roteador_player.patch(
+    "/sessao/{sessao_id}/momento/{evento_id}/surdina",
+    summary="Definir Perfil de Surdina do Momento Ritualístico",
+    description=(
+        "Define permanentemente se este momento litúrgico específico da sessão da Loja deve ser executado em Surdina "
+        "(volume limitado pelo percentual de surdina configurado, ideal para interlúdios, oratórias e passagens). "
+        "Qualquer música tocada neste momento respeitará o perfil de surdina."
+    ),
+    responses={
+        401: {"description": "Token Bearer ausente ou inválido."},
+        403: {"description": "A sessão pertence a outra Loja."},
+        404: {"description": "Sessão ou momento não encontrados."},
+    },
+)
+async def alternar_momento_surdina(
+    sessao_id: uuid.UUID,
+    evento_id: uuid.UUID,
+    em_surdina: bool = Query(..., description="True para executar em Surdina, False para execução normal"),
+    usuario: UsuarioEsigma = Depends(obter_usuario_esigma),
+    db: AsyncSession = Depends(obter_banco_de_dados),
+):
+    loja_id = uuid.UUID(str(usuario.organizacao_id)) if usuario.organizacao_id else uuid.UUID(int=0)
+    return await ServicoPlayer.definir_surdina_momento(
+        db=db,
+        sessao_id=sessao_id,
+        evento_id=evento_id,
+        em_surdina=em_surdina,
+        organizacao_id=loja_id,
+        is_super_admin=usuario.is_super_admin,
+    )
+
