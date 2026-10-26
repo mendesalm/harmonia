@@ -84,7 +84,30 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     }
   };
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Volume mestre geral (0 a 100%, padrão 100%)
+  const [volumeGeral, setVolumeGeral] = useState<number>(() => {
+    const salvo = localStorage.getItem('harmonia_volume_geral');
+    if (salvo) {
+      const n = Number(salvo);
+      if (!isNaN(n) && n >= 0 && n <= 100) return n;
+    }
+    return 100;
+  });
+
+  const alterarVolumeGeral = (novoVolume: number) => {
+    const seguro = Math.max(0, Math.min(100, Math.round(novoVolume)));
+    setVolumeGeral(seguro);
+    try {
+      localStorage.setItem('harmonia_volume_geral', String(seguro));
+    } catch {
+      /* storage desabilitado */
+    }
+  };
+
+  const ajustarVolumeRelativo = (delta: number) => {
+    alterarVolumeGeral(volumeGeral + delta);
+    feedbackTatil.clique();
+  };
   const ytPlayerRef = useRef<any>(null);
   /** O player do YouTube já disparou `onReady` (só então play/pause/seek são seguros). */
   const ytProntoRef = useRef(false);
@@ -188,22 +211,25 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     }
   }, [indiceAtual, modoInterludioAtivo, momentoAtual?.em_surdina, musicaAtual?.id, musicaAtual?.surdina]);
 
-  // Aplica o volume instantaneamente (percentualSurdina% ou 100%) em áudio HTML5 e no YouTube IFrame
+  // Aplica o volume instantaneamente em áudio HTML5 e no YouTube IFrame
   useEffect(() => {
-    const volFloat = surdinaAtiva ? percentualSurdina / 100 : 1.0;
-    const volInt = surdinaAtiva ? percentualSurdina : 100;
+    // Fator de escala da surdina (ex: 25% = 0.25)
+    const fatorSurdina = surdinaAtiva ? percentualSurdina / 100 : 1.0;
+    // Volume final ponderado pelo volume geral do mestre (0 a 1)
+    const volFinalFloat = Math.max(0, Math.min(1, (volumeGeral / 100) * fatorSurdina));
+    const volFinalInt = Math.round(volFinalFloat * 100);
 
     if (audioRef.current) {
-      audioRef.current.volume = volFloat;
+      audioRef.current.volume = volFinalFloat;
     }
     if (ytPlayerRef.current && typeof ytPlayerRef.current.setVolume === 'function') {
       try {
-        ytPlayerRef.current.setVolume(volInt);
+        ytPlayerRef.current.setVolume(volFinalInt);
       } catch {
         /* ignora se player ainda não está pronto */
       }
     }
-  }, [surdinaAtiva, percentualSurdina]);
+  }, [surdinaAtiva, percentualSurdina, volumeGeral]);
 
   // Sincroniza a fonte de áudio ao trocar a música ativa
   useEffect(() => {
@@ -315,7 +341,9 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             onReady: (event: any) => {
               ytProntoRef.current = true;
               try {
-                event.target.setVolume(surdinaAtiva ? percentualSurdina : 100);
+                const fatorSurdina = surdinaAtiva ? percentualSurdina / 100 : 1.0;
+                const volFinalInt = Math.round(Math.max(0, Math.min(100, volumeGeral * fatorSurdina)));
+                event.target.setVolume(volFinalInt);
               } catch {
                 /* ignora */
               }
@@ -658,7 +686,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         onEnded={aoTerminarMusica}
       />
 
-      {/* Barra superior compacta de seleção de Sessão e Botão de Trilha de Fundo */}
+      {/* Barra superior compacta de seleção de Sessão */}
       <div className="relative z-20 flex items-center justify-between gap-2 px-3 sm:px-6 py-2 bg-[#070e1c]/90 border-b border-macaonico-dourado/20 shrink-0">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <ListOrdered className="w-4 h-4 text-macaonico-dourado shrink-0" />
@@ -670,7 +698,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
               setSearchParams({ sessao: novoId });
             }}
             aria-label="Selecionar Sessão Ritualística"
-            className="bg-sigma-surface/90 text-slate-100 text-xs sm:text-sm font-medium border border-macaonico-dourado/30 rounded-lg px-2.5 py-1.5 w-full max-w-xs focus:outline-none focus:border-macaonico-dourado truncate"
+            className="bg-sigma-surface/90 text-slate-100 text-xs sm:text-sm font-medium border border-macaonico-dourado/30 rounded-lg px-2.5 py-1.5 w-full max-w-sm focus:outline-none focus:border-macaonico-dourado truncate"
           >
             {sessoes.length === 0 && <option value="">Nenhum roteiro cadastrado</option>}
             {sessoes.map((s) => (
@@ -679,30 +707,6 @@ export const PaginaPlayerHarmonia: React.FC = () => {
               </option>
             ))}
           </select>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Botão de Chamada Rápida: Música de Fundo / Interlúdio */}
-          <button
-            type="button"
-            onClick={() => setModalInterludioAberto(true)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all shadow-sm ${
-              modoInterludioAtivo
-                ? 'bg-macaonico-dourado text-black border-yellow-300 animate-pulse'
-                : 'bg-macaonico-dourado/15 text-macaonico-dourado border-macaonico-dourado/40 hover:bg-macaonico-dourado/25 hover:text-yellow-300'
-            }`}
-            title="Abrir trilhas de fundo para monólogo ou espera de irmãos"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Música de Fundo</span>
-            <span className="sm:hidden">Fundo</span>
-          </button>
-
-          {dadosSessao && dadosSessao.esteira_ritualistica.length > 0 && (
-            <span className="text-[11px] sm:text-xs font-cinzel text-macaonico-dourado/90 shrink-0 bg-macaonico-dourado/10 border border-macaonico-dourado/30 px-2.5 py-1 rounded-full">
-              Momento {indiceAtual + 1}/{dadosSessao.esteira_ritualistica.length}
-            </span>
-          )}
         </div>
       </div>
 
@@ -802,6 +806,9 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           onAlterarPercentualSurdina={atualizarPercentualSurdina}
           musicaAtualSurdina={Boolean(musicaAtual?.surdina)}
           onAlternarMusicaSurdinaPermanente={alternarMusicaSurdinaPermanente}
+          volumeGeral={volumeGeral}
+          onAjustarVolumeRelativo={ajustarVolumeRelativo}
+          onAlterarVolumeGeral={alterarVolumeGeral}
         />
       </div>
 

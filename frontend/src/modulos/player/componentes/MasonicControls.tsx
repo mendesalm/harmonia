@@ -8,9 +8,13 @@ import {
   Rewind,
   FastForward,
   Compass,
-  ArrowRightCircle,
+  HelpCircle,
   Volume1,
   Volume2,
+  VolumeX,
+  Volume,
+  Minus,
+  Plus,
   X,
   BookOpen,
   Music,
@@ -37,13 +41,16 @@ interface MasonicControlsProps {
   onAlterarPercentualSurdina: (novoPercentual: number) => void;
   musicaAtualSurdina?: boolean;
   onAlternarMusicaSurdinaPermanente?: (musicaId: string, surdina: boolean) => void;
+  volumeGeral: number;
+  onAjustarVolumeRelativo: (delta: number) => void;
+  onAlterarVolumeGeral: (novoVolume: number) => void;
 }
 
 /**
  * Painel inferior de controles de reprodução do Player Harmonia.
- * Ergonomia de polegar (thumb zone), com botão central Play/Pause garantido em proporção 1:1,
- * barra horizontal de ações compactas (Orientação, Surdina configurável e Próximo Momento)
- * que abrem modais dedicados de informações e calibração de volume.
+ * - Botão central Play/Pause circular 76x76 garantido por inline style.
+ * - Linha de apoio: Orientação, Surdina configurável e Informação do Próximo Evento (ícone de interrogação/ajuda).
+ * - Controles de Volume (+ / -) elegantes integrados com display de nível.
  */
 export const MasonicControls: React.FC<MasonicControlsProps> = ({
   tocando,
@@ -63,10 +70,14 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
   onAlterarPercentualSurdina,
   musicaAtualSurdina = false,
   onAlternarMusicaSurdinaPermanente,
+  volumeGeral,
+  onAjustarVolumeRelativo,
+  onAlterarVolumeGeral,
 }) => {
   const [modalOrientacaoAberto, setModalOrientacaoAberto] = useState(false);
   const [modalProximoAberto, setModalProximoAberto] = useState(false);
   const [modalSurdinaAberto, setModalSurdinaAberto] = useState(false);
+  const [sliderVolumeAberto, setSliderVolumeAberto] = useState(false);
 
   const formatarTempo = (secs: number) => {
     if (!secs || isNaN(secs)) return '00:00';
@@ -260,7 +271,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
           </button>
         </div>
 
-        {/* Linha Compacta de Botões de Apoio: Orientação, Surdina Configurável e Próximo Momento */}
+        {/* Linha Compacta de Botões de Apoio: Orientação, Surdina, Informação do Próximo e Controles de Volume */}
         <div className="w-full max-w-[390px] sm:max-w-[430px] flex items-center justify-between gap-1.5 sm:gap-2 mt-1 px-1 shrink-0">
           {/* Botão 1: Orientação ao Mestre de Harmonia */}
           <button
@@ -278,7 +289,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
             </span>
           </button>
 
-          {/* Botão 2: Surdina (limitação configurável de volume) com toque para alternar e clique longo/engrenagem para ajustar */}
+          {/* Botão 2: Surdina (limitação configurável de volume) */}
           <div className="flex-1 flex items-center rounded-xl overflow-hidden border shadow-sm transition-all">
             <button
               type="button"
@@ -293,8 +304,8 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
               }`}
               title={
                 surdinaAtiva
-                  ? `Surdina ATIVA (volume limitado a ${percentualSurdina}%). Toque para desligar.`
-                  : `Surdina DESLIGADA (volume em 100%). Toque para limitar a ${percentualSurdina}%.`
+                  ? `Surdina ATIVA (volume em ${percentualSurdina}%). Toque para desligar.`
+                  : `Surdina DESLIGADA. Toque para limitar a ${percentualSurdina}%.`
               }
             >
               {surdinaAtiva ? (
@@ -307,7 +318,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
               </span>
             </button>
 
-            {/* Atalho direto para ajustar a calibragem da Surdina */}
+            {/* Atalho de calibragem da Surdina */}
             <button
               type="button"
               onClick={() => {
@@ -319,13 +330,13 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
                   ? 'bg-amber-500/30 text-amber-300 hover:bg-amber-500/40'
                   : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
               }`}
-              title="Calibrar percentual do volume de Surdina para sua aparelhagem"
+              title="Calibrar percentual do volume de Surdina"
             >
               <Sliders className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          {/* Botão 3: Informação do Próximo Evento Litúrgico */}
+          {/* Botão 3: Informação do Próximo Evento Litúrgico (Ícone de Interrogação / Ajuda) */}
           <button
             type="button"
             onClick={() => {
@@ -338,14 +349,70 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
                 ? 'bg-macaonico-dourado/15 hover:bg-macaonico-dourado/25 border-macaonico-dourado/40 text-macaonico-dourado'
                 : 'bg-white/5 border-white/10 text-slate-500 opacity-50 cursor-not-allowed'
             }`}
-            title={proximoMomento ? 'Ver informações do próximo momento ritualístico' : 'Último momento da esteira'}
+            title={proximoMomento ? 'Consultar informações do próximo evento ritualístico' : 'Último momento da esteira'}
           >
-            <ArrowRightCircle className="w-3.5 h-3.5 shrink-0" />
+            <HelpCircle className="w-3.5 h-3.5 shrink-0" />
             <span className="text-[10px] sm:text-xs font-semibold tracking-wide truncate">
-              Próximo
+              Próximo?
             </span>
           </button>
+
+          {/* Botão 4: Controles de Volume (+ / -) com display de nível */}
+          <div className="flex items-center rounded-xl bg-white/5 border border-white/15 px-1 py-1 shrink-0 gap-0.5">
+            <button
+              type="button"
+              onClick={() => onAjustarVolumeRelativo(-5)}
+              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors active:scale-90"
+              title="Diminuir volume (-5%)"
+            >
+              <Minus className="w-3 h-3" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSliderVolumeAberto((v) => !v)}
+              className="px-1 text-[10px] font-mono font-bold text-slate-300 hover:text-macaonico-dourado transition-colors"
+              title="Toque para abrir controle fino de volume"
+            >
+              {volumeGeral}%
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onAjustarVolumeRelativo(5)}
+              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors active:scale-90"
+              title="Aumentar volume (+5%)"
+            >
+              <Plus className="w-3 h-3" />
+            </button>
+          </div>
         </div>
+
+        {/* Popover / Slider expansível de Volume Geral */}
+        {sliderVolumeAberto && (
+          <div className="w-full max-w-[390px] sm:max-w-[430px] mt-1.5 p-2.5 rounded-xl bg-[#091224] border border-macaonico-dourado/30 flex items-center gap-3 animate-in fade-in zoom-in-95 duration-150">
+            <Volume className="w-4 h-4 text-macaonico-dourado shrink-0" />
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={volumeGeral}
+              onChange={(e) => onAlterarVolumeGeral(Number(e.target.value))}
+              className="w-full accent-macaonico-dourado h-1.5 bg-slate-700 rounded-lg cursor-pointer"
+            />
+            <span className="text-xs font-mono font-bold text-macaonico-dourado w-9 text-right shrink-0">
+              {volumeGeral}%
+            </span>
+            <button
+              type="button"
+              onClick={() => setSliderVolumeAberto(false)}
+              className="p-1 text-slate-400 hover:text-white"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Modal 1: Orientação ao Mestre de Harmonia */}
@@ -468,7 +535,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-xs font-mono uppercase tracking-wider text-macaonico-dourado font-bold">
-                      Próximo Momento Litúrgico
+                      Informações do Próximo Evento
                     </h3>
                     <p className="text-sm font-bold text-white truncate">
                       #{proximoMomento.posicao} • {proximoMomento.evento_nome}
@@ -535,7 +602,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
                   }}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-macaonico-dourado hover:bg-yellow-400 text-black font-bold text-xs transition-colors shadow-md"
                 >
-                  <ArrowRightCircle className="w-3.5 h-3.5" />
+                  <Play className="w-3.5 h-3.5 fill-current" />
                   <span>Avançar para Este Momento</span>
                 </button>
               </div>
