@@ -32,6 +32,7 @@ from backend.api.musicas.servicos import (
 )
 from backend.api.musicas.extrator_metadados import extrair_metadados_arquivo_audio
 from backend.api.musicas.conversor import converter_youtube_para_mp3_async
+from backend.api.musicas.midia import classificar_midia
 
 roteador_musicas = APIRouter(
     prefix="/musicas",
@@ -92,14 +93,17 @@ async def listar_musicas(
                     "evento_nome": es.evento.canonico.nome if es.evento.canonico else es.evento.nome,
                 }
 
+        midia = classificar_midia(m.arquivo_url, m.metadados)
         m_dict = {
             "id": m.id,
             "titulo": m.titulo,
             "autor_artista": m.autor_artista,
             "upload_por_loja_id": m.upload_por_loja_id,
             "arquivo_url": m.arquivo_url,
-            "caminho_arquivo": m.arquivo_url,
-            "tipo_midia": "ARQUIVO_LOCAL",
+            "caminho_arquivo": midia["caminho_arquivo"],
+            "link_externo": midia["link_externo"],
+            "tipo_midia": midia["tipo_midia"],
+            "duracao_segundos": (m.metadados or {}).get("duracao_segundos"),
             "sinalizada_erro": m.sinalizada_erro,
             "status_uso": m.status_uso,
             "ativo": m.ativo,

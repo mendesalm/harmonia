@@ -51,3 +51,14 @@ class StatusObreiro(str, Enum):
     REGULAR = "Regular"
     IRREGULAR = "Irregular"
     FALECIDO = "Falecido"
+
+
+class TipoMidia(str, Enum):
+    """
+    Tipos de mídia aceitos pelo Player do Harmonia (Dicionário de Dados).
+    Valor único e canônico trafegado entre backend e frontend, evitando
+    divergências como "STREAMING" vs "YOUTUBE".
+    """
+    ARQUIVO_LOCAL = "ARQUIVO_LOCAL"  # MP3/WAV hospedado no servidor (ou URL direta de áudio)
+    YOUTUBE = "YOUTUBE"              # Link do YouTube reproduzido via IFrame API
+    SPOTIFY = "SPOTIFY"              # Link do Spotify (embed)

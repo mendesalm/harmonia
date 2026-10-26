@@ -8,7 +8,8 @@ import uuid
 from typing import List, Optional
 
 from fastapi import HTTPException, status
-from sqlalchemy import or_, select
+from loguru import logger
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -17,28 +18,59 @@ from backend.api.player.schemas import (
     MusicaSorteadaInfo,
     SessaoPlayerExecucao,
 )
+from backend.api.musicas.midia import classificar_midia
 from backend.modelos.evento import Evento
 from backend.modelos.musica import Musica, MusicaEvento, MusicaEventoSugerido
 from backend.modelos.sessao import SessaoLoja, SessaoLojaEvento, TipoSessao
+from backend.nucleo.auth_esigma import UsuarioEsigma
 from backend.nucleo.sincronizacao_tenant import sincronizar_organizacoes_base
 
 
 def _converter_musica_para_info(musica: Musica, preferida: bool = False) -> MusicaSorteadaInfo:
-    """Converte a entidade ORM `Musica` para o schema `MusicaSorteadaInfo`."""
+    """
+    Converte a entidade ORM `Musica` para o schema `MusicaSorteadaInfo`.
+
+    O `tipo_midia` é sempre derivado da URL real via `classificar_midia`
+    (enum `TipoMidia`), nunca de um valor legado salvo em `metadados`.
+    """
     meta = musica.metadados or {}
-    url = musica.arquivo_url or ""
-    eh_link_externo = url.startswith("http://") or url.startswith("https://")
-    tipo_midia = meta.get("tipo_midia") or ("STREAMING" if eh_link_externo else "ARQUIVO_LOCAL")
+    midia = classificar_midia(musica.arquivo_url, meta)
     return MusicaSorteadaInfo(
         id=musica.id,
         titulo=musica.titulo,
         autor_artista=musica.autor_artista,
-        tipo_midia=tipo_midia,
-        caminho_arquivo=None if eh_link_externo else url,
-        link_externo=url if eh_link_externo else meta.get("link_externo"),
+        tipo_midia=midia["tipo_midia"],
+        caminho_arquivo=midia["caminho_arquivo"],
+        link_externo=midia["link_externo"],
         duracao_segundos=meta.get("duracao_segundos"),
         preferida=preferida,
     )
+
+
+def sortear_entre_candidatas(
+    candidatas: List[MusicaSorteadaInfo],
+    excluir_id: Optional[uuid.UUID] = None,
+) -> Optional[MusicaSorteadaInfo]:
+    """
+    Regra de sorteio de um momento ritualístico (função pura, testável sem banco):
+
+      1. Se existir UMA OU MAIS músicas preferidas, sorteia aleatoriamente apenas entre elas.
+      2. Se não houver preferidas, sorteia entre todas as candidatas.
+      3. `excluir_id` evita repetir a música atual no re-sorteio, desde que haja outra opção
+         dentro do mesmo grupo (preferidas ou todas).
+    """
+    if not candidatas:
+        return None
+
+    preferidas = [m for m in candidatas if m.preferida]
+    grupo = preferidas if preferidas else candidatas
+
+    if excluir_id is not None and len(grupo) > 1:
+        sem_atual = [m for m in grupo if m.id != excluir_id]
+        if sem_atual:
+            grupo = sem_atual
+
+    return random.choice(grupo)
 
 
 class ServicoPlayer:
@@ -143,10 +175,8 @@ class ServicoPlayer:
                 sessao_loja_evento_id=item.id,
             )
 
-            musica_escolhida = None
-            if lista_candidatas_info:
-                preferidas = [m for m in lista_candidatas_info if m.preferida]
-                musica_escolhida = random.choice(preferidas) if preferidas else random.choice(lista_candidatas_info)
+            # Várias preferidas são permitidas: sorteia entre elas; sem preferidas, sorteia entre todas
+            musica_escolhida = sortear_entre_candidatas(lista_candidatas_info)
 
             esteira.append(
                 MomentoRitualisticoExecucao(
@@ -184,25 +214,118 @@ class ServicoPlayer:
         evento_id: uuid.UUID,
         organizacao_id: uuid.UUID,
         musica_id_atual: Optional[uuid.UUID] = None,
+        sessao_id: Optional[uuid.UUID] = None,
     ) -> Optional[MusicaSorteadaInfo]:
-        """Sorteia uma nova música aleatória para um momento específico (botão 'Re-sortear')."""
+        """
+        Re-sorteia uma música para um momento específico (botão 'Re-sortear').
+
+        Quando `sessao_id` é informado, as preferidas da playlist da Loja naquele momento
+        (`playlists_loja`) entram no sorteio com prioridade, igual à montagem da esteira.
+        """
         res_ev = await db.execute(select(Evento).where(Evento.id == evento_id))
         evento = res_ev.scalar_one_or_none()
         if not evento:
             return None
 
+        sessao_loja_evento_id = None
+        if sessao_id:
+            res_item = await db.execute(
+                select(SessaoLojaEvento.id).where(
+                    SessaoLojaEvento.sessao_loja_id == sessao_id,
+                    SessaoLojaEvento.evento_id == evento_id,
+                )
+            )
+            sessao_loja_evento_id = res_item.scalar_one_or_none()
+
         lista_info = await ServicoPlayer._buscar_candidatas_momento(
             db=db,
             evento=evento,
             loja_id=organizacao_id,
+            sessao_loja_evento_id=sessao_loja_evento_id,
         )
-        if not lista_info:
-            return None
+        return sortear_entre_candidatas(lista_info, excluir_id=musica_id_atual)
 
-        candidatas = (
-            [m for m in lista_info if m.id != musica_id_atual]
-            if len(lista_info) > 1 and musica_id_atual
-            else lista_info
+    @staticmethod
+    async def alternar_preferencia(
+        db: AsyncSession,
+        sessao_id: uuid.UUID,
+        evento_id: uuid.UUID,
+        musica_id: uuid.UUID,
+        preferida: bool,
+        usuario: UsuarioEsigma,
+    ) -> dict:
+        """
+        Marca ou desmarca uma música como PREFERIDA de um momento da sessão da Loja.
+
+        Modelo: "preferida" == existir uma linha em `playlists_loja` ligando a música ao
+        momento customizado da sessão (`sessoes_loja_eventos`). Várias músicas podem ser
+        preferidas no mesmo momento; o sorteio escolhe somente entre elas.
+
+        Segurança: a identidade vem de `obter_usuario_esigma`; a Loja dona da sessão precisa
+        ser a Loja do usuário (ou o usuário ser SuperAdmin) — nunca confiamos em parâmetros
+        enviados pelo cliente.
+        Banco afetado: harmoniadb (`playlists_loja`).
+        """
+        res_sessao = await db.execute(select(SessaoLoja).where(SessaoLoja.id == sessao_id))
+        sessao = res_sessao.scalar_one_or_none()
+        if not sessao:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sessão não encontrada.")
+
+        if not usuario.is_super_admin and str(sessao.loja_id) != str(usuario.organizacao_id):
+            logger.warning(
+                f"Preferência negada: user={usuario.email} org={usuario.organizacao_id} "
+                f"tentou alterar sessão da loja {sessao.loja_id}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Esta sessão pertence a outra Loja.",
+            )
+
+        res_item = await db.execute(
+            select(SessaoLojaEvento).where(
+                SessaoLojaEvento.sessao_loja_id == sessao_id,
+                SessaoLojaEvento.evento_id == evento_id,
+            )
         )
-        preferidas = [m for m in candidatas if m.preferida]
-        return random.choice(preferidas) if preferidas else random.choice(candidatas)
+        item = res_item.scalar_one_or_none()
+        if not item:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Momento não encontrado nesta sessão.",
+            )
+
+        musica = await db.get(Musica, musica_id)
+        if not musica or not musica.ativo:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Música não encontrada.")
+
+        res_vinculo = await db.execute(
+            select(MusicaEvento).where(
+                MusicaEvento.sessao_loja_evento_id == item.id,
+                MusicaEvento.musica_id == musica_id,
+            )
+        )
+        vinculo = res_vinculo.scalar_one_or_none()
+
+        if preferida and not vinculo:
+            res_max = await db.execute(
+                select(func.coalesce(func.max(MusicaEvento.ordem_musica), 0)).where(
+                    MusicaEvento.sessao_loja_evento_id == item.id
+                )
+            )
+            db.add(
+                MusicaEvento(
+                    sessao_loja_evento_id=item.id,
+                    musica_id=musica_id,
+                    ordem_musica=(res_max.scalar_one() or 0) + 1,
+                )
+            )
+        elif not preferida and vinculo:
+            await db.delete(vinculo)
+
+        await db.commit()
+        logger.info(
+            f"Preferência {'ADICIONADA' if preferida else 'REMOVIDA'}: música={musica_id} "
+            f"momento={evento_id} sessão={sessao_id} por={usuario.email} (harmoniadb.playlists_loja)"
+        )
+        return {"status": "ok", "preferida": preferida, "musica_id": musica_id, "evento_id": evento_id}
+

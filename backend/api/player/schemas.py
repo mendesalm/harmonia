@@ -34,6 +34,14 @@ class MomentoRitualisticoExecucao(BaseModel):
     candidatas: List[MusicaSorteadaInfo] = Field(default_factory=list, description="Lista de todas as músicas disponíveis para troca manual")
 
 
+class PreferenciaResposta(BaseModel):
+    """Resposta da alternância do selo de preferência de uma música em um momento."""
+    status: str = Field("ok", description="Sempre 'ok' em caso de sucesso")
+    preferida: bool = Field(..., description="Estado final do selo de preferência")
+    musica_id: uuid.UUID
+    evento_id: uuid.UUID
+
+
 class SessaoPlayerExecucao(BaseModel):
     """Payload completo entregue ao Player do Mestre ao selecionar uma Sessão."""
     sessao_id: uuid.UUID
