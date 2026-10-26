@@ -21,7 +21,7 @@ interface EqualizadorProps {
 }
 
 /** Equalizador animado exibido no card da faixa ativa. */
-export const Equalizador: React.FC<EqualizadorProps> = ({ tocando, altura = 22, cor = '#00E5FF' }) => (
+export const Equalizador: React.FC<EqualizadorProps> = ({ tocando, altura = 22, cor = '#DDB96B' }) => (
   <div className="flex items-end justify-center gap-[3px]" style={{ height: altura }} aria-hidden="true">
     {BARRAS.map((b, i) => (
       <span

@@ -243,7 +243,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
               feedbackTatil.clique();
               setModalOrientacaoAberto(true);
             }}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/50 border border-cyan-400/30 text-[#00E5FF] transition-all shadow-sm active:scale-95 truncate"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-blue-950/50 hover:bg-blue-900/60 border border-blue-500/35 text-blue-300 transition-all shadow-sm active:scale-95 truncate"
             title="Abrir orientação ritualística do momento atual"
           >
             <Compass className="w-3.5 h-3.5 shrink-0" />
@@ -365,15 +365,15 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
             style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10000 }}
             className="flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
           >
-            <div className="bg-[#071122] border border-cyan-400/40 rounded-2xl w-full max-w-md max-h-[85dvh] flex flex-col shadow-[0_25px_60px_rgba(0,0,0,0.95)] overflow-hidden">
+            <div className="bg-[#0A1428] border border-blue-500/35 rounded-2xl w-full max-w-md max-h-[85dvh] flex flex-col shadow-[0_25px_60px_rgba(0,0,0,0.95)] overflow-hidden">
               {/* Topo do Modal */}
-              <div className="flex items-center justify-between p-4 border-b border-cyan-400/20 bg-[#0a1a33] shrink-0">
+              <div className="flex items-center justify-between p-4 border-b border-blue-500/20 bg-[#0E1C36] shrink-0">
                 <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                  <div className="w-8 h-8 rounded-lg bg-cyan-400/15 border border-cyan-400/30 flex items-center justify-center text-[#00E5FF] shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-300 shrink-0">
                     <Compass className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-xs font-mono uppercase tracking-wider text-[#00E5FF] font-bold">
+                    <h3 className="text-xs font-mono uppercase tracking-wider text-blue-300 font-bold">
                       Orientação Litúrgica
                     </h3>
                     <p className="text-sm font-bold text-white truncate">
@@ -394,8 +394,8 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
 
               {/* Corpo com a Orientação */}
               <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs sm:text-sm text-slate-200 leading-relaxed min-h-0">
-                <div className="rounded-xl bg-[#040914] border border-cyan-400/20 p-3.5 space-y-2">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-cyan-300 font-bold block">
+                <div className="rounded-xl bg-[#070F1E] border border-blue-500/20 p-3.5 space-y-2">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-blue-300 font-bold block">
                     Instrução ao Mestre de Harmonia
                   </span>
                   <p className="whitespace-pre-line text-slate-200">
@@ -447,11 +447,11 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
               </div>
 
               {/* Rodapé com botão Fechar */}
-              <div className="p-3 bg-[#0a1a33]/60 border-t border-cyan-400/20 flex justify-end shrink-0">
+              <div className="p-3 bg-[#0E1C36]/80 border-t border-blue-500/20 flex justify-end shrink-0">
                 <button
                   type="button"
                   onClick={() => setModalOrientacaoAberto(false)}
-                  className="px-4 py-2 rounded-xl bg-cyan-400/20 hover:bg-cyan-400/30 border border-cyan-400/40 text-[#00E5FF] font-bold text-xs transition-colors"
+                  className="px-4 py-2 rounded-xl bg-blue-600/25 hover:bg-blue-600/35 border border-blue-500/40 text-blue-200 font-bold text-xs transition-colors"
                 >
                   Fechar
                 </button>

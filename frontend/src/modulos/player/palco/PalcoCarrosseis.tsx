@@ -139,7 +139,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
       role="group"
       aria-roledescription="carrossel"
       aria-label="Momentos ritualísticos e faixas da sessão. Use as setas do teclado ou arraste para navegar."
-      className="relative flex-1 min-h-0 w-full overflow-hidden select-none outline-none focus-visible:ring-1 focus-visible:ring-cyan-400/40"
+      className="relative flex-1 min-h-0 w-full overflow-hidden select-none outline-none focus-visible:ring-1 focus-visible:ring-macaonico-dourado/40"
       style={{ touchAction: 'none', cursor: arrastando ? 'grabbing' : 'grab' }}
     >
       {/* Texto para leitores de tela acompanhando a mudança de momento/faixa */}
@@ -148,14 +148,14 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
         {momentoAtivo.musica_sorteada ? ` Faixa: ${momentoAtivo.musica_sorteada.titulo}.` : ' Sem faixas.'}
       </p>
 
-      {/* Halo ciano que respira atrás do palco */}
+      {/* Halo âmbar/dourado e marinho sóbrio atrás do palco */}
       <div
         className="harmonia-aurora pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
           width: 460 * escala,
           height: 460 * escala,
           background:
-            'radial-gradient(circle, rgba(0,229,255,0.17) 0%, rgba(0,229,255,0.05) 45%, transparent 70%)',
+            'radial-gradient(circle, rgba(221,185,107,0.08) 0%, rgba(14,28,54,0.25) 45%, transparent 70%)',
         }}
       />
 
@@ -273,12 +273,12 @@ const MolduraMomento: React.FC<MolduraMomentoProps> = ({
   return (
     <div
       className={`relative h-full w-full overflow-hidden rounded-[26px] border-2 transition-colors duration-500 ${
-        ativo ? 'border-[#00E5FF]' : 'border-cyan-400/40'
+        ativo ? 'border-macaonico-dourado/80' : 'border-slate-800/80 hover:border-slate-700/80'
       } ${ativo && tocando ? 'harmonia-moldura-ativa-tocando' : ''}`}
       style={{
-        background: 'linear-gradient(180deg, #071a2e 0%, #050d1b 100%)',
+        background: 'linear-gradient(180deg, #0A1428 0%, #060D1A 100%)',
         boxShadow: ativo
-          ? '0 18px 44px rgba(0,0,0,0.95), 0 0 28px rgba(0,229,255,0.3)'
+          ? '0 18px 44px rgba(0,0,0,0.95), 0 0 20px rgba(221,185,107,0.18)'
           : '0 10px 24px rgba(0,0,0,0.8)',
       }}
     >
@@ -292,11 +292,11 @@ const MolduraMomento: React.FC<MolduraMomentoProps> = ({
         className="absolute inset-0 flex flex-col items-center justify-center gap-3"
         style={{ opacity: 1 - intensidade, pointerEvents: intensidade > 0.5 ? 'none' : 'auto' }}
       >
-        <span className="font-mono text-5xl font-extrabold text-cyan-300/80 drop-shadow-[0_0_14px_rgba(0,229,255,0.45)]">
+        <span className="font-mono text-5xl font-extrabold text-slate-400 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
           {dois(indice + 1)}
         </span>
-        <Disc3 className="h-9 w-9 text-cyan-300/50" aria-hidden="true" />
-        <span className="font-mono text-[11px] font-bold uppercase tracking-widest text-cyan-200/60">
+        <Disc3 className="h-9 w-9 text-slate-600" aria-hidden="true" />
+        <span className="font-mono text-[11px] font-bold uppercase tracking-widest text-slate-500">
           {faixas.length} {faixas.length === 1 ? 'faixa' : 'faixas'}
         </span>
       </button>
@@ -307,23 +307,23 @@ const MolduraMomento: React.FC<MolduraMomentoProps> = ({
           {/* Cabeçalho: título do momento */}
           <div
             key={momento.evento_id}
-            className="harmonia-entrar absolute inset-x-0 top-0 flex flex-col items-center justify-center border-b border-cyan-400/20 px-4 text-center"
+            className="harmonia-entrar absolute inset-x-0 top-0 flex flex-col items-center justify-center border-b border-macaonico-dourado/20 px-4 text-center bg-[#070F1E]/80 backdrop-blur-sm"
             style={{ height: M.alturaCabecalho }}
           >
             <div className="flex items-center justify-center gap-1.5 max-w-full px-2">
-              <h3 className="line-clamp-1 text-[13px] font-extrabold uppercase leading-tight tracking-wide text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.35)] truncate">
+              <h3 className="line-clamp-1 text-[13px] font-extrabold uppercase leading-tight tracking-wide text-slate-100 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
                 {momento.evento_nome}
               </h3>
               {momento.em_surdina && (
                 <span
-                  className="shrink-0 text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/25 text-amber-300 border border-amber-400/40 shadow-sm"
+                  className="shrink-0 text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-sm"
                   title="Momento ritualístico classificado como Surdina permanente"
                 >
                   SURDINA
                 </span>
               )}
             </div>
-            <span className="mt-0.5 font-mono text-[10px] font-bold tracking-widest text-cyan-300/90">
+            <span className="mt-0.5 font-mono text-[10px] font-bold tracking-widest text-[#DDB96B]/80">
               {faixas.length} {faixas.length === 1 ? 'FAIXA' : 'FAIXAS'} • {indice + 1}/{total}
             </span>
           </div>
@@ -342,7 +342,7 @@ const MolduraMomento: React.FC<MolduraMomentoProps> = ({
           >
             {faixas.length === 0 ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
-                <Disc3 className="h-12 w-12 text-cyan-300/30" aria-hidden="true" />
+                <Disc3 className="h-12 w-12 text-slate-600" aria-hidden="true" />
                 <p className="font-mono text-xs italic text-slate-400">[ SILÊNCIO PROGRAMADO ]</p>
                 <button
                   type="button"
@@ -350,7 +350,7 @@ const MolduraMomento: React.FC<MolduraMomentoProps> = ({
                     e.stopPropagation();
                     onAbrirUpload();
                   }}
-                  className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-xs font-bold text-cyan-300 transition-colors hover:bg-cyan-400/20"
+                  className="rounded-xl border border-macaonico-dourado/30 bg-macaonico-dourado/10 px-4 py-2 text-xs font-bold text-macaonico-dourado transition-colors hover:bg-macaonico-dourado/20"
                 >
                   + Catalogar Música
                 </button>
@@ -388,7 +388,7 @@ const MolduraMomento: React.FC<MolduraMomentoProps> = ({
               }}
               aria-label="Catalogar nova música para este momento"
               title="Catalogar nova música para este momento"
-              className="absolute bottom-2.5 right-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-400/10 text-cyan-300 transition-all hover:scale-110 hover:bg-cyan-400/25"
+              className="absolute bottom-2.5 right-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-macaonico-dourado/30 bg-macaonico-dourado/10 text-macaonico-dourado transition-all hover:scale-110 hover:bg-macaonico-dourado/25"
             >
               <Plus className="h-4 w-4" />
             </button>
@@ -467,10 +467,10 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
         onClick={onClicar}
         className={`relative h-full w-full cursor-pointer overflow-hidden rounded-[22px] border transition-colors duration-500 ${
           ativa
-            ? 'border-[#00E5FF]/70 shadow-[0_0_26px_rgba(0,229,255,0.28)]'
-            : 'border-cyan-400/20 hover:border-cyan-400/45'
+            ? 'border-macaonico-dourado/65 shadow-[0_8px_24px_rgba(0,0,0,0.8),0_0_15px_rgba(221,185,107,0.12)]'
+            : 'border-slate-800/80 hover:border-slate-700/80'
         }`}
-        style={{ background: ativa ? '#0a1b30' : '#07121f' }}
+        style={{ background: ativa ? '#0E1A2F' : '#070E1A' }}
       >
         {/* Disco (preferida = bordas e centro dourados) + Braço de Vitrola proporcional na faixa ativa */}
         <div
@@ -496,8 +496,8 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
           <div
             className={`absolute left-2.5 top-2.5 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-mono font-bold transition-all shadow-sm ${
               surdinaAtiva
-                ? 'bg-amber-500/25 text-amber-300 border-amber-400/40 shadow-[0_0_10px_rgba(245,158,11,0.25)]'
-                : 'bg-[#06182c]/85 text-[#00E5FF] border-cyan-400/40 shadow-[0_0_8px_rgba(0,229,255,0.2)]'
+                ? 'bg-amber-500/20 text-amber-300 border-amber-400/40 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                : 'bg-[#071122]/95 text-slate-200 border-slate-700/70 shadow-sm'
             }`}
             style={{ opacity: f.intensidade, pointerEvents: 'none' }}
             title={`Volume de execução: ${volumeExecucao}% ${surdinaAtiva ? '(Modo Surdina)' : ''}`}
@@ -505,7 +505,7 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
             {surdinaAtiva ? (
               <Volume1 className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
             ) : (
-              <Volume2 className="w-3.5 h-3.5 text-[#00E5FF]" />
+              <Volume2 className="w-3.5 h-3.5 text-macaonico-dourado" />
             )}
             <span>{volumeExecucao}%</span>
             {surdinaAtiva && (
@@ -521,8 +521,8 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
           className="absolute inset-y-0 right-3 flex flex-col justify-center"
           style={{ left: 62, opacity: 1 - f.intensidade }}
         >
-          <span className="truncate text-[12px] font-semibold text-slate-200">{faixa.titulo}</span>
-          <span className="truncate text-[10px] text-slate-400">{faixa.autor_artista || 'Acervo Harmonia'}</span>
+          <span className="truncate text-[12px] font-semibold text-slate-300">{faixa.titulo}</span>
+          <span className="truncate text-[10px] text-slate-500">{faixa.autor_artista || 'Acervo Harmonia'}</span>
         </div>
 
         {/* Texto completo (faixa ativa) */}
@@ -531,15 +531,15 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
           style={{ top: 12 + DISCO_BASE + 12, opacity: f.intensidade }}
         >
           <div className="flex items-center justify-center min-w-0">
-            <p className="truncate text-[16px] font-bold leading-tight text-cyan-200">{faixa.titulo}</p>
+            <p className="truncate text-[16px] font-bold leading-tight text-slate-100">{faixa.titulo}</p>
           </div>
-          <p className="mt-1 truncate text-[12px] font-semibold text-white">
+          <p className="mt-1 truncate text-[12px] font-medium text-slate-300">
             {faixa.autor_artista || 'Acervo Harmonia'}
             {duracao ? <span className="font-normal text-slate-400"> • {duracao}</span> : null}
             {volumeExecucao !== undefined && (
               <span
                 className={`font-mono text-[11px] font-bold ml-1.5 ${
-                  surdinaAtiva ? 'text-amber-300' : 'text-cyan-300'
+                  surdinaAtiva ? 'text-amber-300' : 'text-[#DDB96B]'
                 }`}
               >
                 • Vol: {volumeExecucao}%
@@ -548,7 +548,7 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
           </p>
         </div>
         <div className="absolute inset-x-0 bottom-3.5" style={{ opacity: f.intensidade }}>
-          <Equalizador tocando={tocando} altura={22} />
+          <Equalizador tocando={tocando} altura={22} cor="#DDB96B" />
         </div>
 
         {/* Estrela de preferência (várias faixas podem ser preferidas; o sorteio ocorre entre elas) */}

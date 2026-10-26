@@ -269,10 +269,10 @@
   50% { transform: scaleY(1); }
 }
 
-/* Pulso de brilho ciano da moldura do momento ativo */
-@keyframes harmonia-pulso-ciano {
-  0%, 100% { box-shadow: 0 18px 44px rgba(0, 0, 0, 0.95), 0 0 22px rgba(0, 229, 255, 0.28); }
-  50% { box-shadow: 0 18px 44px rgba(0, 0, 0, 0.95), 0 0 44px rgba(0, 229, 255, 0.55); }
+/* Pulso dourado refinado da moldura do momento ativo tocando */
+@keyframes harmonia-pulso-dourado {
+  0%, 100% { box-shadow: 0 18px 44px rgba(0, 0, 0, 0.95), 0 0 18px rgba(221, 185, 107, 0.22); }
+  50% { box-shadow: 0 18px 44px rgba(0, 0, 0, 0.95), 0 0 32px rgba(221, 185, 107, 0.42); }
 }
 
 /* Brilho respirando do disco preferido (bordas e centro dourados) */
@@ -308,7 +308,7 @@
 
 .harmonia-disco-girando { animation: harmonia-girar 5.5s linear infinite; }
 .harmonia-eq-barra { animation: harmonia-eq 0.95s ease-in-out infinite; transform-origin: bottom; }
-.harmonia-moldura-ativa-tocando { animation: harmonia-pulso-ciano 2.6s ease-in-out infinite; }
+.harmonia-moldura-ativa-tocando { animation: harmonia-pulso-dourado 2.8s ease-in-out infinite; }
 .harmonia-disco-preferido { animation: harmonia-brilho-dourado 3.2s ease-in-out infinite; }
 .harmonia-entrar { animation: harmonia-entrar 0.5s cubic-bezier(0.2, 0.9, 0.25, 1) both; }
 .harmonia-aurora { animation: harmonia-aurora 7s ease-in-out infinite; }
