@@ -29,6 +29,10 @@ class MomentoRitualisticoExecucao(BaseModel):
     evento_descricao: Optional[str]
     obrigatorio: bool
     observacao_ritual: Optional[str]
+    em_surdina: bool = Field(
+        False,
+        description="Indica se o momento é classificado como Surdina/Interlúdio (volume limitado a 25% por padrão).",
+    )
     musica_sorteada: Optional[MusicaSorteadaInfo] = Field(None, description="Música sorteada aleatoriamente para este momento")
     total_musicas_disponiveis: int = Field(0, description="Quantidade total de músicas cadastradas para este evento")
     candidatas: List[MusicaSorteadaInfo] = Field(default_factory=list, description="Lista de todas as músicas disponíveis para troca manual")

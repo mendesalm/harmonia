@@ -239,3 +239,22 @@ async def test_preferencia_ciclo_marcar_e_desmarcar_reflete_no_player(cliente_ht
         finally:
             r3 = await cliente_http.patch(f"{base}?preferida=false", headers=headers)
             assert r3.status_code == 200
+
+
+def test_classificar_momento_surdina():
+    """Valida a detecção automática de momentos que devem entrar em Surdina (25% volume)."""
+    from backend.api.player.servicos import classificar_momento_surdina
+
+    # Casos positivos (termos canônicos)
+    assert classificar_momento_surdina("Giro do Tronco de Beneficência") is True
+    assert classificar_momento_surdina("Leitura do Balaústre") is True
+    assert classificar_momento_surdina("Palavra a Bem da Ordem") is True
+    assert classificar_momento_surdina("Interlúdio Musical") is True
+    assert classificar_momento_surdina("Escrutínio Secreto") is True
+    assert classificar_momento_surdina("Bolsa de Propostas e Informações") is True
+    assert classificar_momento_surdina("Harmonia", observacao="Executar em surdina durante a oratória") is True
+
+    # Casos normais (não surdina)
+    assert classificar_momento_surdina("Entrada do Cortejo") is False
+    assert classificar_momento_surdina("Abertura do Livro da Lei") is False
+    assert classificar_momento_surdina("Marcha do Mestre") is False

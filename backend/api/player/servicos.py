@@ -19,6 +19,7 @@ from backend.api.player.schemas import (
     SessaoPlayerExecucao,
 )
 from backend.api.musicas.midia import classificar_midia
+from backend.core.constants import TERMOS_MOMENTO_SURDINA
 from backend.modelos.evento import Evento
 from backend.modelos.musica import Musica, MusicaEvento, MusicaEventoSugerido
 from backend.modelos.sessao import SessaoLoja, SessaoLojaEvento, TipoSessao
@@ -45,6 +46,20 @@ def _converter_musica_para_info(musica: Musica, preferida: bool = False) -> Musi
         duracao_segundos=meta.get("duracao_segundos"),
         preferida=preferida,
     )
+
+
+def classificar_momento_surdina(
+    nome: Optional[str],
+    descricao: Optional[str] = None,
+    observacao: Optional[str] = None,
+) -> bool:
+    """
+    Identifica se um momento ritualístico pertence à classe de Surdina / Interlúdio
+    (acompanhamento de fala, leituras, giro de bolsas ou meditação), devendo iniciar
+    com volume limitado a 25% por padrão (desabilitável pelo Mestre de Harmonia).
+    """
+    texto_unificado = " ".join(filter(None, [nome, descricao, observacao])).lower()
+    return any(termo in texto_unificado for termo in TERMOS_MOMENTO_SURDINA)
 
 
 def sortear_entre_candidatas(
@@ -178,6 +193,7 @@ class ServicoPlayer:
             # Várias preferidas são permitidas: sorteia entre elas; sem preferidas, sorteia entre todas
             musica_escolhida = sortear_entre_candidatas(lista_candidatas_info)
 
+            observacao_final = item.observacao_mestre_harmonia or evento.observacao_padrao_mestre_harmonia
             esteira.append(
                 MomentoRitualisticoExecucao(
                     posicao=item.ordem_execucao,
@@ -185,7 +201,12 @@ class ServicoPlayer:
                     evento_nome=evento.nome,
                     evento_descricao=evento.descricao,
                     obrigatorio=not item.suprimido,
-                    observacao_ritual=item.observacao_mestre_harmonia or evento.observacao_padrao_mestre_harmonia,
+                    observacao_ritual=observacao_final,
+                    em_surdina=classificar_momento_surdina(
+                        evento.nome,
+                        evento.descricao,
+                        observacao_final,
+                    ),
                     musica_sorteada=musica_escolhida,
                     total_musicas_disponiveis=len(lista_candidatas_info),
                     candidatas=lista_candidatas_info,

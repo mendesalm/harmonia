@@ -62,6 +62,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const [tocando, setTocando] = useState(false);
   const [tempoAtual, setTempoAtual] = useState(0);
   const [duracaoTotal, setDuracaoTotal] = useState(0);
+  // Surdina: limita o volume a 25% (ativada automaticamente em momentos de surdina/interlúdio)
+  const [surdinaAtiva, setSurdinaAtiva] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ytPlayerRef = useRef<any>(null);
@@ -158,6 +160,32 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const musicaAtivaEfetiva = modoInterludioAtivo ? musicaFundoAtiva : momentoAtual?.musica_sorteada;
   const musicaAtual = musicaAtivaEfetiva;
 
+  // Ativa automaticamente a Surdina (25%) em momentos classificados como surdina ou no modo interlúdio
+  useEffect(() => {
+    if (modoInterludioAtivo || momentoAtual?.em_surdina) {
+      setSurdinaAtiva(true);
+    } else {
+      setSurdinaAtiva(false);
+    }
+  }, [indiceAtual, modoInterludioAtivo, momentoAtual?.em_surdina]);
+
+  // Aplica o volume instantaneamente (25% ou 100%) em áudio HTML5 e no YouTube IFrame
+  useEffect(() => {
+    const volFloat = surdinaAtiva ? 0.25 : 1.0;
+    const volInt = surdinaAtiva ? 25 : 100;
+
+    if (audioRef.current) {
+      audioRef.current.volume = volFloat;
+    }
+    if (ytPlayerRef.current && typeof ytPlayerRef.current.setVolume === 'function') {
+      try {
+        ytPlayerRef.current.setVolume(volInt);
+      } catch {
+        /* ignora se player ainda não está pronto */
+      }
+    }
+  }, [surdinaAtiva]);
+
   // Sincroniza a fonte de áudio ao trocar a música ativa
   useEffect(() => {
     const audio = audioRef.current;
@@ -179,7 +207,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           caminho = '/' + caminho;
         }
         audio.src = caminho;
-        audio.volume = 1.0;
+        audio.volume = surdinaAtiva ? 0.25 : 1.0;
         audio.currentTime = 0;
         audio.pause();
         if (musicaAtual.duracao_segundos) setDuracaoTotal(musicaAtual.duracao_segundos);
@@ -267,6 +295,11 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           events: {
             onReady: (event: any) => {
               ytProntoRef.current = true;
+              try {
+                event.target.setVolume(surdinaAtiva ? 25 : 100);
+              } catch {
+                /* ignora */
+              }
               if (reproduzirYtRef.current) {
                 event.target.playVideo();
                 setTocando(true);
@@ -683,7 +716,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         )
       )}
 
-      {/* Eixo Inferior: Barra de progresso, controles táteis e box de orientação ao Mestre de Harmonia */}
+      {/* Eixo Inferior: Barra de progresso, controles táteis e botões de apoio com modais */}
       <div className="shrink-0 bg-macaonico-surface relative z-30">
         <MasonicControls
           tocando={tocando}
@@ -697,6 +730,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           onSeek={onSeek}
           momentoAtual={momentoAtual ?? null}
           proximoMomento={dadosSessao?.esteira_ritualistica[indiceAtual + 1] ?? null}
+          surdinaAtiva={surdinaAtiva}
+          onAlternarSurdina={() => setSurdinaAtiva((v) => !v)}
         />
       </div>
 

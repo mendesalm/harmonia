@@ -62,3 +62,29 @@ class TipoMidia(str, Enum):
     ARQUIVO_LOCAL = "ARQUIVO_LOCAL"  # MP3/WAV hospedado no servidor (ou URL direta de áudio)
     YOUTUBE = "YOUTUBE"              # Link do YouTube reproduzido via IFrame API
     SPOTIFY = "SPOTIFY"              # Link do Spotify (embed)
+
+
+# Volume padrão (25%) aplicado automaticamente em momentos classificados como Surdina / Interlúdio
+VOLUME_SURDINA_PADRAO: float = 0.25
+
+# Termos canônicos que classificam um momento ritualístico como Surdina (fundo para fala/circulação)
+TERMOS_MOMENTO_SURDINA: tuple[str, ...] = (
+    "surdina",
+    "interlúdio",
+    "interludio",
+    "fundo",
+    "balaústre",
+    "balaustre",
+    "expediente",
+    "bolsa de propostas",
+    "tronco",
+    "palavra",
+    "leitura",
+    "ordem do dia",
+    "escrutínio",
+    "escrutinio",
+    "meditação",
+    "meditacao",
+    "reflexão",
+    "reflexao",
+)
