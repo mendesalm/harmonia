@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Disc3, Plus, Star } from 'lucide-react';
+import { Disc3, Plus, Star, Volume1, Volume2 } from 'lucide-react';
 import { MomentoExecucao, MusicaSorteada } from '../../../compartilhado/tipos';
 import { feedbackTatil } from '../../../compartilhado/utilitarios/dispositivoNativo';
 import { useGestoPalco } from '../hooks/useGestoPalco';
@@ -47,6 +47,8 @@ interface PalcoCarrosseisProps {
   tocando: boolean;
   /** Progresso da faixa atual entre 0 e 1 (para o braço de vitrola). */
   progressoFaixa: number;
+  volumeExecucao?: number;
+  surdinaAtiva?: boolean;
   /** Vai para um momento pelo índice absoluto. */
   onMudarMomento: (indice: number) => void;
   /** Seleciona a faixa pelo índice dentro do momento ativo. `tocar` indica se deve iniciar/continuar a reprodução. */
@@ -72,6 +74,8 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   indiceMomento,
   tocando,
   progressoFaixa,
+  volumeExecucao,
+  surdinaAtiva,
   onMudarMomento,
   onTrocarFaixa,
   onAlternarPlayPause,
@@ -197,6 +201,8 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                   intensidade={t.intensidade}
                   tocando={ativo && tocando}
                   progressoFaixa={ativo ? progressoFaixa : 0}
+                  volumeExecucao={volumeExecucao}
+                  surdinaAtiva={surdinaAtiva}
                   offsetFaixa={ativo ? offsetY : 0}
                   arrastando={arrastando}
                   onIr={() => {
@@ -227,6 +233,8 @@ interface MolduraMomentoProps {
   intensidade: number;
   tocando: boolean;
   progressoFaixa: number;
+  volumeExecucao?: number;
+  surdinaAtiva?: boolean;
   offsetFaixa: number;
   arrastando: boolean;
   onIr: () => void;
@@ -249,6 +257,8 @@ const MolduraMomento: React.FC<MolduraMomentoProps> = ({
   intensidade,
   tocando,
   progressoFaixa,
+  volumeExecucao,
+  surdinaAtiva,
   offsetFaixa,
   arrastando,
   onIr,
@@ -347,6 +357,8 @@ const MolduraMomento: React.FC<MolduraMomentoProps> = ({
                     ativa={i === idxAtiva}
                     tocando={tocando && i === idxAtiva}
                     progresso={i === idxAtiva ? progressoFaixa : 0}
+                    volumeExecucao={volumeExecucao}
+                    surdinaAtiva={surdinaAtiva}
                     arrastando={arrastando}
                     onClicar={() => onClicarFaixa(i)}
                     onAlternarPreferencia={onAlternarPreferencia}
@@ -386,6 +398,8 @@ interface CardFaixaProps {
   ativa: boolean;
   tocando: boolean;
   progresso: number;
+  volumeExecucao?: number;
+  surdinaAtiva?: boolean;
   arrastando: boolean;
   onClicar: () => void;
   onAlternarPreferencia: (musicaId: string, preferida: boolean) => void;
@@ -402,6 +416,8 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
   ativa,
   tocando,
   progresso,
+  volumeExecucao,
+  surdinaAtiva,
   arrastando,
   onClicar,
   onAlternarPreferencia,
@@ -465,6 +481,31 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
           />
         </div>
 
+        {/* Indicador de Volume de Execução no card da música */}
+        {volumeExecucao !== undefined && (
+          <div
+            className={`absolute left-2.5 top-2.5 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-mono font-bold transition-all shadow-sm ${
+              surdinaAtiva
+                ? 'bg-amber-500/25 text-amber-300 border-amber-400/40 shadow-[0_0_10px_rgba(245,158,11,0.25)]'
+                : 'bg-[#06182c]/85 text-[#00E5FF] border-cyan-400/40 shadow-[0_0_8px_rgba(0,229,255,0.2)]'
+            }`}
+            style={{ opacity: f.intensidade, pointerEvents: 'none' }}
+            title={`Volume de execução: ${volumeExecucao}% ${surdinaAtiva ? '(Modo Surdina)' : ''}`}
+          >
+            {surdinaAtiva ? (
+              <Volume1 className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+            ) : (
+              <Volume2 className="w-3.5 h-3.5 text-[#00E5FF]" />
+            )}
+            <span>{volumeExecucao}%</span>
+            {surdinaAtiva && (
+              <span className="text-[8px] font-sans font-extrabold uppercase tracking-wider text-amber-300/80">
+                SURDINA
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Texto compacto (faixa vizinha) */}
         <div
           className="absolute inset-y-0 right-3 flex flex-col justify-center"
@@ -493,6 +534,15 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
           <p className="mt-1 truncate text-[12px] font-semibold text-white">
             {faixa.autor_artista || 'Acervo Harmonia'}
             {duracao ? <span className="font-normal text-slate-400"> • {duracao}</span> : null}
+            {volumeExecucao !== undefined && (
+              <span
+                className={`font-mono text-[11px] font-bold ml-1.5 ${
+                  surdinaAtiva ? 'text-amber-300' : 'text-cyan-300'
+                }`}
+              >
+                • Vol: {volumeExecucao}%
+              </span>
+            )}
           </p>
         </div>
         <div className="absolute inset-x-0 bottom-3.5" style={{ opacity: f.intensidade }}>

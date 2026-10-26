@@ -695,7 +695,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
       />
 
       {/* Barra superior compacta de seleção de Sessão */}
-      <div className="relative z-20 flex items-center justify-between gap-2 px-3 sm:px-6 py-2 bg-[#070e1c]/90 border-b border-macaonico-dourado/20 shrink-0">
+      <div className="relative z-20 flex items-center justify-between gap-2 px-3 sm:px-6 py-2 bg-[#070e1c]/90 border-b border-macaonico-dourado/20 shrink-0 pr-24 sm:pr-28">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <ListOrdered className="w-4 h-4 text-macaonico-dourado shrink-0" />
           <select
@@ -767,6 +767,12 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             indiceMomento={indiceAtual}
             tocando={tocando && !modoInterludioAtivo}
             progressoFaixa={duracaoTotal > 0 ? tempoAtual / duracaoTotal : 0}
+            volumeExecucao={
+              surdinaAtiva
+                ? Math.max(1, Math.round((volumeGeral * percentualSurdina) / 100))
+                : volumeGeral
+            }
+            surdinaAtiva={surdinaAtiva}
             onMudarMomento={setIndiceAtual}
             onTrocarFaixa={trocarFaixaDoMomento}
             onAlternarPlayPause={alternarPlayPause}

@@ -69,15 +69,16 @@ export const Navbar: React.FC = () => {
   if (noPlayer) {
     return (
       <>
-        {/* Botão Flutuante Discreto de Menu Sanduíche (canto inferior direito) */}
+        {/* Botão de Menu Sanduíche no Cabeçalho (canto superior direito) */}
         <button
           type="button"
           onClick={() => {
             feedbackTatil.clique();
             setMenuSanduicheAberto(true);
           }}
-          className="fixed bottom-2.5 right-2.5 z-40 flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#071122]/90 hover:bg-[#0d1e38] text-macaonico-dourado border border-macaonico-dourado/40 shadow-[0_4px_16px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all active:scale-95"
+          className="fixed top-2 right-2.5 sm:right-4 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#071122]/95 hover:bg-[#0d1e38] text-macaonico-dourado border border-macaonico-dourado/40 shadow-[0_4px_16px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all active:scale-95 cursor-pointer"
           title="Abrir Menu de Navegação"
+          aria-label="Abrir Menu de Navegação"
         >
           <Menu className="w-4 h-4" />
           <span className="text-[10px] font-cinzel uppercase tracking-wider font-bold">
