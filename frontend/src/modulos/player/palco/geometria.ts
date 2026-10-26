@@ -12,16 +12,17 @@
 
 /** Medidas de projeto do palco (px). */
 export const MEDIDAS_PALCO = {
-  larguraMoldura: 300,
-  alturaMoldura: 392,
-  alturaCabecalho: 58,
-  alturaCardAtivo: 150,
-  alturaCardCompacto: 58,
+  larguraMoldura: 306,
+  alturaMoldura: 432,
+  alturaCabecalho: 56,
+  /** Card ativo ampliado em +33% de altura (de 150px para 200px) para destaque do disco e vitrola. */
+  alturaCardAtivo: 200,
+  alturaCardCompacto: 62,
   /** Deslocamento horizontal do 1º vizinho de momento. */
-  passoMomento: 212,
+  passoMomento: 216,
   /** Deslocamento vertical do 1º e 2º vizinho de faixa. */
-  passoFaixa1: 96,
-  passoFaixa2: 40,
+  passoFaixa1: 122,
+  passoFaixa2: 42,
 } as const;
 
 /** Opacidade de momentos por distância inteira: centro, 1º, 2º vizinho (depois zera). */

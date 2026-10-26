@@ -19,9 +19,9 @@ const TRANSICAO_FAIXA =
   'transform 0.5s cubic-bezier(0.22, 0.9, 0.25, 1), opacity 0.4s ease-out, height 0.45s ease-out, margin-top 0.45s ease-out';
 /** Distância máxima (em itens) renderizada: virtualização para sessões com muitos momentos/faixas. */
 const ALCANCE_RENDER = 3.2;
-/** Disco base (px de projeto); escala para baixo nos cards compactos. */
-const DISCO_BASE = 70;
-const LARGURA_CARD_FAIXA = M.larguraMoldura - 44;
+/** Disco base (px de projeto) no card ativo ampliado; escala para baixo nos cards compactos. */
+const DISCO_BASE = 92;
+const LARGURA_CARD_FAIXA = M.larguraMoldura - 40;
 
 const dois = (n: number) => String(n).padStart(2, '0');
 
@@ -84,8 +84,8 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   // Escala uniforme: cabe a moldura na altura disponível e deixa espaço para os vizinhos na largura
   const escala =
     largura > 0 && altura > 0
-      ? limitar(Math.min(altura / (M.alturaMoldura + 20), largura / (M.larguraMoldura * 1.15)), 0.55, 1.12)
-      : 0.85;
+      ? limitar(Math.min(altura / (M.alturaMoldura + 8), largura / (M.larguraMoldura * 1.12)), 0.58, 1.16)
+      : 0.9;
 
   const momentoAtivo = momentos[indiceMomento];
   const faixasAtivas = momentoAtivo?.candidatas ?? [];
@@ -413,9 +413,9 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
     : null;
 
   // Disco: do canto esquerdo (compacto) ao topo central (completo)
-  const escalaDisco = interpolar(0.56, 1, f.intensidade);
+  const escalaDisco = interpolar(0.46, 1, f.intensidade);
   const centroX = interpolar(34, LARGURA_CARD_FAIXA / 2, f.intensidade);
-  const centroY = interpolar(f.altura / 2, 8 + DISCO_BASE / 2, f.intensidade);
+  const centroY = interpolar(f.altura / 2, 12 + DISCO_BASE / 2, f.intensidade);
 
   return (
     <div
@@ -477,16 +477,16 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
         {/* Texto completo (faixa ativa) */}
         <div
           className="absolute inset-x-3 text-center"
-          style={{ top: 8 + DISCO_BASE + 4, opacity: f.intensidade }}
+          style={{ top: 12 + DISCO_BASE + 8, opacity: f.intensidade }}
         >
-          <p className="truncate text-[15px] font-bold leading-tight text-cyan-200">{faixa.titulo}</p>
-          <p className="mt-0.5 truncate text-[12px] font-semibold text-white">
+          <p className="truncate text-[16px] font-bold leading-tight text-cyan-200">{faixa.titulo}</p>
+          <p className="mt-1 truncate text-[12px] font-semibold text-white">
             {faixa.autor_artista || 'Acervo Harmonia'}
             {duracao ? <span className="font-normal text-slate-400"> • {duracao}</span> : null}
           </p>
         </div>
-        <div className="absolute inset-x-0 bottom-2" style={{ opacity: f.intensidade }}>
-          <Equalizador tocando={tocando} altura={16} />
+        <div className="absolute inset-x-0 bottom-3" style={{ opacity: f.intensidade }}>
+          <Equalizador tocando={tocando} altura={20} />
         </div>
 
         {/* Estrela de preferência (várias faixas podem ser preferidas; o sorteio ocorre entre elas) */}

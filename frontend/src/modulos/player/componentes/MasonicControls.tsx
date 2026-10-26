@@ -95,19 +95,19 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
           </div>
         </div>
 
-        {/* Painel Principal de Controles */}
-        <div className="relative w-full max-w-[420px] h-18 sm:h-22 flex items-center justify-center">
+        {/* Painel Principal de Controles (classes Tailwind v3 explícitas e shrink-0 para evitar deformação) */}
+        <div className="relative w-full max-w-[440px] h-20 sm:h-24 shrink-0 flex items-center justify-center my-0.5">
           {/* Asa Esquerda (Anterior) */}
-          <div className="absolute left-0 w-[45%] h-11 sm:h-13 bg-macaonico-surface rounded-l-full border border-macaonico-dourado/30 flex items-center justify-between px-3 sm:px-5 pr-9 sm:pr-12 z-0 shadow-[inset_0_0_15px_rgba(212,175,55,0.05)]">
+          <div className="absolute left-0 w-[45%] h-12 sm:h-14 bg-macaonico-surface rounded-l-full border border-macaonico-dourado/30 flex items-center justify-between px-3 sm:px-5 pr-10 sm:pr-12 z-0 shadow-[inset_0_0_15px_rgba(212,175,55,0.05)]">
             <button
               type="button"
               onClick={() => {
                 feedbackTatil.clique();
                 onPrevMoment();
               }}
-              className="text-macaonico-dourado/85 hover:text-macaonico-dourado transition-colors flex flex-col items-center justify-center min-w-[42px] min-h-[42px] active:scale-95"
+              className="text-macaonico-dourado/85 hover:text-macaonico-dourado transition-colors flex flex-col items-center justify-center min-w-[44px] min-h-[44px] shrink-0 active:scale-95"
             >
-              <Rewind className="w-4 h-4 sm:w-4.5 sm:h-4.5" fill="currentColor" />
+              <Rewind className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
               <span className="text-[8px] sm:text-[9px] font-cinzel mt-0.5 tracking-wider opacity-80">
                 Momento
               </span>
@@ -119,9 +119,9 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
                 feedbackTatil.clique();
                 onPrevTrack();
               }}
-              className="text-macaonico-dourado/85 hover:text-macaonico-dourado transition-colors flex flex-col items-center justify-center min-w-[42px] min-h-[42px] active:scale-95"
+              className="text-macaonico-dourado/85 hover:text-macaonico-dourado transition-colors flex flex-col items-center justify-center min-w-[44px] min-h-[44px] shrink-0 active:scale-95"
             >
-              <SkipBack className="w-4 h-4 sm:w-4.5 sm:h-4.5" fill="currentColor" />
+              <SkipBack className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
               <span className="text-[8px] sm:text-[9px] font-cinzel mt-0.5 tracking-wider opacity-80">
                 Faixa
               </span>
@@ -129,16 +129,16 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
           </div>
 
           {/* Asa Direita (Próximo) */}
-          <div className="absolute right-0 w-[45%] h-11 sm:h-13 bg-macaonico-surface rounded-r-full border border-macaonico-dourado/30 flex items-center justify-between px-3 sm:px-5 pl-9 sm:pl-12 z-0 shadow-[inset_0_0_15px_rgba(212,175,55,0.05)]">
+          <div className="absolute right-0 w-[45%] h-12 sm:h-14 bg-macaonico-surface rounded-r-full border border-macaonico-dourado/30 flex items-center justify-between px-3 sm:px-5 pl-10 sm:pl-12 z-0 shadow-[inset_0_0_15px_rgba(212,175,55,0.05)]">
             <button
               type="button"
               onClick={() => {
                 feedbackTatil.clique();
                 onNextTrack();
               }}
-              className="text-macaonico-dourado/85 hover:text-macaonico-dourado transition-colors flex flex-col items-center justify-center min-w-[42px] min-h-[42px] active:scale-95"
+              className="text-macaonico-dourado/85 hover:text-macaonico-dourado transition-colors flex flex-col items-center justify-center min-w-[44px] min-h-[44px] shrink-0 active:scale-95"
             >
-              <SkipForward className="w-4 h-4 sm:w-4.5 sm:h-4.5" fill="currentColor" />
+              <SkipForward className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
               <span className="text-[8px] sm:text-[9px] font-cinzel mt-0.5 tracking-wider opacity-80">
                 Faixa
               </span>
@@ -150,9 +150,9 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
                 feedbackTatil.clique();
                 onNextMoment();
               }}
-              className="text-macaonico-dourado/85 hover:text-macaonico-dourado transition-colors flex flex-col items-center justify-center min-w-[42px] min-h-[42px] active:scale-95"
+              className="text-macaonico-dourado/85 hover:text-macaonico-dourado transition-colors flex flex-col items-center justify-center min-w-[44px] min-h-[44px] shrink-0 active:scale-95"
             >
-              <FastForward className="w-4 h-4 sm:w-4.5 sm:h-4.5" fill="currentColor" />
+              <FastForward className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
               <span className="text-[8px] sm:text-[9px] font-cinzel mt-0.5 tracking-wider opacity-80">
                 Momento
               </span>
@@ -166,7 +166,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
               feedbackTatil.acaoMedia();
               onPlayPause();
             }}
-            className={`relative z-10 w-18 h-18 sm:w-22 sm:h-22 rounded-full border-2 flex flex-col items-center justify-center transition-all duration-300 active:scale-95
+            className={`relative z-10 w-20 h-20 sm:w-24 sm:h-24 shrink-0 aspect-square rounded-full border-2 flex flex-col items-center justify-center transition-all duration-300 active:scale-95
               ${
                 tocando
                   ? 'bg-[#121a2d] border-macaonico-dourado shadow-[0_0_25px_rgba(212,175,55,0.35)]'
@@ -179,12 +179,12 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
             <div className="flex items-center justify-center mt-0.5">
               {tocando ? (
                 <Pause
-                  className="w-6 h-6 sm:w-8 sm:h-8 text-macaonico-dourado drop-shadow-[0_0_8px_rgba(212,175,55,0.8)]"
+                  className="w-7 h-7 sm:w-8 sm:h-8 text-macaonico-dourado drop-shadow-[0_0_8px_rgba(212,175,55,0.8)]"
                   fill="currentColor"
                 />
               ) : (
                 <Play
-                  className="w-6 h-6 sm:w-8 sm:h-8 text-macaonico-dourado ml-0.5"
+                  className="w-7 h-7 sm:w-8 sm:h-8 text-macaonico-dourado ml-0.5"
                   fill="currentColor"
                 />
               )}
@@ -197,15 +197,15 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
 
         {/* Box de Orientação ao Mestre de Harmonia + Observação do Momento Seguinte */}
         {momentoAtual && (
-          <div className="w-full max-w-2xl mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 px-1">
+          <div className="w-full max-w-2xl mt-2 grid grid-cols-2 gap-2 px-1 shrink-0">
             {/* Orientação do Momento Atual */}
-            <div className="rounded-xl bg-[#071122]/90 border border-cyan-400/25 px-3 py-2 flex items-start gap-2.5 shadow-inner">
-              <Compass className="w-4 h-4 text-[#00E5FF] shrink-0 mt-0.5" />
+            <div className="rounded-xl bg-[#071122]/90 border border-cyan-400/25 px-2.5 py-1.5 flex items-start gap-2 shadow-inner min-w-0">
+              <Compass className="w-3.5 h-3.5 text-[#00E5FF] shrink-0 mt-0.5" />
               <div className="min-w-0 flex-1">
-                <span className="block text-[9px] font-mono uppercase tracking-widest text-[#00E5FF] font-bold">
-                  Orientação ao Mestre de Harmonia
+                <span className="block text-[8px] sm:text-[9px] font-mono uppercase tracking-wider text-[#00E5FF] font-bold truncate">
+                  Orientação • Mestre de Harmonia
                 </span>
-                <p className="text-[11px] text-slate-200 leading-snug line-clamp-2 mt-0.5">
+                <p className="text-[10px] sm:text-[11px] text-slate-200 leading-snug line-clamp-2 mt-0.5">
                   {orientacaoAtual}
                 </p>
               </div>
@@ -219,30 +219,30 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
                   onNextMoment();
                 }
               }}
-              className={`rounded-xl bg-[#071122]/75 border border-macaonico-dourado/25 px-3 py-2 flex items-start gap-2.5 transition-colors ${
+              className={`rounded-xl bg-[#071122]/75 border border-macaonico-dourado/25 px-2.5 py-1.5 flex items-start gap-2 transition-colors min-w-0 ${
                 proximoMomento ? 'cursor-pointer hover:border-macaonico-dourado/50 hover:bg-[#0a172d]' : 'opacity-60'
               }`}
               title={proximoMomento ? 'Toque para avançar ao momento seguinte' : undefined}
             >
-              <ArrowRightCircle className="w-4 h-4 text-macaonico-dourado shrink-0 mt-0.5" />
+              <ArrowRightCircle className="w-3.5 h-3.5 text-macaonico-dourado shrink-0 mt-0.5" />
               <div className="min-w-0 flex-1">
-                <span className="block text-[9px] font-mono uppercase tracking-widest text-macaonico-dourado font-bold">
-                  Momento Seguinte {proximoMomento ? `• #${proximoMomento.posicao}` : ''}
+                <span className="block text-[8px] sm:text-[9px] font-mono uppercase tracking-wider text-macaonico-dourado font-bold truncate">
+                  Seguinte {proximoMomento ? `• #${proximoMomento.posicao}` : ''}
                 </span>
                 {proximoMomento ? (
                   <>
-                    <p className="text-[11px] font-semibold text-white truncate mt-0.5">
+                    <p className="text-[10px] sm:text-[11px] font-semibold text-white truncate mt-0.5">
                       {proximoMomento.evento_nome}
                     </p>
                     {orientacaoProximo && (
-                      <p className="text-[10px] text-slate-400 leading-snug line-clamp-1 mt-0.5">
+                      <p className="text-[9px] sm:text-[10px] text-slate-400 leading-snug line-clamp-1 mt-0.5">
                         {orientacaoProximo}
                       </p>
                     )}
                   </>
                 ) : (
-                  <p className="text-[11px] text-slate-400 italic mt-0.5">
-                    Último momento da esteira ritualística.
+                  <p className="text-[10px] sm:text-[11px] text-slate-400 italic mt-0.5">
+                    Último momento da esteira.
                   </p>
                 )}
               </div>
