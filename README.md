@@ -6,20 +6,19 @@ O **Harmonia** é o módulo especialista de Músicas Ritualísticas do Ecossiste
 
 Sendo um **Microserviço**, o Harmonia não lida com cobranças, faturas ou criação de lojas. Ele funciona como um aplicativo "satélite" (PWA / Web App) que recebe os usuários autenticados pelo cérebro central (e-Sigma Core).
 
-* **Frontend:** React + Vite, Tailwind CSS, Componentes de Áudio nativos.
-* **Backend:** Python + FastAPI.
-* **Banco de Dados:** SQLite (Armazenamento local super rápido de metadados das músicas).
-* **Armazenamento de Áudio:** Servido estaticamente pela VPS ou CDN.
+* **Frontend:** React 18 + Vite, Tailwind CSS, Web Audio API (compressor dinâmico e ganho linear), PWA (Workbox).
+* **Backend:** Python + FastAPI (Async/Await), SQLAlchemy assíncrono.
+* **Banco de Dados:** PostgreSQL (`harmoniadb`) com SQLAlchemy + `asyncpg`.
+* **Armazenamento de Áudio:** Servido pelo filesystem multi-tenant isolado por slug da organização ou streaming.
 
 ## 🔐 Autenticação e Single Sign-On (SSO)
 
-O aplicativo Harmonia **terceiriza** a sua segurança e autenticação para o `e-sigma.app`.
+O aplicativo Harmonia segue estritamente as regras inegociáveis de segurança do ecossistema e-Sigma:
 
-O fluxo funciona da seguinte maneira:
-1. Quando um Mestre de Harmonia tenta logar no aplicativo (Web ou Celular), o frontend do Harmonia dispara um pedido `POST` secretamente para a API do e-Sigma (`https://e-sigma.app/api/auth/login`).
-2. Se o e-Sigma validar que a Loja daquele usuário está com a assinatura do módulo Harmonia paga (verificada via Asaas), ele devolve um JWT.
-3. O Frontend do Harmonia salva o JWT e, a partir de então, toda requisição de música enviada para o backend do Harmonia leva esse Token.
-4. O backend do Harmonia e do e-Sigma compartilham a mesma `JWT_SECRET_KEY`. Assim, o Harmonia confia plenamente na permissão concedida e libera o Player.
+1. Quando um Mestre de Harmonia faz login (via e-mail da estação, CIM ou CPF), as credenciais são autenticadas no e-Sigma IdP (`https://e-sigma.app/api/auth/login`).
+2. O e-Sigma retorna o token JWT do usuário com o vínculo da Loja e módulos ativos.
+3. Toda chamada protegida enviada ao backend do Harmonia passa por validação via introspecção no endpoint `GET /api/v1/auth/validate` do e-Sigma. O Harmonia **nunca** decodifica segredos JWT localmente nem aceita headers forjados pelo cliente.
+4. O backend do Harmonia valida se o módulo `harmonia` está ativo na assinatura SaaS da Loja (`verificar_assinatura_ativa`) antes de autorizar a reprodução litúrgica.
 
 ## 📦 Estrutura do Projeto
 

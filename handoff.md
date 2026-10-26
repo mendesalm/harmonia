@@ -88,7 +88,7 @@ Harmonia/
    - **Controles e Layout:** Reposicionamento do menu sanduíche para o cabeçalho superior direito (desafogando o botão de Orientação Litúrgica), adição de botões de ajuste fino de volume na barra de controle e indicador de volume de execução direto no card da faixa.
    - **Resiliência e Correção VPS:** Resolução do `ReferenceError: audioRef is not defined` e encapsulamento no `ErrorBoundary`.
 
-8. **Restauração dos Controles de Navegação e Composição por Acervo Existente (26/10/2026)**:
+6. **Restauração dos Controles de Navegação e Composição por Acervo Existente (26/10/2026)**:
    - **Restauração da Barra de Controle:** Retorno aos 5 botões táteis no player: Momento Anterior (`Rewind`), Faixa Anterior (`SkipBack`), Play/Pause circular central (76x76px), Próxima Faixa (`SkipForward`) e Próximo Momento (`FastForward`).
    - **Controle Deslizante de Volume:** Mantido e acessível pelo botão compacto `Vol: X%` na linha de apoio, abrindo popover com slider contínuo de 0% a 100%.
    - **Composição de Momentos com Músicas do Acervo (`ModalComporMomento.tsx`):**

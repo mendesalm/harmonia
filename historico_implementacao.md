@@ -4,6 +4,49 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [26 de Outubro de 2026] - Redesign Litúrgico Nobre, Normalizador Web Audio API, Surdina por Momento, Composição via Acervo e Navegação Tátil Restaurada
+**Módulo:** `Player UX` / `Áudio DSP` / `Acervo & Momentos` / `Estabilidade VPS`
+
+### 1. Identidade Visual Nobre e-Sigma (Sem Saturação Neon)
+- **Eliminação do Ciano Neon:** Substituição do tema ciano fluorescentes pela paleta oficial e sóbria do e-Sigma:
+  - Fundo e superfícies: Preto e Azul Noturno profundo (`#050811`, `#070F1E`, `#0A1428`, `#0E1A2F`).
+  - Destaques ritualísticos: Dourado Maçônico (`#DDB96B`) com brilho atenuado (`box-shadow` suave).
+  - Equalizador gráfico animado e anéis do disco em tom dourado refinado.
+- **Geometria do Carrossel Horizontal:** Calibragem da largura central (`258px`) e espaçamento (`182px`), permitindo que os momentos anterior e seguinte fiquem claramente visíveis nas laterais (~50px e opacidade 75%), tornando a navegação tátil por deslize intuitiva.
+
+### 2. Normalizador de Áudio (Web Audio API) e Surdina por Momento
+- **Normalizador de Volume Broadcast:** Criação de `normalizadorAudio.ts` integrando `DynamicsCompressorNode` e transição suave no `GainNode` via rampa linear (`linearRampToValueAtTime`) de 40ms, eliminando oscilações de volume e equalizando faixas com ganhos diferentes.
+- **Surdina por Momento Ritualístico:**
+  - Adicionada coluna `em_surdina` em `SessaoLojaEvento` com autocorreção (self-healing) de schema no `sincronizacao_tenant.py`.
+  - Endpoint `PATCH /api/v1/player/sessao/{sessao_id}/momento/{evento_id}/surdina` para salvar a preferência permanentemente.
+  - O modo surdina agora é configurado e memorizado por momento litúrgico (ex.: Palavra a Bem da Ordem).
+
+### 3. Restauração dos Controles de Navegação e Slider de Volume
+- **Barra Tátil Clássica:** Retorno aos 5 botões táteis no player:
+  - Asa Esquerda: Momento Anterior (`Rewind`) e Faixa Anterior (`SkipBack`).
+  - Botão Central: Play/Pause circular 76x76px com anéis dourados concêntricos.
+  - Asa Direita: Próxima Faixa (`SkipForward`) e Próximo Momento (`FastForward`).
+- **Slider Contínuo de Volume Master:** Acessível pelo botão compacto `Vol: X%` na linha de apoio, expandindo controle deslizante de 0% a 100%.
+
+### 4. Composição de Momentos com Músicas do Acervo Existente
+- **Novo Componente `ModalComporMomento.tsx`:**
+  - Aba "Músicas no Acervo" com pesquisa instantânea por título ou artista.
+  - Pré-escuta de áudio (preview) antes de vincular à cerimônia.
+  - Ação em 1 clique para associar ou desassociar músicas ao momento ritualístico.
+  - Atualização dinâmica da esteira da sessão ativa no player (`preferida=true`).
+  - Aba integrada "Nova Música" para uploads e YouTube quando necessário.
+- **Novas Rotas REST no Backend:**
+  - `POST /api/v1/eventos/{evento_id}/musicas/{musica_id}` (com replicação canônica entre ritos).
+  - `DELETE /api/v1/eventos/{evento_id}/musicas/{musica_id}`.
+  - Suporte a filtro textual `busca` em `GET /api/v1/musicas`.
+
+### 5. Resiliência e Correção de Inicialização na VPS
+- Corrigida referência ausente `audioRef` que causava tela preta na VPS (`ReferenceError: audioRef is not defined`).
+- Envolvido o shell da aplicação com `ErrorBoundary` para evitar falhas catastróficas de tela branca/preta.
+- 29 testes automatizados passando 100% no Pytest.
+
+---
+
 ## [20 de Outubro de 2026] - Fase 1 SSO/RBAC, Auto-Provisionamento SaaS, Redesign Mobile-First PWA, Desduplicação de Momentos e Self-Healing de Rito
 **Módulo:** `Segurança SSO` / `Multi-Tenant` / `Mobile-First PWA` / `Rito Brasileiro`
 
