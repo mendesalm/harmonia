@@ -189,13 +189,15 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
     return () => clearInterval(interval);
   }, [tocando, volumeExecucao, temAlbumNoMomento]);
 
-  // Ângulo dinâmico do braço de precisão H-33
-  // Repouso: 0deg | Leitura: 14deg a 24deg (não recua durante pause!)
+  // Ângulo dinâmico do braço de precisão audiófilo H-33
+  // Repouso: 0deg (apoiado no suporte de descanso do chassi)
+  // Execução ativa: 36deg (borda externa do vinil) a 53deg (ranhura final próxima ao selo)
+  // Se pausado no meio da faixa, o braço permanece sobre a faixa atual sem recuar abruptamente
   // Se o momento não tiver nenhum álbum cadastrado, o braço permanece estritamente em repouso no suporte (0deg)
   const anguloBraco =
     !temAlbumNoMomento || (!tocando && progressoFaixa === 0)
       ? 0
-      : 14 + Math.min(1, Math.max(0, progressoFaixa)) * 3.8;
+      : 36 + Math.min(1, Math.max(0, progressoFaixa)) * 17;
 
   const palcoBoxRef = useRef<HTMLDivElement>(null);
   const [larguraBox, setLarguraBox] = useState(360);
@@ -627,53 +629,68 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
               </div>
             )}
 
-            {/* BRAÇO MECÂNICO AUDIÓFILO DE LATÃO DOURADO (STITCH TONEARM SYSTEM) */}
-            <div className="absolute right-1 top-1 w-20 h-48 pointer-events-none z-30 flex flex-col items-center">
-              {/* Base Fixa / Gimbal Knob */}
-              <div className="w-10 h-10 rounded-full brass-knob border-2 border-[#FDE68A] flex items-center justify-center shadow-xl relative">
-                {/* Centro do Parafuso de Precisão */}
-                <div className="w-4 h-4 rounded-full bg-gradient-to-b from-neutral-800 to-black border border-[#DDB96B] flex items-center justify-center">
-                  <div className="w-2 h-[1px] bg-[#FDE68A]" />
-                </div>
-                {/* Anti-skating counterweight stub */}
-                <div className="absolute -top-1 right-1.5 w-2.5 h-4 bg-gradient-to-r from-[#ab7f28] to-[#e3be61] rounded-sm shadow" />
+            {/* BRAÇO MECÂNICO AUDIÓFILO DE LATÃO DOURADO (PRECISION TONEARM ASSEMBLY) */}
+            <div className="absolute right-1.5 top-1.5 w-24 h-48 pointer-events-none z-30" data-purpose="precision-tonearm">
+              {/* Suporte de Repouso Fixo no Chassi (Tonearm Rest Clip) */}
+              <div className="absolute right-2 top-28 w-3 h-5 flex flex-col items-center justify-center opacity-70" title="Suporte de descanso">
+                <div className="w-2.5 h-1 bg-gradient-to-r from-[#805a17] to-[#d4af37] rounded-sm" />
+                <div className="w-1 h-3.5 bg-neutral-800 border-x border-[#DDB96B]/40" />
               </div>
 
-              {/* Tubo Curvo em S Móvel articulado a partir do centro do Gimbal */}
+              {/* Conjunto Giratório Completo com Pivô Central Unificado (Centro em 58px, 22px) */}
               <div
-                className="relative w-12 h-36 -mt-2 -mr-3"
+                className="relative w-full h-full"
                 style={{
-                  transformOrigin: '20px 0px',
+                  transformOrigin: '58px 22px',
                   transform: `rotate(${anguloBraco}deg)`,
                   transition: 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)',
                 }}
               >
+                {/* Base Torneada e Rolamento Central do Gimbal (centro exato em 58px, 22px) */}
+                <div className="absolute left-[38px] top-[2px] w-10 h-10 rounded-full brass-knob border-2 border-[#FDE68A] flex items-center justify-center shadow-2xl">
+                  {/* Anel de Graduação Usinado do Rolamento */}
+                  <div className="w-6 h-6 rounded-full border border-[#785012] bg-gradient-to-br from-[#caa037] via-[#fcedaf] to-[#735012] flex items-center justify-center shadow-inner">
+                    {/* Gema / Pivô Central Torneado de Alta Relojoaria */}
+                    <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-b from-[#fff1ba] to-[#ab7f28] border border-[#523a10] shadow-sm" />
+                  </div>
+                </div>
+
+                {/* Contrapeso Traseiro (Counterweight) usinado atrás do pivô */}
+                <div className="absolute left-[52px] -top-1 w-3.5 h-4 bg-gradient-to-b from-[#d4af37] via-[#fff0b3] to-[#805a17] border border-[#523a10] rounded-sm shadow-md" />
+
+                {/* Tubo Curvo em S com Gradiente Metálico nascendo diretamente do Centro do Pivô */}
                 <svg
-                  className="w-full h-full filter drop-shadow-[2px_4px_6px_rgba(0,0,0,0.8)]"
+                  className="w-full h-full filter drop-shadow-[2px_5px_7px_rgba(0,0,0,0.85)]"
                   fill="none"
-                  viewBox="0 0 50 140"
+                  viewBox="0 0 96 192"
                   style={{ overflow: 'visible' }}
                 >
+                  {/* Haste em S partindo de (58, 22) até a Cápsula em (22, 162) */}
                   <path
-                    d="M 26 0 C 26 30, 36 50, 32 90 C 30 115, 20 120, 16 135"
+                    d="M 58 22 C 58 55, 78 85, 72 120 C 66 145, 45 152, 22 162"
                     stroke="url(#brassGradientStitch)"
                     strokeLinecap="round"
-                    strokeWidth="3.2"
+                    strokeWidth="3.4"
                   />
                   <defs>
                     <linearGradient id="brassGradientStitch" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#FFF0B3" />
-                      <stop offset="40%" stopColor="#D4AF37" />
-                      <stop offset="80%" stopColor="#805A17" />
+                      <stop offset="35%" stopColor="#E4C46F" />
+                      <stop offset="65%" stopColor="#D4AF37" />
+                      <stop offset="85%" stopColor="#805A17" />
                       <stop offset="100%" stopColor="#FFD966" />
                     </linearGradient>
                   </defs>
                 </svg>
 
-                {/* Cápsula Audiófila com agulha e LED âmbar */}
-                <div className="absolute -bottom-1 left-2 w-4 h-6 bg-gradient-to-br from-[#1c1d22] via-[#2d2e38] to-[#0c0d11] border border-[#DDB96B] rounded-sm transform -rotate-12 shadow-md flex flex-col items-center justify-between p-0.5">
-                  <span className="w-2.5 h-0.5 bg-[#DDB96B] rounded-full" />
-                  <span className="w-1 h-1.5 bg-[#ffb938] rounded-full shadow-[0_0_4px_#ffb938]" />
+                {/* Cápsula Audiófila Headshell com Agulha e LED Âmbar pousando com precisão no vinil */}
+                <div
+                  className="absolute left-[13px] top-[152px] w-4.5 h-7 bg-gradient-to-br from-[#1a1c22] via-[#2c2e3a] to-[#0c0d12] border border-[#FDE68A] rounded-sm shadow-xl flex flex-col items-center justify-between p-0.5"
+                  style={{ transform: 'rotate(24deg)' }}
+                >
+                  <div className="w-3 h-0.5 bg-gradient-to-r from-[#caa037] to-[#fff1ba] rounded-full" />
+                  <div className="w-1.5 h-2 bg-[#ffb938] rounded-full shadow-[0_0_6px_#ffb938]" />
+                  <div className="w-0.5 h-1 bg-[#fff] rounded-full opacity-80" />
                 </div>
               </div>
             </div>

@@ -1,12 +1,15 @@
 # Harmonia - Guia de Handoff e Inicialização
 
-**Última Atualização:** 27 de Outubro de 2026 (Encerramento da Sessão - Design Stitch Integrado & Capas Quadradas)  
-**Status da Sessão:** 🟢 **Concluído, Validado e Sincronizado (Build Frontend OK + 32 testes Pytest passando 100%)** — Réplica Fiel do Design Nobre Stitch para a Vitrola H-33:
+**Última Atualização:** 27 de Outubro de 2026 (Calibração Geométrica do Braço da Vitrola H-33)  
+**Status da Sessão:** 🟢 **Concluído, Validado e Sincronizado (Build Frontend OK + 32 testes Pytest passando 100%)** — Réplica Fiel e Correção de Amplitude do Braço da Vitrola:
 - Box 1 (Acervo Litúrgico): Capas dos álbuns com formato rigorosamente quadrado (cantos retos vivos, `borderRadius: 0` e `rounded-none`), moldura ornamental dupla dourada contínua e tracejada (`border-[#DDB96B]/40` e `border-dashed border-[#DDB96B]/25` ambos `rounded-none`), medalhão circular com Esquadro facetado e Compasso em ouro (`#FDF3D7`), tipografia cerimonial com Cinzel e Cormorant Garamond itálico, dimensionadas dinamicamente a 65% da largura do box container (`Math.round(larguraBox * 0.65)`).
 - Regra de Cores Litúrgicas do Rito: Bordô nobre Stitch (`#460811` via `#2d060c` a `#120306`) exclusivo para o Rito Brasileiro; Obsidian/Midnight (`#0e1624` via `#0b111a` a `#070a10`) para os demais ritos.
 - Box 2 (Vitrola H-33 Deck):
   - Disco de Vinil: Textura hi-fi realista de ranhuras (`.vinyl-grooves`), anéis chanfrados de borda, selo central com furo usinado de spindle e rotação suave `spin-slow` (14s/volta).
-  - Braço Audiófilo Precision Stitch: Gimbal base circular de latão (`.brass-knob`), contrapeso anti-skating, haste em S com gradiente metálico dourado, cabeçote chanfrado com agulha e LED âmbar, articulando dinamicamente em torno do pivô (`transformOrigin: '20px 0px'`).
+  - Braço Mecânico Audiófilo Precision Unificado:
+    - Reconstrução da montagem mecânica eliminando peças soltas e desalinhamentos: mancal torneado com anel de graduação em latão usinado, pivô central com gema/rolamento de alta relojoaria, contrapeso traseiro balanceado e suporte de descanso fixo no chassi (`Tonearm Rest Clip`).
+    - Haste contínua em S de latão (`strokeWidth="3.4"`, gradiente dourado metálico) nascendo com precisão do centro do rolamento (`X = 58px, Y = 22px`).
+    - Correção de Amplitude Angular (+22°): Repouso em 0° no suporte de descanso fora do prato; em execução ativa, avança para 36° (pousando na primeira ranhura da borda externa do vinil) e desliza suavemente até 53° (ranhura final junto ao selo litúrgico central), sem retornar abruptamente no pause.
   - Platter Well rebaixado em preto abissal profundo (`shadow-[inset_0_4px_16px_rgba(0,0,0,0.95)]`).
   - Lâmpada de status litúrgico com luz verde estroboscópica `ESTRITO RITO`.
   - Fader de Volume: Thumb metálico de lingote de ouro chanfrado (`.fader-volume-stitch`) com escala gravada litúrgica `0`, `PP (Sórdida)`, `MP`, `MF (Plena)`, `100`.

@@ -4,6 +4,23 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [27 de Outubro de 2026 - Noite (Calibração Geométrica do Braço H-33)] - Reconstrução do Tonearm Precision: Eliminação de Peças Desalinhadas e Amplitude Estendida para o Vinil
+**Módulo:** `Player UX Vitrola H-33` / `Mecânica Audiófila` / `Tonearm Precision` / `Animação & Geometria`
+
+### 1. Reconstrução Unificada do Conjunto do Braço (Tonearm Assembly)
+- **Eliminação de Peças Desalinhadas:** Removido o retângulo solto de anti-skating que se projetava para fora do gimbal e o centro tipo "menos", substituindo-os por um mancal de alta relojoaria torneado em latão com aro de graduação usinado e pivô com rolamento de esferas chanfrado.
+- **Suporte de Descanso Fixo no Chassi (`Tonearm Rest Clip`):** Adicionado suporte fixo na lateral direita onde o braço repousa com segurança a 0° quando a reprodução está parada ou o momento não possui álbum.
+- **Centro de Rotação Coincidente:** Todo o conjunto (mancal do rolamento, contrapeso traseiro balanceado, haste em S e cápsula fonocaptora) pivota solidariamente em torno do eixo exato do rolamento central (`X = 58px, Y = 22px`), erradicando qualquer desalinhamento durante o movimento.
+
+### 2. Correção da Amplitude Angular da Animação (+22°)
+- **Problema Diagnosticado:** O braço estava restrito à faixa de 14° a 17.8°, parando cerca de 26px antes da borda externa do disco de vinil.
+- **Calibração Realista (+22°):**
+  - **Repouso (0°):** Travado no suporte de descanso fora do prato.
+  - **Execução Ativa (36° a 53°):** Ao iniciar a faixa, o braço avança +22° (36°), pousando a agulha com precisão cirúrgica na primeira ranhura externa do disco de vinil; desliza gradualmente ao longo da música até 53° (última ranhura próxima ao selo litúrgico central).
+  - **Pausa sem Recuo:** Ao pausar a reprodução, o braço mantém a agulha na ranhura exata da música atual, retornando ao suporte apenas se a faixa for resetada a 0% ou o momento não tiver faixas.
+
+---
+
 ## [27 de Outubro de 2026 - Noite (Aprimoramento Stitch)] - Integração Fiel dos Elementos Visuais Stitch: Capas com Moldura Dupla Dourada, Vinil Hi-Fi e Braço de Latão Nobre
 **Módulo:** `Player UX Vitrola H-33` / `Design Stitch` / `Acervo & Capas` / `Vinil & Braço Mecânico`
 
