@@ -359,7 +359,7 @@
 }
 
 .spin-slow {
-  animation: vinylSpin 14s linear infinite;
+  animation: vinylSpin 1800ms linear infinite;
 }
 
 .spin-paused {

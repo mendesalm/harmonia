@@ -4,6 +4,23 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [27 de Outubro de 2026 - Noite (Arrasto do Braço para Troca de Faixas & Vinil 1800ms)] - Interação Audiófila Tátil no Tonearm e Rotação Dinâmica do Vinil
+**Módulo:** `Player UX Vitrola H-33` / `Interação Tátil Audiófila` / `Gestos Pointer` / `Animação Hi-Fi`
+
+### 1. Troca de Faixas por Movimento de Arrasto do Braço da Vitrola
+- **Interação Natural com Pointer Events:** Implementada área de toque com hitbox ergonômica (`w-14 h-16`) sobre a cápsula/agulha do braço.
+- **Rastreio Angular em Tempo Real:** Durante o arrasto com o dedo ou mouse, o braço calcula $\theta = \arctan2(-dx, dy)$ relativo ao pivô do gimbal (`X = 58px, Y = 22px`), seguindo o toque com latência zero (`transition: none`).
+- **Tooltip Audiófilo e Feedback no Visor:** Enquanto arrasta sobre o disco, exibe um badge flutuante translúcido dourado com o número e título da faixa apontada, acompanhado de feedback háptico suave (`acaoSuave()`) a cada transição de sulco.
+- **Assentamento da Agulha:** Ao soltar sobre uma região do disco, troca instantaneamente para a faixa apontada e inicia a reprodução (`onTrocarFaixa(faixaAlvo, true)` + `acaoForte()`), com transição suave (`cubic-bezier`).
+- **Suporte de Descanso e Gestos Rápidos (Flick):**
+  - Se arrastado de volta ao descanso (< 22°), o braço pousa no suporte e pausa a reprodução.
+  - Se sofrer flick expressivo para a esquerda ou direita, avança para a próxima faixa ou retrocede para a anterior.
+
+### 2. Calibração da Rotação do Vinil para 1800ms por Volta
+- **Velocidade Apropriada para Dispositivos Móveis:** O tempo da animação `@keyframes vinylSpin` foi ajustado de 14s para **1800ms (1.8s)** por rotação em `frontend/src/index.css` e no protótipo HTML, conferindo o dinamismo e a energia visual consagrada de um toca-discos real operando em rotação litúrgica.
+
+---
+
 ## [27 de Outubro de 2026 - Noite (Calibração Geométrica do Braço H-33)] - Reconstrução do Tonearm Precision: Eliminação de Peças Desalinhadas e Amplitude Estendida para o Vinil
 **Módulo:** `Player UX Vitrola H-33` / `Mecânica Audiófila` / `Tonearm Precision` / `Animação & Geometria`
 
