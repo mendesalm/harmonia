@@ -27,6 +27,7 @@ yarn-error.log*
 armazenamento/instancias/public/*/musicas/*.mp3
 armazenamento/instancias/public/*/musicas/*.wav
 armazenamento/instancias/public/*/musicas/*.ogg
+downloads/
 
 # IDEs e Sistema Operacional
 .vscode/

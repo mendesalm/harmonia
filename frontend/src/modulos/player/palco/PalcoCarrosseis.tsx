@@ -35,16 +35,16 @@ const formatarTempo = (segundos?: number) => {
   return `${String(min).padStart(2, '0')}:${String(seg).padStart(2, '0')}`;
 };
 
-function calcularMomento3D(distancia: number) {
+function calcularMomento3D(distancia: number, tamanho: number = 180) {
   const ad = Math.abs(distancia);
-  const passo1 = 180;
-  const passo2 = 75;
+  const passo1 = Math.round(tamanho * 1.05);
+  const passo2 = Math.round(tamanho * 0.44);
   const sinal = distancia < 0 ? -1 : 1;
   const x = sinal * (ad <= 1 ? ad * passo1 : passo1 + (ad - 1) * passo2);
-  const y = Math.min(ad, 2) * 6;
-  const z = -ad * 85;
+  const y = Math.min(ad, 2) * 5;
+  const z = -ad * 80;
   const rotY = -sinal * Math.min(ad, 1.8) * 24;
-  const escala = Math.max(0.7, 1 - ad * 0.22);
+  const escala = Math.max(0.72, 1 - ad * 0.20);
   const opacidade = Math.max(0, Math.min(1, 1 - ad * 0.45));
   const zIndex = Math.round(200 - ad * 20);
   return { x, y, z, rotY, escala, opacidade, zIndex };
@@ -185,8 +185,25 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
       ? 0
       : 14 + Math.min(1, Math.max(0, progressoFaixa)) * 3.8;
 
-  // Lógica de gestos do carrossel
-  const PASSO_X = 180;
+  const palcoBoxRef = useRef<HTMLDivElement>(null);
+  const [larguraBox, setLarguraBox] = useState(360);
+
+  useEffect(() => {
+    if (!palcoBoxRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0) {
+          setLarguraBox(entry.contentRect.width);
+        }
+      }
+    });
+    observer.observe(palcoBoxRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Regra do usuário: O tamanho da capa dos discos é rigorosamente 65% do box que o contém
+  const tamanhoCapa = Math.round(larguraBox * 0.65);
+  const PASSO_X = Math.round(tamanhoCapa * 1.05);
   const RESISTENCIA_BORDA = 0.25;
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -292,10 +309,13 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
         {/* =========================================================================
             BOX 1 (SUPERIOR INDEPENDENTE): ACERVO LITÚRGICO • CARROSSEL 3D
             ========================================================================= */}
-        <section className="w-full flex-[4_4_0%] min-h-[155px] rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#0A1428] via-[#070F1E] to-[#040812] border border-[#1E325C]/80 shadow-[0_10px_28px_rgba(0,0,0,0.7)] p-2 sm:p-2.5 flex flex-col items-center justify-center">
+        <section
+          ref={palcoBoxRef}
+          className="w-full flex-[4.5_4.5_0%] min-h-[220px] rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#0A1428] via-[#070F1E] to-[#040812] border border-[#1E325C]/80 shadow-[0_10px_28px_rgba(0,0,0,0.7)] p-2 sm:p-2.5 flex flex-col items-center justify-center"
+        >
           {/* PALCO 3D DO CARROSSEL DE ÁLBUNS */}
           <div
-            className="relative w-full h-full min-h-[145px] overflow-hidden select-none cursor-grab active:cursor-grabbing flex items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#050B17] via-[#040812] to-[#02050E]"
+            className="relative w-full h-full min-h-[210px] overflow-hidden select-none cursor-grab active:cursor-grabbing flex items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#050B17] via-[#040812] to-[#02050E]"
             style={{ perspective: 1100, touchAction: 'none' }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
@@ -309,7 +329,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
               {momentos.map((momento, i) => {
                 const distancia = i - (indiceMomento + offsetXFracionario);
                 if (Math.abs(distancia) > 2.8) return null;
-                const t = calcularMomento3D(distancia);
+                const t = calcularMomento3D(distancia, tamanhoCapa);
                 const ativo = Math.abs(distancia) < 0.45;
                 const totalFaixas = momento.candidatas?.length || 0;
 
@@ -319,8 +339,8 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                     onClick={() => lidarCliqueCard(i)}
                     style={{
                       position: 'absolute',
-                      width: 156,
-                      height: 156,
+                      width: tamanhoCapa,
+                      height: tamanhoCapa,
                       borderRadius: 0,
                       border: 'none', // Estritamente sem borda dourada conforme solicitado!
                       transform: `translate3d(${t.x}px, ${t.y}px, ${t.z}px) rotateY(${t.rotY}deg) scale(${t.escala})`,
@@ -337,14 +357,14 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                       filter: ativo ? 'none' : 'brightness(0.72)',
                       cursor: 'pointer',
                     }}
-                    className="p-2.5 flex flex-col justify-between cursor-pointer select-none"
+                    className="p-3 sm:p-3.5 flex flex-col justify-between cursor-pointer select-none"
                   >
                     {/* Top bar da capa: Identificador e Dinâmica */}
-                    <div className="w-full flex items-center justify-between text-[7.5px] font-cinzel border-b border-[#DDB96B]/30 pb-1 pointer-events-none">
+                    <div className="w-full flex items-center justify-between text-[8px] sm:text-[9px] font-cinzel border-b border-[#DDB96B]/30 pb-1 pointer-events-none">
                       <span className="font-bold text-[#FDE68A] tracking-wider">
                         ÁLBUM {paraRomano(i + 1)}
                       </span>
-                      <span className="px-1.5 py-0.5 rounded-none font-mono font-bold bg-[#DDB96B]/15 text-[#FDE68A] border border-[#DDB96B]/30">
+                      <span className="px-2 py-0.5 rounded-none font-mono text-[7.5px] font-bold bg-[#DDB96B]/15 text-[#FDE68A] border border-[#DDB96B]/30">
                         {momento.em_surdina ? 'pp • SURDINA' : 'mf • FORTE'}
                       </span>
                     </div>
@@ -353,9 +373,9 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                     <div className="my-auto flex flex-col items-center justify-center pointer-events-none">
                       <div
                         style={{ background: bercoEmblema }}
-                        className="w-16 h-16 rounded-none border border-[#DDB96B]/70 flex items-center justify-center shadow-lg relative"
+                        className="w-18 h-18 sm:w-20 sm:h-20 rounded-none border border-[#DDB96B]/70 flex items-center justify-center shadow-lg relative"
                       >
-                        <div className="scale-110">
+                        <div className="scale-125">
                           <SimboloEsquadroCompasso />
                         </div>
                       </div>
@@ -363,10 +383,10 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
                     {/* Base da capa: Título em serifa dourada + contagem de trilhas */}
                     <div className="w-full flex flex-col items-center text-center border-t border-[#DDB96B]/30 pt-1 pointer-events-none">
-                      <h3 className="font-cinzel text-[10px] font-bold text-white leading-tight line-clamp-1 w-full drop-shadow">
+                      <h3 className="font-cinzel text-xs sm:text-[13px] font-bold text-white leading-tight line-clamp-1 w-full drop-shadow">
                         {momento.evento_nome}
                       </h3>
-                      <span className="text-[7.5px] font-mono text-[#FDE68A] font-semibold mt-0.5 flex items-center justify-center gap-1">
+                      <span className="text-[8px] sm:text-[9px] font-mono text-[#FDE68A] font-semibold mt-0.5 flex items-center justify-center gap-1">
                         {totalFaixas > 0 ? `${totalFaixas} Trilhas LP` : 'Sem Trilhas LP'}
                       </span>
                     </div>
@@ -381,7 +401,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
             BARRA DE PROGRESSO DOS ÁLBUNS NO VÃO CENTRAL (NUNCA EXTRAPOLA A TELA)
             ========================================================================= */}
         {momentos.length <= 8 ? (
-          <div className="flex items-center justify-center gap-1.5 py-0.5 select-none max-w-[280px]">
+          <div className="flex items-center justify-center gap-1.5 py-0.5 select-none max-w-[280px] self-center">
             {momentos.map((_, i) => (
               <button
                 key={`indicador-gap-${i}`}
@@ -400,7 +420,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
             ))}
           </div>
         ) : (
-          <div className="w-full max-w-[280px] sm:max-w-[310px] flex flex-col items-center gap-0.5 select-none py-0.5">
+          <div className="w-full max-w-[280px] sm:max-w-[310px] flex flex-col items-center gap-0.5 select-none py-0.5 self-center">
             <div className="w-full flex items-center justify-between text-[8px] font-cinzel font-bold text-[#DDB96B]/80 px-1 tracking-widest uppercase">
               <span>ÁLBUM {paraRomano(indiceMomento + 1)}</span>
               <span className="text-[7.5px] font-mono text-slate-400">
