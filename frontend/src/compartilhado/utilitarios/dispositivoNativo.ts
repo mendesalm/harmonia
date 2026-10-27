@@ -73,6 +73,13 @@ export const feedbackTatil = {
       await Haptics.impact({ style: ImpactStyle.Medium });
     } catch (_) {}
   },
+  // Toque forte em ações de destaque / confirmações de impacto
+  acaoForte: async () => {
+    if (!isDispositivoNativo) return;
+    try {
+      await Haptics.impact({ style: ImpactStyle.Heavy });
+    } catch (_) {}
+  },
   // Confirmação de sucesso
   sucesso: async () => {
     if (!isDispositivoNativo) return;

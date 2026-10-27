@@ -139,6 +139,9 @@ Harmonia/
      - Base do Card: Linha tríplice com Pílula de Volume `[ 🔊 10% ]`, Equalizador animado multicolorido e Selo Musical Clássico de Dinâmica: **`pp`** (*pianissimo*) para faixas Ambiente/Surdina e **`mf`** (*mezzo-forte*) para dinâmicas regulares.
    - **Botão `+` Centralizado:** Botão de catalogação e adição de faixas posicionado centralizado no rodapé da moldura do momento.
 
+7. **Correção Crítica no Dispositivo Nativo (Haptics / Vibração)**:
+   - Adicionado método `acaoForte()` à API de `feedbackTatil` em `dispositivoNativo.ts` (utilizando `ImpactStyle.Heavy` do `@capacitor/haptics`), sanando o erro `ze.acaoForte is not a function` na inicialização do Player e garantindo execução 100% estável no mobile e na web.
+
 ---
 
 ## 🧪 Como Executar e Testar Localmente
