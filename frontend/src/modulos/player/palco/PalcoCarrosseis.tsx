@@ -285,16 +285,16 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   const bercoEmblema = eRitoBrasileiro ? '#150205' : '#0A1428';
 
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col items-center justify-center p-1 sm:p-2 select-none overflow-y-auto">
+    <div className="w-full flex-1 min-h-0 flex flex-col items-center justify-start pt-1 sm:pt-2 pb-1 px-1 sm:px-2 select-none overflow-y-auto">
       {/* CONTAINER CENTRAL UNIFICADO COM LARGURA RIGOROSA (MAX-W-[360px] SM:MAX-W-[380px]) */}
-      <div className="w-full max-w-[360px] sm:max-w-[380px] flex flex-col items-center gap-2">
+      <div className="w-full max-w-[360px] sm:max-w-[380px] flex flex-col items-center gap-1.5">
         {/* =========================================================================
             BOX 1 (SUPERIOR INDEPENDENTE): ACERVO LITÚRGICO • CARROSSEL 3D
             ========================================================================= */}
-        <section className="w-full rounded-3xl bg-gradient-to-b from-[#0A1428] via-[#070F1E] to-[#040812] border border-[#1E325C]/80 shadow-[0_12px_32px_rgba(0,0,0,0.7)] p-2.5 sm:p-3 flex flex-col items-center">
+        <section className="w-full rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#0A1428] via-[#070F1E] to-[#040812] border border-[#1E325C]/80 shadow-[0_10px_28px_rgba(0,0,0,0.7)] p-2 sm:p-2.5 flex flex-col items-center">
           {/* PALCO 3D DO CARROSSEL DE ÁLBUNS */}
           <div
-            className="relative w-full h-[180px] sm:h-[190px] overflow-hidden select-none cursor-grab active:cursor-grabbing flex items-center justify-center rounded-2xl bg-gradient-to-b from-[#050B17] via-[#040812] to-[#02050E]"
+            className="relative w-full h-[168px] sm:h-[178px] overflow-hidden select-none cursor-grab active:cursor-grabbing flex items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#050B17] via-[#040812] to-[#02050E]"
             style={{ perspective: 1100, touchAction: 'none' }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
@@ -318,8 +318,8 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                     onClick={() => lidarCliqueCard(i)}
                     style={{
                       position: 'absolute',
-                      width: 175,
-                      height: 175,
+                      width: 156,
+                      height: 156,
                       borderRadius: 0,
                       border: 'none', // Estritamente sem borda dourada conforme solicitado!
                       transform: `translate3d(${t.x}px, ${t.y}px, ${t.z}px) rotateY(${t.rotY}deg) scale(${t.escala})`,
@@ -336,7 +336,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                       filter: ativo ? 'none' : 'brightness(0.72)',
                       cursor: 'pointer',
                     }}
-                    className="p-3 flex flex-col justify-between cursor-pointer select-none"
+                    className="p-2.5 flex flex-col justify-between cursor-pointer select-none"
                   >
                     {/* Top bar da capa: Identificador e Dinâmica */}
                     <div className="w-full flex items-center justify-between text-[7.5px] font-cinzel border-b border-[#DDB96B]/30 pb-1 pointer-events-none">
@@ -377,38 +377,74 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
         </section>
 
         {/* =========================================================================
-            PAGINAÇÃO NO VÃO CENTRAL (PÍLULA DOURADA ALONGADA + PONTOS)
+            BARRA DE PROGRESSO DOS ÁLBUNS NO VÃO CENTRAL (NUNCA EXTRAPOLA A TELA)
             ========================================================================= */}
-        <div className="flex items-center justify-center gap-1.5 py-0.5 select-none">
-          {momentos.map((_, i) => (
-            <button
-              key={`indicador-gap-${i}`}
-              type="button"
-              onClick={() => {
+        {momentos.length <= 8 ? (
+          <div className="flex items-center justify-center gap-1.5 py-0.5 select-none max-w-[280px]">
+            {momentos.map((_, i) => (
+              <button
+                key={`indicador-gap-${i}`}
+                type="button"
+                onClick={() => {
+                  feedbackTatil.clique();
+                  onMudarMomento(i);
+                }}
+                className={`transition-all duration-300 cursor-pointer ${
+                  i === indiceMomento
+                    ? 'w-7 h-1.5 rounded-full bg-gradient-to-r from-[#DDB96B] to-[#FDE68A] shadow-[0_0_8px_rgba(221,185,107,0.8)]'
+                    : 'w-1.5 h-1.5 rounded-full bg-[#1E325C] hover:bg-[#64748b]'
+                }`}
+                title={`Álbum ${i + 1}`}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="w-full max-w-[280px] sm:max-w-[310px] flex flex-col items-center gap-0.5 select-none py-0.5">
+            <div className="w-full flex items-center justify-between text-[8px] font-cinzel font-bold text-[#DDB96B]/80 px-1 tracking-widest uppercase">
+              <span>ÁLBUM {paraRomano(indiceMomento + 1)}</span>
+              <span className="text-[7.5px] font-mono text-slate-400">
+                {indiceMomento + 1} / {momentos.length}
+              </span>
+            </div>
+            <div
+              className="relative w-full h-2 bg-[#050B17] rounded-full border border-[#1E325C] shadow-inner flex items-center cursor-pointer px-0.5 group"
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const pct = Math.max(0, Math.min(1, clickX / rect.width));
+                const novoIdx = Math.min(momentos.length - 1, Math.floor(pct * momentos.length));
                 feedbackTatil.clique();
-                onMudarMomento(i);
+                onMudarMomento(novoIdx);
               }}
-              className={`transition-all duration-300 cursor-pointer ${
-                i === indiceMomento
-                  ? 'w-7 h-1.5 rounded-full bg-gradient-to-r from-[#DDB96B] to-[#FDE68A] shadow-[0_0_8px_rgba(221,185,107,0.8)]'
-                  : 'w-1.5 h-1.5 rounded-full bg-[#1E325C] hover:bg-[#64748b]'
-              }`}
-              title={`Álbum ${i + 1}`}
-            />
-          ))}
-        </div>
+              title="Clique para navegar entre os álbuns da esteira"
+            >
+              <div
+                className="h-1 rounded-full bg-gradient-to-r from-[#B8862D] via-[#DDB96B] to-[#FDE68A] shadow-[0_0_8px_rgba(221,185,107,0.7)] transition-all duration-200"
+                style={{
+                  width: `${Math.max(4, ((indiceMomento + 1) / momentos.length) * 100)}%`,
+                }}
+              />
+              <div
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-2 rounded-full bg-gradient-to-r from-[#DDB96B] to-[#FDE68A] border border-[#050B17] shadow-[0_0_8px_rgba(221,185,107,0.9)] transition-all duration-200 pointer-events-none group-hover:scale-110"
+                style={{
+                  left: `${Math.max(3, Math.min(97, ((indiceMomento + 0.5) / momentos.length) * 100))}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* =========================================================================
             BOX 2 (INFERIOR INDEPENDENTE): VITROLA H-33 DECK
             ========================================================================= */}
-        <div className="relative w-full rounded-3xl bg-gradient-to-b from-[#0E1C36] via-[#0A1428] to-[#070F1E] border-2 border-[#DDB96B]/40 shadow-[0_16px_40px_-10px_rgba(0,0,0,0.85),0_0_25px_-5px_rgba(14,28,54,0.45)] p-3 sm:p-3.5 flex flex-col items-center">
+        <div className="relative w-full rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#0E1C36] via-[#0A1428] to-[#070F1E] border-2 border-[#DDB96B]/40 shadow-[0_14px_36px_-10px_rgba(0,0,0,0.85)] p-2.5 sm:p-3 flex flex-col items-center">
           {/* HEADER DO DECK: LOGO CURSIVO H-33 + DISPLAY LED DIGITAL AO LADO */}
-          <div className="w-full flex items-center justify-between gap-2 pb-2 mb-1.5 border-b border-[#DDB96B]/25">
+          <div className="w-full flex items-center justify-between gap-2 pb-1.5 mb-1 border-b border-[#DDB96B]/25">
             {/* Logo Cursivo H-33 */}
             <LogoCursivoH33 />
 
             {/* Display LED Digital com cantos arredondados à direita */}
-            <div className="flex-1 max-w-[220px] sm:max-w-[240px] px-2 py-1 rounded-xl flex flex-col gap-0.5 border border-[#1E325C] shadow-inner bg-[#02050E]">
+            <div className="flex-1 max-w-[220px] sm:max-w-[240px] px-2 py-0.5 rounded-xl flex flex-col gap-0.5 border border-[#1E325C] shadow-inner bg-[#02050E]">
               {/* Linha 1: Tempo + Bargraph VU Level */}
               <div className="w-full flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
@@ -461,7 +497,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
           {/* ÁREA DO DECK: ÍCONE DE EQUALIZADOR + VINIL REPOSICIONADO + BRAÇO AUDIÓFILO */}
           <div
-            className="relative w-full h-[225px] flex items-center justify-center my-0.5"
+            className="relative w-full h-[195px] sm:h-[205px] flex items-center justify-center my-0.5"
             style={{ overflow: 'visible' }}
           >
             {/* Ícone Gráfico de Equalizador / Faders no canto superior esquerdo do deck */}
@@ -475,7 +511,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
               title="Ajustar Equalização / Surdina"
             >
               <svg
-                className="w-6 h-6 drop-shadow-[0_0_6px_rgba(221,185,107,0.4)] group-hover:scale-110 transition-transform"
+                className="w-5 h-5 drop-shadow-[0_0_6px_rgba(221,185,107,0.4)] group-hover:scale-110 transition-transform"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -492,7 +528,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
             </button>
 
             {/* PRATO METÁLICO E VINIL (+8% À DIREITA) */}
-            <div className="relative w-[195px] h-[195px] sm:w-[205px] sm:h-[205px] rounded-full bg-[#050B17] border-4 border-[#1E325C] shadow-inner flex items-center justify-center flex-shrink-0 z-20 ml-[68px] sm:ml-[78px]">
+            <div className="relative w-[180px] h-[180px] sm:w-[190px] sm:h-[190px] rounded-full bg-[#050B17] border-4 border-[#1E325C] shadow-inner flex items-center justify-center flex-shrink-0 z-20 ml-[62px] sm:ml-[72px]">
               {/* Spindle Central Dourado */}
               <div className="absolute w-3 h-3 rounded-full bg-[#DDB96B] shadow-lg z-30 flex items-center justify-center">
                 <div className="w-1 h-1 rounded-full bg-black" />
@@ -506,7 +542,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                   boxShadow:
                     'inset 0 0 15px rgba(0,0,0,0.95), 0 14px 35px rgba(0,0,0,0.85), 0 0 0 1px rgba(221, 185, 107, 0.35)',
                 }}
-                className={`relative w-[185px] h-[185px] sm:w-[195px] sm:h-[195px] rounded-full flex items-center justify-center z-30 cursor-pointer shadow-2xl ${
+                className={`relative w-[170px] h-[170px] sm:w-[180px] sm:h-[180px] rounded-full flex items-center justify-center z-30 cursor-pointer shadow-2xl ${
                   tocando ? 'animate-[spin_2.2s_linear_infinite]' : ''
                 }`}
                 onClick={() => setModalTracklistAberto(true)}
@@ -527,15 +563,15 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                     background: fundoCapa,
                     boxShadow: '0 10px 25px rgba(0,0,0,0.9), inset 0 0 12px rgba(0,0,0,0.85)',
                   }}
-                  className="relative w-18 h-18 sm:w-20 sm:h-20 rounded-full border-2 border-[#DDB96B] flex flex-col items-center justify-center p-1 text-center shadow-md"
+                  className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-full border-2 border-[#DDB96B] flex flex-col items-center justify-center p-1 text-center shadow-md"
                 >
-                  <span className="text-[5.5px] font-cinzel font-black text-[#FDE68A] tracking-wider">
+                  <span className="text-[5px] font-cinzel font-black text-[#FDE68A] tracking-wider">
                     H-33
                   </span>
-                  <span className="text-[7px] sm:text-[7.5px] font-bold text-white font-cinzel leading-tight line-clamp-2 max-w-[65px] sm:max-w-[70px] drop-shadow">
+                  <span className="text-[6.5px] sm:text-[7px] font-bold text-white font-cinzel leading-tight line-clamp-2 max-w-[60px] sm:max-w-[65px] drop-shadow">
                     {momentoAtivo.evento_nome}
                   </span>
-                  <span className="text-[5.5px] text-[#DDB96B] font-mono uppercase mt-0.5">
+                  <span className="text-[5px] text-[#DDB96B] font-mono uppercase mt-0.5">
                     ÁLBUM {paraRomano(indiceMomento + 1)} • RITO BR.
                   </span>
                   <div className="w-2 h-2 rounded-full bg-[#050B17] border border-[#DDB96B]/60 mt-0.5" />
@@ -544,7 +580,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
             </div>
 
             {/* BRAÇO AUDIÓFILO PRECISION H-33 (PIVÔ FIXADO À DIREITA) */}
-            <div className="relative w-[95px] h-[210px] flex-shrink-0 pointer-events-none z-50 -ml-12 sm:-ml-12">
+            <div className="relative w-[90px] h-[195px] flex-shrink-0 pointer-events-none z-50 -ml-12 sm:-ml-12">
               <svg className="w-full h-full drop-shadow-2xl" viewBox="0 0 95 210" style={{ overflow: 'visible' }}>
                 <defs>
                   <linearGradient id="metalOuroH33Deck" x1="0%" y1="0%" x2="100%" y2="100%">

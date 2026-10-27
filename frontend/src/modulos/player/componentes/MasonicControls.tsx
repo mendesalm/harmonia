@@ -115,7 +115,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
     'Momento litúrgico seguinte na esteira ritualística.';
 
   return (
-    <div className="w-full bg-[#050811] border-t border-macaonico-dourado/25 pt-1.5 pb-2 sm:pt-2.5 sm:pb-3 px-2 sm:px-4 flex flex-col items-center relative z-20 shrink-0">
+    <div className="w-full bg-[#050811] border-t border-macaonico-dourado/25 pt-1 pb-1.5 sm:pt-1.5 sm:pb-2 px-2 sm:px-4 flex flex-col items-center relative z-20 shrink-0">
       {/* Linha decorativa superior */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-px bg-gradient-to-r from-transparent via-macaonico-dourado/50 to-transparent pointer-events-none"></div>
 
