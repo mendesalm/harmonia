@@ -325,7 +325,59 @@
 .harmonia-estrela-marcada { animation: harmonia-estrela 0.5s ease-out; }
 .harmonia-aviso { animation: harmonia-aviso 0.3s ease-out both; }
 
-/* Acessibilidade: respeita a preferência do sistema por menos movimento */
+/* ==========================================================================
+   Estilos Nobres Stitch: Texturas Realistas de Vinil e Latão da Vitrola H-33
+   ========================================================================== */
+
+/* Textura Hi-Fi Realista de Ranhuras do Disco de Vinil */
+.vinyl-grooves {
+  background: 
+    radial-gradient(circle at center, transparent 28%, rgba(255, 255, 255, 0.05) 28.5%, transparent 29%),
+    radial-gradient(circle at center, transparent 38%, rgba(255, 255, 255, 0.04) 38.5%, transparent 39%),
+    radial-gradient(circle at center, transparent 48%, rgba(255, 255, 255, 0.04) 48.5%, transparent 49%),
+    radial-gradient(circle at center, transparent 58%, rgba(255, 255, 255, 0.035) 58.5%, transparent 59%),
+    radial-gradient(circle at center, transparent 68%, rgba(255, 255, 255, 0.03) 68.5%, transparent 69%),
+    radial-gradient(circle at center, transparent 78%, rgba(255, 255, 255, 0.03) 78.5%, transparent 79%),
+    radial-gradient(circle at center, transparent 88%, rgba(255, 255, 255, 0.025) 88.5%, transparent 89%),
+    conic-gradient(from 45deg, #111419 0deg, #242a35 60deg, #111419 120deg, #28303d 180deg, #111419 240deg, #222934 300deg, #111419 360deg);
+}
+
+/* Acabamento em Latão Nobre (Tubulação e Pivô do Braço) */
+.brass-tube {
+  background: linear-gradient(90deg, #8a641d 0%, #e4c46f 35%, #fff1ba 50%, #d4a946 70%, #694a11 100%);
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.brass-knob {
+  background: radial-gradient(circle at 35% 35%, #fff1ba 0%, #d8ac44 45%, #7a5413 90%);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.7);
+}
+
+@keyframes vinylSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin-slow {
+  animation: vinylSpin 14s linear infinite;
+}
+
+.spin-paused {
+  animation-play-state: paused;
+}
+
+/* Fader de Volume com Marcador em Ouro Maciço Chanfrado */
+input[type=range].fader-volume-stitch::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 20px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #fff3c4, #d1a540 60%, #875d16);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.8), 0 0 6px rgba(227, 190, 97, 0.6);
+  border: 1px solid #ffe89e;
+  cursor: pointer;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .harmonia-disco-girando,
   .harmonia-eq-barra,
@@ -334,7 +386,9 @@
   .harmonia-entrar,
   .harmonia-aurora,
   .harmonia-estrela-marcada,
-  .harmonia-aviso {
+  .harmonia-aviso,
+  .spin-slow {
     animation: none !important;
   }
 }
+

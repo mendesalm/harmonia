@@ -1,13 +1,17 @@
 # Harmonia - Guia de Handoff e Inicialização
 
-**Última Atualização:** 27 de Outubro de 2026 (Encerramento da Sessão)  
-**Status da Sessão:** 🟢 **Concluído, Validado e Sincronizado (Build Frontend OK + 32 testes Pytest passando 100%)** — Redesign do Player Litúrgico Vitrola H-33:
-- Box 1 (Acervo Litúrgico): Capas dos álbuns quadradas e sem borda dourada externa, dimensionadas dinamicamente a rigorosamente **65% da largura do box container** (`tamanhoCapa = Math.round(larguraBox * 0.65)`).
-- Regra de Cores Litúrgicas do Rito: Bordô nobre (`#5A0A18` -> `#220308`) exclusivo para o Rito Brasileiro; Deep Blue Sovereign (`#0E1C36` -> `#070F1E`) para os demais ritos.
-- Box 2 (Vitrola H-33 Deck): Prato vazio com slipmat concêntrico e braço travado em repouso a 0° quando o momento não possui álbum/trilhas; display LED digital integrado com tempo decorrido, VU meter e status de trilha; fader com entalhes `pp` (28%) e `mp` (60%).
-- Vão Central & Supressão de Redundâncias: Indicador de progresso contido (`max-w-[280px] self-center`) eliminando espaço morto; supressão completa da seekbar duplicada e da barra inferior de botões extras (`Orientação`, `Surdina`, `Próximo?`, `100%`), preservando unicamente a pílula de controle tátil (`MOMENTO` / `FAIXA` / `Play/Pause 76x76` / `FAIXA` / `MOMENTO`).
-- Cabeçalho: Menu sanduíche à esquerda e título da sessão litúrgica centralizado em caixa alta Cinzel dourada.
-- Correção UTF-8 Global: Eliminado byte inválido Windows-1252 em `.agent/rules/GEMINI.md`, solucionando o erro de carregamento de customização.
+**Última Atualização:** 27 de Outubro de 2026 (Encerramento da Sessão - Design Stitch Integrado)  
+**Status da Sessão:** 🟢 **Concluído, Validado e Sincronizado (Build Frontend OK + 32 testes Pytest passando 100%)** — Réplica Fiel do Design Nobre Stitch para a Vitrola H-33:
+- Box 1 (Acervo Litúrgico): Capas dos álbuns com moldura ornamental dupla dourada contínua e tracejada (`border-[#DDB96B]/40` e `border-dashed border-[#DDB96B]/25`), medalhão circular com Esquadro facetado e Compasso em ouro (`#FDF3D7`), tipografia cerimonial com Cinzel e Cormorant Garamond itálico, dimensionadas dinamicamente a 65% da largura do box container (`Math.round(larguraBox * 0.65)`).
+- Regra de Cores Litúrgicas do Rito: Bordô nobre Stitch (`#460811` via `#2d060c` a `#120306`) exclusivo para o Rito Brasileiro; Obsidian/Midnight (`#0e1624` via `#0b111a` a `#070a10`) para os demais ritos.
+- Box 2 (Vitrola H-33 Deck):
+  - Disco de Vinil: Textura hi-fi realista de ranhuras (`.vinyl-grooves`), anéis chanfrados de borda, selo central com furo usinado de spindle e rotação suave `spin-slow` (14s/volta).
+  - Braço Audiófilo Precision Stitch: Gimbal base circular de latão (`.brass-knob`), contrapeso anti-skating, haste em S com gradiente metálico dourado, cabeçote chanfrado com agulha e LED âmbar, articulando dinamicamente em torno do pivô.
+  - Platter Well rebaixado em preto abissal profundo (`shadow-[inset_0_4px_16px_rgba(0,0,0,0.95)]`).
+  - Lâmpada de status litúrgico com luz verde estroboscópica `ESTRITO RITO`.
+  - Fader de Volume: Thumb metálico de lingote de ouro chanfrado (`.fader-volume-stitch`) com escala gravada litúrgica `0`, `PP (Sórdida)`, `MP`, `MF (Plena)`, `100`.
+- Vão Central & Supressão de Redundâncias: Indicador de progresso centralizado contido (`max-w-[280px] self-center`); supressão completa da seekbar duplicada e dos botões redundantes.
+- Pílula de Controles: Botão central circular Play/Pause com aro de latão chanfrado de 3 níveis, inner bezel escuro e halo ambiental de brilho dourado.
 
 ---
 

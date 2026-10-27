@@ -122,9 +122,9 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
           className="relative w-full max-w-[390px] sm:max-w-[430px] flex items-center justify-center shrink-0 my-0.5 select-none"
           style={{ height: 78 }}
         >
-          {/* Barra contínua em formato pílula atrás do botão central */}
+          {/* Barra contínua em formato pílula refinada Stitch */}
           <div
-            className="absolute inset-x-0 bg-[#070F1E] rounded-full border border-[#DDB96B]/35 flex items-center justify-between z-0 shadow-[0_4px_20px_rgba(0,0,0,0.5),inset_0_0_15px_rgba(221,185,107,0.06)]"
+            className="absolute inset-x-0 bg-gradient-to-r from-[#090f1a] via-[#0d1626] to-[#090f1a] rounded-full border border-[#DDB96B]/40 flex items-center justify-between z-0 shadow-[0_4px_20px_rgba(0,0,0,0.5),inset_0_0_15px_rgba(221,185,107,0.08)]"
             style={{ height: 50 }}
           >
             {/* Metade Esquerda (Anterior) */}
@@ -147,7 +147,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
                 aria-label="Momento Anterior"
               >
                 <Rewind className="w-4 h-4 sm:w-5 sm:h-5 drop-shadow-[0_0_6px_rgba(221,185,107,0.3)]" fill="currentColor" />
-                <span className="text-[8px] sm:text-[9px] font-cinzel mt-0.5 tracking-wider opacity-80 leading-none">
+                <span className="text-[7.5px] sm:text-[8.5px] font-cinzel mt-0.5 tracking-wider opacity-85 leading-none uppercase">
                   Momento
                 </span>
               </button>
@@ -167,7 +167,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
                 aria-label="Faixa Anterior"
               >
                 <SkipBack className="w-4 h-4 sm:w-5 sm:h-5 drop-shadow-[0_0_6px_rgba(221,185,107,0.3)]" fill="currentColor" />
-                <span className="text-[8px] sm:text-[9px] font-cinzel mt-0.5 tracking-wider opacity-80 leading-none">
+                <span className="text-[7.5px] sm:text-[8.5px] font-cinzel mt-0.5 tracking-wider opacity-85 leading-none uppercase">
                   Faixa
                 </span>
               </button>
@@ -196,7 +196,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
                 aria-label="Próxima Faixa"
               >
                 <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 drop-shadow-[0_0_6px_rgba(221,185,107,0.3)]" fill="currentColor" />
-                <span className="text-[8px] sm:text-[9px] font-cinzel mt-0.5 tracking-wider opacity-80 leading-none">
+                <span className="text-[7.5px] sm:text-[8.5px] font-cinzel mt-0.5 tracking-wider opacity-85 leading-none uppercase">
                   Faixa
                 </span>
               </button>
@@ -216,59 +216,52 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
                 aria-label="Próximo Momento"
               >
                 <FastForward className="w-4 h-4 sm:w-5 sm:h-5 drop-shadow-[0_0_6px_rgba(221,185,107,0.3)]" fill="currentColor" />
-                <span className="text-[8px] sm:text-[9px] font-cinzel mt-0.5 tracking-wider opacity-80 leading-none">
+                <span className="text-[7.5px] sm:text-[8.5px] font-cinzel mt-0.5 tracking-wider opacity-85 leading-none uppercase">
                   Momento
                 </span>
               </button>
             </div>
           </div>
 
-          {/* Botão Central Circular Play/Pause (76x76px) com Anéis Dourados Concêntricos */}
-          <button
-            type="button"
-            onClick={() => {
-              feedbackTatil.acaoMedia();
-              onPlayPause();
-            }}
-            style={{
-              width: 76,
-              height: 76,
-              minWidth: 76,
-              minHeight: 76,
-              maxWidth: 76,
-              maxHeight: 76,
-              borderRadius: '9999px',
-              flexShrink: 0,
-            }}
-            className={`relative z-10 border-2 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95 shadow-xl bg-[#070F1E]
-              ${
-                tocando
-                  ? 'border-[#DDB96B] shadow-[0_0_25px_rgba(221,185,107,0.45)]'
-                  : 'border-[#DDB96B]/80 hover:border-[#DDB96B] shadow-[0_0_15px_rgba(0,0,0,0.7)]'
-              }
-            `}
-            title={tocando ? 'Pausar música ritualística' : 'Tocar música ritualística'}
-            aria-label={tocando ? 'Pausar' : 'Tocar'}
-          >
-            {/* Anel dourado fino concêntrico interno */}
-            <div
-              className="absolute rounded-full border border-[#DDB96B]/50 pointer-events-none"
-              style={{ inset: 4, borderRadius: '9999px' }}
-            />
+          {/* Botão Central Circular Play/Pause Stitch com Aro de Latão Chanfrado */}
+          <div className="relative z-10 flex items-center justify-center">
+            {/* Halo de brilho ambiental dourado pulsante */}
+            <div className="absolute inset-0 rounded-full bg-[#DDB96B]/20 blur-md pointer-events-none" />
 
-            {/* Ícone Play/Pause dourado maciço */}
-            <div className="flex items-center justify-center">
-              {tocando ? (
-                <Pause
-                  className="w-8 h-8 text-[#DDB96B] fill-[#DDB96B] drop-shadow-[0_0_8px_rgba(221,185,107,0.7)]"
-                />
-              ) : (
-                <Play
-                  className="w-8 h-8 text-[#DDB96B] fill-[#DDB96B] ml-1 drop-shadow-[0_0_8px_rgba(221,185,107,0.7)]"
-                />
-              )}
-            </div>
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                feedbackTatil.acaoMedia();
+                onPlayPause();
+              }}
+              style={{
+                width: 76,
+                height: 76,
+                minWidth: 76,
+                minHeight: 76,
+                maxWidth: 76,
+                maxHeight: 76,
+                borderRadius: '9999px',
+                flexShrink: 0,
+              }}
+              className="relative rounded-full bg-gradient-to-b from-[#fcedaf] via-[#caa037] to-[#735012] p-[2.5px] shadow-[0_4px_16px_rgba(0,0,0,0.8)] active:scale-95 transition-all cursor-pointer"
+              title={tocando ? 'Pausar música ritualística' : 'Tocar música ritualística'}
+              aria-label={tocando ? 'Pausar' : 'Tocar'}
+            >
+              {/* Inner Bezel Escuro com Borda Fina Dourada */}
+              <div className="w-full h-full rounded-full bg-gradient-to-b from-[#131d2d] to-[#070c14] border border-[#DDB96B]/40 flex items-center justify-center shadow-inner">
+                {tocando ? (
+                  <Pause
+                    className="w-7 h-7 text-[#FDF3D7] fill-[#FDF3D7] drop-shadow-[0_0_8px_rgba(253,243,215,0.7)]"
+                  />
+                ) : (
+                  <Play
+                    className="w-7 h-7 text-[#FDF3D7] fill-[#FDF3D7] ml-1 drop-shadow-[0_0_8px_rgba(253,243,215,0.7)]"
+                  />
+                )}
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 

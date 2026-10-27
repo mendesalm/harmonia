@@ -50,23 +50,35 @@ function calcularMomento3D(distancia: number, tamanho: number = 180) {
   return { x, y, z, rotY, escala, opacidade, zIndex };
 }
 
-/** Símbolo Sagrado Maçônico: Esquadro e Compasso com o 'G' central gravado em Ouro */
-const SimboloEsquadroCompasso: React.FC = () => (
-  <svg className="w-8 h-8 text-[#DDB96B] drop-shadow" viewBox="0 0 100 100" fill="none" stroke="currentColor">
-    <circle cx="50" cy="18" r="4.5" fill="#DDB96B" stroke="#785012" strokeWidth="1.5" />
-    <line x1="50" y1="18" x2="22" y2="82" stroke="#DDB96B" strokeWidth="4" strokeLinecap="round" />
-    <line x1="50" y1="18" x2="78" y2="82" stroke="#DDB96B" strokeWidth="4" strokeLinecap="round" />
-    <path d="M 35 58 A 22 22 0 0 0 65 58" fill="none" stroke="#DDB96B" strokeWidth="2" strokeDasharray="3,2" />
-    <path d="M 20 42 L 50 76 L 80 42" fill="none" stroke="#FDE68A" strokeWidth="4.5" strokeLinecap="square" />
+/** Símbolo Sagrado Maçônico Refinado Stitch: Esquadro facetado e Compasso com 'G' central em Ouro */
+const SimboloEsquadroCompasso: React.FC<{ className?: string }> = ({ className = 'w-12 h-12' }) => (
+  <svg
+    className={`${className} text-[#DDB96B] drop-shadow-[0_0_8px_rgba(227,190,97,0.7)]`}
+    fill="none"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2.6"
+    viewBox="0 0 100 100"
+  >
+    {/* Compass Arms */}
+    <line stroke="currentColor" x1="50" x2="16" y1="12" y2="82" />
+    <line stroke="currentColor" x1="50" x2="84" y1="12" y2="82" />
+    <circle cx="50" cy="12" fill="#FDF3D7" r="3.5" />
+    {/* Square (Esquadro facetado com profundidade metálica) */}
+    <polyline points="28,38 50,78 72,38" stroke="#EED184" strokeWidth="3" />
+    <polyline points="21,34 50,86 79,34" stroke="#AB7F28" strokeWidth="1.8" />
+    {/* Letter 'G' in Center */}
     <text
-      x="50"
-      y="54"
+      dominantBaseline="middle"
+      fill="#FDF3D7"
       fontFamily="'Cinzel', serif"
-      fontSize="18"
-      fontWeight="900"
-      fill="#DDB96B"
+      fontSize="16"
+      fontWeight="bold"
+      stroke="none"
       textAnchor="middle"
-      dominantBaseline="central"
+      x="50"
+      y="55"
     >
       G
     </text>
@@ -295,19 +307,17 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
   if (!momentoAtivo) return null;
 
-  // Gradientes e fundos baseados no Rito ativo
+  // Gradientes e fundos nobres Stitch baseados no Rito ativo
   const fundoCapa = eRitoBrasileiro
-    ? 'radial-gradient(circle at 35% 30%, #5A0A18 0%, #38050D 65%, #1C0206 100%)'
-    : 'linear-gradient(145deg, rgba(14, 28, 54, 0.96) 0%, rgba(10, 20, 40, 0.98) 55%, rgba(7, 15, 30, 1) 100%)';
-
-  const bercoEmblema = eRitoBrasileiro ? '#150205' : '#0A1428';
+    ? 'linear-gradient(135deg, #460811 0%, #2d060c 50%, #120306 100%)'
+    : 'linear-gradient(135deg, #0e1624 0%, #0b111a 50%, #070a10 100%)';
 
   return (
     <div className="w-full flex-1 min-h-0 flex flex-col items-center justify-between p-1 sm:p-2 select-none overflow-hidden">
       {/* CONTAINER CENTRAL UNIFICADO COM LARGURA RIGOROSA (MAX-W-[360px] SM:MAX-W-[380px]) DISTRIBUÍDO NA ALTURA DISPONÍVEL */}
       <div className="w-full max-w-[360px] sm:max-w-[380px] h-full flex flex-col justify-between gap-1 sm:gap-1.5">
         {/* =========================================================================
-            BOX 1 (SUPERIOR INDEPENDENTE): ACERVO LITÚRGICO • CARROSSEL 3D
+            BOX 1 (SUPERIOR INDEPENDENTE): ACERVO LITÚRGICO • CARROSSEL 3D STITCH
             ========================================================================= */}
         <section
           ref={palcoBoxRef}
@@ -341,8 +351,8 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                       position: 'absolute',
                       width: tamanhoCapa,
                       height: tamanhoCapa,
-                      borderRadius: 0,
-                      border: 'none', // Estritamente sem borda dourada conforme solicitado!
+                      borderRadius: 10,
+                      border: '1.5px solid rgba(227, 190, 97, 0.75)',
                       transform: `translate3d(${t.x}px, ${t.y}px, ${t.z}px) rotateY(${t.rotY}deg) scale(${t.escala})`,
                       opacity: t.opacidade,
                       zIndex: t.zIndex,
@@ -352,43 +362,42 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                       transformStyle: 'preserve-3d',
                       background: fundoCapa,
                       boxShadow: ativo
-                        ? '0 0 25px rgba(221, 185, 107, 0.20), 0 16px 36px rgba(0,0,0,0.95)'
+                        ? '0 0 25px rgba(227, 190, 97, 0.28), 0 16px 36px rgba(0,0,0,0.95)'
                         : '0 12px 30px rgba(0,0,0,0.85)',
                       filter: ativo ? 'none' : 'brightness(0.72)',
                       cursor: 'pointer',
                     }}
-                    className="p-3 sm:p-3.5 flex flex-col justify-between cursor-pointer select-none"
+                    className="p-3 sm:p-3.5 flex flex-col justify-between cursor-pointer select-none relative overflow-hidden"
                   >
+                    {/* Moldura dupla dourada ornamental refinada do Stitch */}
+                    <div className="absolute inset-[3px] border border-[#DDB96B]/40 rounded pointer-events-none" />
+                    <div className="absolute inset-[6px] border border-dashed border-[#DDB96B]/25 rounded pointer-events-none" />
+
                     {/* Top bar da capa: Identificador e Dinâmica */}
-                    <div className="w-full flex items-center justify-between text-[8px] sm:text-[9px] font-cinzel border-b border-[#DDB96B]/30 pb-1 pointer-events-none">
-                      <span className="font-bold text-[#FDE68A] tracking-wider">
+                    <div className="w-full flex items-center justify-between text-[8px] sm:text-[9px] uppercase tracking-wider relative z-10 border-b border-[#DDB96B]/20 pb-1 pointer-events-none">
+                      <span className="font-cinzel font-bold text-[#FDE68A] tracking-widest">
                         ÁLBUM {paraRomano(i + 1)}
                       </span>
-                      <span className="px-2 py-0.5 rounded-none font-mono text-[7.5px] font-bold bg-[#DDB96B]/15 text-[#FDE68A] border border-[#DDB96B]/30">
-                        {momento.em_surdina ? 'pp • SURDINA' : 'mf • FORTE'}
+                      <span className="font-mono text-[7.5px] px-1.5 py-0.5 rounded bg-black/60 border border-[#DDB96B]/50 text-[#FDE68A] shadow-inner font-bold">
+                        {momento.em_surdina ? 'PP • SURDINA' : 'MF • FORTE'}
                       </span>
                     </div>
 
-                    {/* Centro da capa: Berço escuro com Esquadro e Compasso com 'G' em Ouro */}
-                    <div className="my-auto flex flex-col items-center justify-center pointer-events-none">
-                      <div
-                        style={{ background: bercoEmblema }}
-                        className="w-18 h-18 sm:w-20 sm:h-20 rounded-none border border-[#DDB96B]/70 flex items-center justify-center shadow-lg relative"
-                      >
-                        <div className="scale-125">
-                          <SimboloEsquadroCompasso />
-                        </div>
+                    {/* Centro da capa: Medalhão circular com Esquadro e Compasso com 'G' em Ouro */}
+                    <div className="my-auto flex flex-col items-center justify-center relative z-10 py-1 pointer-events-none">
+                      <div className="w-16 h-16 sm:w-18 sm:h-18 p-1.5 rounded-full bg-black/50 border border-[#DDB96B]/50 shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)] flex items-center justify-center relative">
+                        <SimboloEsquadroCompasso className="w-11 h-11 sm:w-12 sm:h-12" />
                       </div>
                     </div>
 
-                    {/* Base da capa: Título em serifa dourada + contagem de trilhas */}
-                    <div className="w-full flex flex-col items-center text-center border-t border-[#DDB96B]/30 pt-1 pointer-events-none">
-                      <h3 className="font-cinzel text-xs sm:text-[13px] font-bold text-white leading-tight line-clamp-1 w-full drop-shadow">
+                    {/* Base da capa: Título em serifa dourada + contagem de trilhas solenes */}
+                    <div className="text-center relative z-10 border-t border-[#DDB96B]/20 pt-1 pointer-events-none">
+                      <p className="font-cinzel text-[11px] sm:text-xs font-bold text-[#FFF2CC] tracking-wider line-clamp-1 drop-shadow-sm uppercase">
                         {momento.evento_nome}
-                      </h3>
-                      <span className="text-[8px] sm:text-[9px] font-mono text-[#FDE68A] font-semibold mt-0.5 flex items-center justify-center gap-1">
-                        {totalFaixas > 0 ? `${totalFaixas} Trilhas LP` : 'Sem Trilhas LP'}
-                      </span>
+                      </p>
+                      <p className="font-serif italic text-[9.5px] sm:text-[10px] text-[#DDB96B] tracking-widest mt-0.5 font-normal">
+                        {totalFaixas > 0 ? `${totalFaixas} Trilhas LP Solenes` : 'Sem Trilhas LP'}
+                      </p>
                     </div>
                   </div>
                 );
@@ -456,16 +465,39 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
         )}
 
         {/* =========================================================================
-            BOX 2 (INFERIOR INDEPENDENTE): VITROLA H-33 DECK
+            BOX 2 (INFERIOR INDEPENDENTE): VITROLA H-33 DECK STITCH
             ========================================================================= */}
-        <div className="relative w-full flex-[5_5_0%] min-h-[210px] rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#0E1C36] via-[#0A1428] to-[#070F1E] border-2 border-[#DDB96B]/40 shadow-[0_14px_36px_-10px_rgba(0,0,0,0.85)] p-2.5 sm:p-3 flex flex-col justify-between items-center">
-          {/* HEADER DO DECK: LOGO CURSIVO H-33 + DISPLAY LED DIGITAL AO LADO */}
-          <div className="w-full flex items-center justify-between gap-2 pb-1.5 mb-1 border-b border-[#DDB96B]/25 shrink-0">
-            {/* Logo Cursivo H-33 */}
-            <LogoCursivoH33 />
+        <div className="relative w-full flex-[5_5_0%] min-h-[210px] rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#0C1422] to-[#070B13] border-2 border-[#DDB96B]/50 shadow-2xl p-2.5 sm:p-3 flex flex-col justify-between items-center overflow-hidden">
+          {/* Moldura interna chanfrada dourada Stitch */}
+          <div className="absolute inset-[3px] rounded-[13px] sm:rounded-[21px] border border-[#DDB96B]/20 pointer-events-none" />
 
-            {/* Display LED Digital com cantos arredondados à direita */}
-            <div className="flex-1 max-w-[220px] sm:max-w-[240px] px-2 py-0.5 rounded-xl flex flex-col gap-0.5 border border-[#1E325C] shadow-inner bg-[#02050E]">
+          {/* HEADER DO DECK: BOTÃO EQUALIZADOR + DISPLAY TELEMETRIA + STATUS ESTREITO RITO */}
+          <div className="w-full flex items-center justify-between gap-1.5 pb-1.5 mb-0.5 border-b border-[#DDB96B]/20 shrink-0 relative z-20">
+            {/* Quick Toggle Equalizador / Surdina */}
+            <button
+              type="button"
+              onClick={() => {
+                feedbackTatil.clique();
+                onAbrirConfiguracoesSurdina?.();
+              }}
+              className="p-1 rounded-lg bg-black/50 border border-[#DDB96B]/40 text-[#DDB96B] hover:text-[#FFF2CC] active:scale-95 transition-all shadow cursor-pointer group shrink-0"
+              title="Ajustar Equalização / Surdina"
+            >
+              <svg className="w-4 h-4 drop-shadow-[0_0_6px_rgba(221,185,107,0.4)]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <line strokeLinecap="round" x1="4" x2="4" y1="21" y2="14" />
+                <line strokeLinecap="round" x1="4" x2="4" y1="10" y2="3" />
+                <line strokeLinecap="round" x1="12" x2="12" y1="21" y2="12" />
+                <line strokeLinecap="round" x1="12" x2="12" y1="8" y2="3" />
+                <line strokeLinecap="round" x1="20" x2="20" y1="21" y2="16" />
+                <line strokeLinecap="round" x1="20" x2="20" y1="12" y2="3" />
+                <circle cx="4" cy="12" fill="#E3BE61" r="2" />
+                <circle cx="12" cy="10" fill="#E3BE61" r="2" />
+                <circle cx="20" cy="14" fill="#E3BE61" r="2" />
+              </svg>
+            </button>
+
+            {/* Display LED Digital com cantos arredondados Stitch */}
+            <div className="flex-1 max-w-[215px] sm:max-w-[235px] px-2 py-0.5 rounded-xl flex flex-col gap-0.5 border border-[#1E325C] shadow-inner bg-[#02050E]">
               {/* Linha 1: Tempo + Bargraph VU Level */}
               <div className="w-full flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
@@ -481,9 +513,9 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
                 <div className="flex items-center gap-1.5">
                   <span className="text-[7px] text-[#00E5FF] font-mono uppercase tracking-wider">
-                    VU LEVEL
+                    VU
                   </span>
-                  <div className="flex items-end gap-0.5 h-2.5 w-16 sm:w-20">
+                  <div className="flex items-end gap-0.5 h-2.5 w-14 sm:w-16">
                     {Array.from({ length: 12 }, (_, i) => {
                       const ativo = vuAtivos.includes(i);
                       let corBg = 'bg-[#061A28]';
@@ -495,7 +527,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                       return (
                         <div
                           key={`vu-bar-deck-${i}`}
-                          className={`w-[2.5px] h-full rounded-[1px] transition-colors duration-100 ${corBg}`}
+                          className={`w-[2px] h-full rounded-[1px] transition-colors duration-100 ${corBg}`}
                         />
                       );
                     })}
@@ -517,217 +549,203 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                 </span>
               </div>
             </div>
+
+            {/* Lâmpada de Rito Estrito */}
+            <div className="flex items-center gap-1.5 bg-black/60 px-2 py-0.5 rounded-full border border-[#DDB96B]/30 text-[8.5px] font-mono text-[#DDB96B] shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_5px_#34d399] animate-pulse" />
+              <span className="hidden sm:inline">ESTRITO RITO</span>
+              <span className="sm:hidden">RITO</span>
+            </div>
           </div>
 
-          {/* ÁREA DO DECK: ÍCONE DE EQUALIZADOR + PRATO (COM OU SEM VINIL) + BRAÇO AUDIÓFILO */}
+          {/* ÁREA DO DECK: PRATO COM DISCO VINYL-GROOVES + BRAÇO MECÂNICO DE LATÃO AUDIÓFILO */}
           <div
             className="relative w-full flex-1 min-h-[160px] flex items-center justify-center my-0.5"
             style={{ overflow: 'visible' }}
           >
-            {/* Ícone Gráfico de Equalizador / Faders no canto superior esquerdo do deck */}
-            <button
-              type="button"
-              onClick={() => {
-                feedbackTatil.clique();
-                onAbrirConfiguracoesSurdina?.();
-              }}
-              className="absolute left-2 top-2 p-1.5 rounded-lg text-[#DDB96B] hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer z-20 group"
-              title="Ajustar Equalização / Surdina"
-            >
-              <svg
-                className="w-5 h-5 drop-shadow-[0_0_6px_rgba(221,185,107,0.4)] group-hover:scale-110 transition-transform"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-              >
-                <line x1="4" y1="6" x2="20" y2="6" />
-                <line x1="10" y1="4" x2="10" y2="8" strokeWidth="2.8" />
-                <line x1="4" y1="12" x2="20" y2="12" />
-                <line x1="16" y1="10" x2="16" y2="14" strokeWidth="2.8" />
-                <line x1="4" y1="18" x2="20" y2="18" />
-                <line x1="8" y1="16" x2="8" y2="20" strokeWidth="2.8" />
-              </svg>
-            </button>
+            {/* Platter Recessed Shadow Well */}
+            <div className="absolute w-[184px] h-[184px] sm:w-[196px] sm:h-[196px] rounded-full bg-black/95 shadow-[inset_0_4px_16px_rgba(0,0,0,0.95)] border border-[#1a2333] ml-[-20px] sm:ml-[-25px]" />
 
-            {/* PRATO METÁLICO: SE NÃO HÁ ÁLBUM, NÃO MOSTRA O DISCO DE VINIL */}
-            <div className="relative w-[180px] h-[180px] sm:w-[190px] sm:h-[190px] rounded-full bg-[#050B17] border-4 border-[#1E325C] shadow-inner flex items-center justify-center flex-shrink-0 z-20 ml-[62px] sm:ml-[72px]">
-              {/* Spindle Central Dourado */}
-              <div className="absolute w-3 h-3 rounded-full bg-[#DDB96B] shadow-lg z-30 flex items-center justify-center">
-                <div className="w-1 h-1 rounded-full bg-black" />
+            {temAlbumNoMomento ? (
+              /* DISCO DE VINIL STITCH COM RANHURAS HI-FI REALISTAS */
+              <div
+                className={`relative w-[178px] h-[178px] sm:w-[188px] sm:h-[188px] rounded-full vinyl-grooves shadow-[0_18px_45px_rgba(0,0,0,0.85),inset_0_1px_2px_rgba(255,255,255,0.1)] flex items-center justify-center cursor-pointer select-none z-20 ml-[-20px] sm:ml-[-25px] ${
+                  tocando ? 'spin-slow' : 'spin-paused'
+                }`}
+                onClick={() => setModalTracklistAberto(true)}
+                title="Toque no vinil para abrir a lista de faixas"
+              >
+                {/* Anéis concêntricos de brilho da borda chanfrada */}
+                <div className="absolute inset-0 rounded-full border border-neutral-700/60 pointer-events-none" />
+                <div className="absolute inset-[3px] rounded-full border border-neutral-800/80 pointer-events-none" />
+
+                {/* Selo Central do Vinil */}
+                <div
+                  style={{
+                    background: eRitoBrasileiro
+                      ? 'radial-gradient(circle, #38050d 0%, #1e0307 70%, #0d0103 100%)'
+                      : 'radial-gradient(circle, #0c1626 0%, #050a12 70%, #03060a 100%)',
+                  }}
+                  className="w-[74px] h-[74px] sm:w-[80px] sm:h-[80px] rounded-full border-2 border-[#DDB96B]/90 shadow-2xl flex flex-col items-center justify-center text-center p-1 relative z-10"
+                >
+                  <span className="font-cinzel text-[7px] text-[#DDB96B] tracking-widest font-bold">
+                    H • 33
+                  </span>
+                  <span className="font-cinzel text-[6px] sm:text-[6.5px] text-[#FFF2CC] uppercase font-semibold leading-tight mt-0.5 line-clamp-1 max-w-[62px] drop-shadow">
+                    {momentoAtivo.evento_nome}
+                  </span>
+                  <span className="font-serif italic text-[5.5px] text-[#DDB96B]/90 mt-0.5">
+                    ÁLBUM {paraRomano(indiceMomento + 1)} • {eRitoBrasileiro ? 'RITO BR.' : 'RITO REAA'}
+                  </span>
+                  {/* Spindle Center Hole */}
+                  <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-b from-neutral-900 to-black border border-[#FDE68A]/80 mt-0.5 shadow-inner flex items-center justify-center">
+                    <div className="w-1 h-1 rounded-full bg-neutral-300" />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* PRATO VAZIO SEM VINIL */
+              <div
+                onClick={() => setModalTracklistAberto(true)}
+                className="relative w-[178px] h-[178px] sm:w-[188px] sm:h-[188px] rounded-full flex flex-col items-center justify-center z-20 cursor-pointer border border-[#1E325C]/70 shadow-inner group ml-[-20px] sm:ml-[-25px]"
+                style={{
+                  background: 'radial-gradient(circle, #081122 0%, #050B17 65%, #02050E 100%)',
+                  boxShadow: 'inset 0 0 25px rgba(0,0,0,0.95)',
+                }}
+                title="Momento sem álbum cadastrado. Toque para adicionar trilhas."
+              >
+                <div className="w-32 h-32 rounded-full border border-dashed border-[#1E325C]/50 flex items-center justify-center pointer-events-none">
+                  <div className="w-20 h-20 rounded-full border border-dashed border-[#1E325C]/35 flex flex-col items-center justify-center p-2 text-center pointer-events-none">
+                    <span className="text-[7px] font-cinzel text-slate-500 uppercase tracking-widest leading-none">
+                      Prato Vazio
+                    </span>
+                    <span className="text-[6.5px] text-[#DDB96B]/80 font-mono mt-1 font-semibold group-hover:text-yellow-300 transition-colors">
+                      + Compor
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* BRAÇO MECÂNICO AUDIÓFILO DE LATÃO DOURADO (STITCH TONEARM SYSTEM) */}
+            <div className="absolute right-1 top-1 w-20 h-48 pointer-events-none z-30 flex flex-col items-center">
+              {/* Base Fixa / Gimbal Knob */}
+              <div className="w-10 h-10 rounded-full brass-knob border-2 border-[#FDE68A] flex items-center justify-center shadow-xl relative">
+                {/* Centro do Parafuso de Precisão */}
+                <div className="w-4 h-4 rounded-full bg-gradient-to-b from-neutral-800 to-black border border-[#DDB96B] flex items-center justify-center">
+                  <div className="w-2 h-[1px] bg-[#FDE68A]" />
+                </div>
+                {/* Anti-skating counterweight stub */}
+                <div className="absolute -top-1 right-1.5 w-2.5 h-4 bg-gradient-to-r from-[#ab7f28] to-[#e3be61] rounded-sm shadow" />
               </div>
 
-              {temAlbumNoMomento ? (
-                /* DISCO DE VINIL ACETINADO COM SELO LITÚRGICO */
-                <div
-                  style={{
-                    background:
-                      'radial-gradient(circle, #070F1E 0%, #070F1E 16%, #080808 17%, #1a1a1a 20%, #050505 24%, #181818 28%, #050505 33%, #1f1f1f 38%, #040404 43%, #171717 49%, #050505 55%, #1c1c1c 61%, #040404 67%, #161616 74%, #040404 81%, #121212 89%, #020202 100%)',
-                    boxShadow:
-                      'inset 0 0 15px rgba(0,0,0,0.95), 0 14px 35px rgba(0,0,0,0.85), 0 0 0 1px rgba(221, 185, 107, 0.35)',
-                  }}
-                  className={`relative w-[170px] h-[170px] sm:w-[180px] sm:h-[180px] rounded-full flex items-center justify-center z-30 cursor-pointer shadow-2xl ${
-                    tocando ? 'animate-[spin_2.2s_linear_infinite]' : ''
-                  }`}
-                  onClick={() => setModalTracklistAberto(true)}
-                  title="Toque no vinil para abrir a lista de faixas"
+              {/* Tubo Curvo em S Móvel articulado a partir do centro do Gimbal */}
+              <div
+                className="relative w-12 h-36 -mt-2 -mr-3"
+                style={{
+                  transformOrigin: '20px 0px',
+                  transform: `rotate(${anguloBraco}deg)`,
+                  transition: 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)',
+                }}
+              >
+                <svg
+                  className="w-full h-full filter drop-shadow-[2px_4px_6px_rgba(0,0,0,0.8)]"
+                  fill="none"
+                  viewBox="0 0 50 140"
+                  style={{ overflow: 'visible' }}
                 >
-                  {/* Brilho Cônico do Vinil */}
-                  <div
-                    style={{
-                      background:
-                        'conic-gradient(from 45deg, rgba(255, 255, 255, 0.14) 0deg, transparent 55deg, rgba(255, 255, 255, 0.08) 110deg, transparent 175deg, rgba(255, 255, 255, 0.15) 235deg, transparent 295deg, rgba(255, 255, 255, 0.1) 360deg)',
-                    }}
-                    className="absolute inset-0 rounded-full pointer-events-none"
+                  <path
+                    d="M 26 0 C 26 30, 36 50, 32 90 C 30 115, 20 120, 16 135"
+                    stroke="url(#brassGradientStitch)"
+                    strokeLinecap="round"
+                    strokeWidth="3.2"
                   />
+                  <defs>
+                    <linearGradient id="brassGradientStitch" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#FFF0B3" />
+                      <stop offset="40%" stopColor="#D4AF37" />
+                      <stop offset="80%" stopColor="#805A17" />
+                      <stop offset="100%" stopColor="#FFD966" />
+                    </linearGradient>
+                  </defs>
+                </svg>
 
-                  {/* SELO CENTRAL DO DISCO (BORDÔ SE RITO BRASILEIRO, DEEP BLUE DEMAIS RITOS) */}
-                  <div
-                    style={{
-                      background: fundoCapa,
-                      boxShadow: '0 10px 25px rgba(0,0,0,0.9), inset 0 0 12px rgba(0,0,0,0.85)',
-                    }}
-                    className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-full border-2 border-[#DDB96B] flex flex-col items-center justify-center p-1 text-center shadow-md"
-                  >
-                    <span className="text-[5px] font-cinzel font-black text-[#FDE68A] tracking-wider">
-                      H-33
-                    </span>
-                    <span className="text-[6.5px] sm:text-[7px] font-bold text-white font-cinzel leading-tight line-clamp-2 max-w-[60px] sm:max-w-[65px] drop-shadow">
-                      {momentoAtivo.evento_nome}
-                    </span>
-                    <span className="text-[5px] text-[#DDB96B] font-mono uppercase mt-0.5">
-                      ÁLBUM {paraRomano(indiceMomento + 1)} • RITO BR.
-                    </span>
-                    <div className="w-2 h-2 rounded-full bg-[#050B17] border border-[#DDB96B]/60 mt-0.5" />
-                  </div>
+                {/* Cápsula Audiófila com agulha e LED âmbar */}
+                <div className="absolute -bottom-1 left-2 w-4 h-6 bg-gradient-to-br from-[#1c1d22] via-[#2d2e38] to-[#0c0d11] border border-[#DDB96B] rounded-sm transform -rotate-12 shadow-md flex flex-col items-center justify-between p-0.5">
+                  <span className="w-2.5 h-0.5 bg-[#DDB96B] rounded-full" />
+                  <span className="w-1 h-1.5 bg-[#ffb938] rounded-full shadow-[0_0_4px_#ffb938]" />
                 </div>
-              ) : (
-                /* PRATO VAZIO SEM VINIL: Feltro/Slipmat de borracha concêntrico */
-                <div
-                  onClick={() => setModalTracklistAberto(true)}
-                  className="relative w-[170px] h-[170px] sm:w-[180px] sm:h-[180px] rounded-full flex flex-col items-center justify-center z-20 cursor-pointer border border-[#1E325C]/70 shadow-inner group"
-                  style={{
-                    background: 'radial-gradient(circle, #081122 0%, #050B17 65%, #02050E 100%)',
-                    boxShadow: 'inset 0 0 25px rgba(0,0,0,0.95)',
-                  }}
-                  title="Momento sem álbum cadastrado. Toque para adicionar trilhas."
-                >
-                  {/* Anéis de feltro em borracha mecânica */}
-                  <div className="w-32 h-32 rounded-full border border-dashed border-[#1E325C]/50 flex items-center justify-center pointer-events-none">
-                    <div className="w-20 h-20 rounded-full border border-dashed border-[#1E325C]/35 flex flex-col items-center justify-center p-2 text-center pointer-events-none">
-                      <span className="text-[7px] font-cinzel text-slate-500 uppercase tracking-widest leading-none">
-                        Prato Vazio
-                      </span>
-                      <span className="text-[6.5px] text-[#DDB96B]/80 font-mono mt-1 font-semibold group-hover:text-yellow-300 transition-colors">
-                        + Compor
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* BRAÇO AUDIÓFILO PRECISION H-33 (PIVÔ FIXADO À DIREITA) */}
-            <div className="relative w-[90px] h-[195px] flex-shrink-0 pointer-events-none z-50 -ml-12 sm:-ml-12">
-              <svg className="w-full h-full drop-shadow-2xl" viewBox="0 0 95 210" style={{ overflow: 'visible' }}>
-                <defs>
-                  <linearGradient id="metalOuroH33Deck" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#FDE68A" />
-                    <stop offset="50%" stopColor="#DDB96B" />
-                    <stop offset="100%" stopColor="#785012" />
-                  </linearGradient>
-                  <filter id="sombraBracoH33Deck" x="-30%" y="-30%" width="160%" height="160%">
-                    <feDropShadow dx="3" dy="5" stdDeviation="4" floodColor="#000" floodOpacity="0.95" />
-                  </filter>
-                </defs>
-
-                {/* Base Fixa do Pivô */}
-                <g>
-                  <circle cx="50" cy="30" r="20" fill="#0A1428" stroke="#DDB96B" strokeWidth="2" />
-                  <circle cx="50" cy="30" r="12" fill="#0E1C36" stroke="#FDE68A" strokeWidth="1" />
-                  <rect x="42" y="180" width="16" height="8" rx="2" fill="#0A1428" stroke="#DDB96B" strokeWidth="1.2" />
-                  <circle cx="50" cy="184" r="2.5" fill="#DDB96B" />
-                  <path d="M 46 178 L 46 182 M 54 178 L 54 182" stroke="#DDB96B" strokeWidth="1.5" strokeLinecap="round" />
-                </g>
-
-                {/* Parte Móvel do Braço */}
-                <g
-                  filter="url(#sombraBracoH33Deck)"
-                  style={{
-                    transformOrigin: '50px 30px',
-                    transform: `rotate(${anguloBraco}deg)`,
-                    transition: 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)',
-                  }}
-                >
-                  <rect x="41" y="4" width="18" height="14" rx="2" fill="#0E1C36" stroke="#DDB96B" strokeWidth="1.8" />
-                  <circle cx="50" cy="11" r="4" fill="url(#metalOuroH33Deck)" />
-                  <circle cx="50" cy="30" r="8" fill="url(#metalOuroH33Deck)" stroke="#070F1E" strokeWidth="1" />
-                  <path d="M 50 30 C 56 70, 44 125, 50 170" fill="none" stroke="url(#metalOuroH33Deck)" strokeWidth="4" strokeLinecap="round" />
-                  <path d="M 50 170 L 46 184" fill="none" stroke="url(#metalOuroH33Deck)" strokeWidth="4.5" strokeLinecap="round" />
-                  <rect x="36" y="180" width="16" height="11" rx="2" fill="#0A1428" stroke="#DDB96B" strokeWidth="2" transform="rotate(15 44 185)" />
-                  <circle cx="43" cy="193" r="2.2" fill="#DDB96B" />
-                </g>
-              </svg>
+              </div>
             </div>
           </div>
 
-          {/* CONTROLE DE VOLUME EM LINHA COM MARCAÇÕES PRÉ-ENTALHADAS (pp e mp) */}
-          <div className="w-full mt-1 pt-2 border-t border-[#DDB96B]/20 flex flex-col gap-1 px-1">
-            <div className="w-full flex items-center justify-between gap-3">
-              <span className="text-[10px] font-cinzel text-[#DDB96B] font-bold flex items-center gap-1 flex-shrink-0">
-                <Volume2 className="w-3.5 h-3.5" />
-                <span>Volume</span>
-              </span>
-              <div className="flex-1 relative flex flex-col justify-center">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={volumeExecucao}
-                  onChange={(e) => onAlterarVolume?.(Number(e.target.value))}
-                  className="w-full h-1.5 bg-[#0A1428] border border-[#1E325C] rounded-lg appearance-none cursor-pointer accent-[#DDB96B]"
-                />
-
-                {/* Escala Pré-Entalhada na Vitrola: Marcações Gravadas em Ouro de pp e mp */}
-                <div className="relative w-full h-4 text-[8px] font-mono select-none px-0.5 mt-0.5">
-                  <span className="absolute left-0 text-[7px] text-slate-500 font-mono top-1">0</span>
-
-                  {/* Ponto Pré-Entalhado pp (Pianíssimo) em 28% */}
-                  <div
-                    className="absolute left-[28%] -translate-x-1/2 flex flex-col items-center cursor-pointer group"
-                    onClick={() => {
-                      feedbackTatil.clique();
-                      onAlterarVolume?.(28);
-                    }}
-                    title="Calibrar para Pianíssimo (28%)"
-                  >
-                    <div className="w-0.5 h-1.5 bg-[#DDB96B]/80 group-hover:bg-[#FDE68A]" />
-                    <span className="text-[8px] font-cinzel font-black text-[#FDE68A] drop-shadow group-hover:text-white tracking-tighter">
-                      pp
-                    </span>
-                  </div>
-
-                  {/* Ponto Pré-Entalhado mp (Mezzo-piano) em 60% */}
-                  <div
-                    className="absolute left-[60%] -translate-x-1/2 flex flex-col items-center cursor-pointer group"
-                    onClick={() => {
-                      feedbackTatil.clique();
-                      onAlterarVolume?.(60);
-                    }}
-                    title="Calibrar para Mezzo-piano (60%)"
-                  >
-                    <div className="w-0.5 h-1.5 bg-[#DDB96B]/90 group-hover:bg-[#FDE68A]" />
-                    <span className="text-[8px] font-cinzel font-black text-[#FDE68A] drop-shadow group-hover:text-white tracking-tighter">
-                      mp
-                    </span>
-                  </div>
-
-                  <span className="absolute right-0 text-[7px] text-slate-500 font-mono top-1">100</span>
-                </div>
+          {/* CONTROLE DE VOLUME EM LINHA COM MARCAÇÕES PRÉ-ENTALHADAS STITCH */}
+          <div className="w-full mt-1 px-1 pt-1.5 border-t border-[#DDB96B]/20 flex flex-col gap-0.5 relative z-20">
+            <div className="flex items-center justify-between mb-0.5 text-[9px] font-mono text-[#DDB96B]">
+              <div className="flex items-center gap-1 font-cinzel font-bold text-[#FDE68A]">
+                <Volume2 className="w-3.5 h-3.5 inline text-[#DDB96B]" />
+                <span>VOLUME</span>
               </div>
-              <span className="font-mono text-white text-[10px] font-bold flex-shrink-0 w-8 text-right">
-                {volumeExecucao}%
+              <span className="font-mono text-white font-bold">{volumeExecucao}%</span>
+            </div>
+
+            <div className="relative flex items-center">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={volumeExecucao}
+                onChange={(e) => onAlterarVolume?.(Number(e.target.value))}
+                className="w-full h-1.5 bg-black rounded-lg appearance-none cursor-pointer border border-neutral-700/80 focus:outline-none fader-volume-stitch"
+                title="Fader de Volume Master da Vitrola"
+              />
+            </div>
+
+            {/* Escala Pré-Entalhada Litúrgica (0 -> PP -> MP -> MF -> 100) */}
+            <div className="flex justify-between text-[8px] font-serif text-[#DDB96B]/80 px-0.5 mt-0.5 tracking-wider select-none">
+              <span
+                className="text-[7.5px] font-mono text-slate-500 cursor-pointer hover:text-white transition-colors"
+                onClick={() => onAlterarVolume?.(0)}
+                title="Mudo (0%)"
+              >
+                0
+              </span>
+              <span
+                className="font-bold text-[#FDE68A] cursor-pointer hover:text-white transition-colors flex items-center gap-0.5"
+                onClick={() => {
+                  feedbackTatil.clique();
+                  onAlterarVolume?.(28);
+                }}
+                title="Calibrar para Pianíssimo / Sórdida (28%)"
+              >
+                PP <span className="text-[7px] font-sans font-normal opacity-70">(Sórdida)</span>
+              </span>
+              <span
+                className="font-bold text-[#FDE68A] cursor-pointer hover:text-white transition-colors"
+                onClick={() => {
+                  feedbackTatil.clique();
+                  onAlterarVolume?.(60);
+                }}
+                title="Calibrar para Mezzo-piano (60%)"
+              >
+                MP
+              </span>
+              <span
+                className="font-bold text-[#FDE68A] cursor-pointer hover:text-white transition-colors flex items-center gap-0.5"
+                onClick={() => {
+                  feedbackTatil.clique();
+                  onAlterarVolume?.(85);
+                }}
+                title="Calibrar para Mezzo-forte / Plena (85%)"
+              >
+                MF <span className="text-[7px] font-sans font-normal opacity-70">(Plena)</span>
+              </span>
+              <span
+                className="text-[7.5px] font-mono text-slate-500 cursor-pointer hover:text-white transition-colors"
+                onClick={() => onAlterarVolume?.(100)}
+                title="Volume Máximo (100%)"
+              >
+                100
               </span>
             </div>
           </div>

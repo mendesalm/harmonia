@@ -4,6 +4,34 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [27 de Outubro de 2026 - Noite (Aprimoramento Stitch)] - Integração Fiel dos Elementos Visuais Stitch: Capas com Moldura Dupla Dourada, Vinil Hi-Fi e Braço de Latão Nobre
+**Módulo:** `Player UX Vitrola H-33` / `Design Stitch` / `Acervo & Capas` / `Vinil & Braço Mecânico`
+
+### 1. Capas dos Álbuns (Box 1) - Estética Cerimonial e Moldura Dupla Dourada
+- **Moldura Ornamental Nobre:** Inclusão de dupla moldura interna com filete dourado contínuo (`border-[#DDB96B]/40`) e filete dourado tracejado (`border-dashed border-[#DDB96B]/25`), acompanhado de cantos finamente arredondados (`rounded-lg`).
+- **Novo Emblema Maçônico Vetorial Stitch:** Medalhão circular com fundo escurecido e sombra interna (`shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)]`), contendo o Esquadro facetado em dupla tonalidade metálica (`#EED184` e `#AB7F28`) com o Compasso e a letra 'G' central em ouro brilhante (`#FDF3D7`) com efeito `drop-shadow`.
+- **Tipografia Solene:** Título do momento em Cinzel dourado e subtítulo das faixas em *Cormorant Garamond* itálico (`font-serif italic text-[#DDB96B] tracking-widest`).
+- **Gradientes Soberanos Stitch:** Bordô nobre para o Rito Brasileiro (`linear-gradient(135deg, #460811, #2d060c, #120306)`) e Obsidian/Midnight para os demais ritos.
+
+### 2. Disco de Vinil - Ranhuras Acústicas Hi-Fi Realistas (`.vinyl-grooves`)
+- **Textura Hi-Fi:** Aplicação de textura com múltiplos anéis de ranhura concêntrica em gradiente radial e brilho cônico multiangular de 45° a 360°, conferindo acabamento de vinil audiófilo master.
+- **Anéis Metálicos de Borda:** Duplo aro sutil de chanfro e profundidade (`border-neutral-700/60` e `border-neutral-800/80`).
+- **Selo Central Nobre:** Fundo em gradiente suave com tipografia `H • 33`, nome do momento e rito, mais furo do spindle central usinado em latão e núcleo escuro.
+- **Rotação Fluida:** Animação suave `spin-slow` (14s por volta) pausando no estado inativo.
+
+### 3. Braço Fonocaptor Mecânico Stitch (Tonearm System)
+- **Gimbal Base de Latão:** Pivô circular em gradiente radial metálico (`brass-knob`), parafuso central chanfrado e contrapeso anti-skating lateral usinado.
+- **Tubo em S Curvado com Gradiente Dourado:** Renderização em SVG com `url(#brassGradientStitch)` (`#FFF0B3` via `#D4AF37` a `#805A17`) e sombra de projeção 3D profunda.
+- **Cápsula e Agulha Stylus:** Cabeçote de precisão escuro chanfrado com filete em ouro e ponto luminoso indicador de leitura em âmbar (`#ffb938`).
+- **Articulação Dinâmica:** Rotação suave baseada no centro do gimbal (`transform-origin: 20px 0px`), avançando sobre as ranhuras do disco conforme a trilha é executada.
+
+### 4. Chassis da Vitrola e Fader Stitch
+- **Moldura Chanfrada no Deck:** Borda interna sutil em ouro nobre (`border-[#DDB96B]/20`) no container da vitrola.
+- **Fader com Thumb de Lingote de Ouro:** Estilização `.fader-volume-stitch` com marcador de metal chanfrado e marcações de escala litúrgica `0`, `PP (Sórdida)`, `MP`, `MF (Plena)`, `100`.
+- **Pílula de Controle:** Botão central Play/Pause com aro de latão chanfrado de 3 níveis (`#fcedaf` / `#caa037` / `#735012`), inner bezel escuro e halo ambiental de brilho dourado.
+
+---
+
 ## [27 de Outubro de 2026 - Noite] - Redesign da Vitrola H-33: 1 Momento = 1 Álbum LP (65% do Box), Prato Vazio sem Disco e Supressão de Controles Redundantes
 **Módulo:** `Player Litúrgico H-33` / `Carrossel 3D de Álbuns` / `Controles Táteis` / `Qualidade & Codificação`
 
