@@ -4,6 +4,40 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [27 de Outubro de 2026] - Classificação Litúrgica por Estilo, Subclassificação de Surdina (Geral/Ambiente), Curadoria Multi-Momentos SuperAdmin e Novo Lobby do Player
+**Módulo:** `Classificação Musical` / `Curadoria SuperAdmin` / `Player UX & Carrossel` / `Lobby Litúrgico`
+
+### 1. Sistema de Estilos e Subclassificação Funcional
+- **Taxonomia Litúrgica e Golden Enums (`backend/nucleo/constantes.py`):**
+  - Estilos: `UNIVERSAL` (padrão retrocompatível inclusivo), `CLASSICA`, `VIOLAO`, `SOUNDTRACKS`, `POPULAR`.
+  - Subclassificações: `GERAL` (peças plenas) e `AMBIENTE` (peças suaves para momentos de surdina sem sobressaltos).
+- **Modelagem de Dados & Self-Healing Migration:**
+  - Colunas `estilo` e `subclassificacao` indexadas em `acervo_musicas`, com autocorreção no startup (`sincronizacao_tenant.py`).
+- **Regra de Inclusão Matemática no Player:**
+  - O filtro de estilo compõe `{Estilo Selecionado} ∪ {Universal}`, assegurando que momentos sem faixas dedicadas nunca fiquem mudos.
+  - Momentos com `em_surdina = True` priorizam automaticamente faixas com subclassificação `AMBIENTE` (ou `surdina = True`), com fallback para `GERAL`.
+
+### 2. Interface de Curadoria do SuperAdmin (`PaginaCuradoriaMusicasAdmin.tsx`)
+- Tabela de gestão de alta densidade visual com reprodução de pré-escuta integrada (`AudioPlayer`).
+- **Designação Multi-Momentos:** Tags dinâmicas conectadas a `MusicaEventoSugerido` e `MomentoCanonico`, permitindo designar uma mesma faixa para múltiplos momentos (ex.: Tronco de Beneficência, Aclamação).
+- **Ações em Lote:** Seleção múltipla com aplicação em massa de estilo, subclassificação e adição de momentos.
+- Proteção RBAC estrita via `exigir_super_admin` e rotas dedicadas em `/api/v1/admin/musicas/*`.
+
+### 3. Novo Lobby Litúrgico e Eliminação do Dropdown no Player (`PaginaPrepararSessao.tsx`)
+- **Lobby Ritualístico:** Página receptiva em 2 passos antes de entrar no templo:
+  1. Escolha do Tipo de Sessão da Loja.
+  2. Escolha do Estilo Musical (cards táteis com iconografia, temas e clima da sessão).
+  3. Resumo da esteira e botão hero *Iniciar Harmonia no Templo*.
+- **Eliminação do Dropdown Legado:** Removido o `<select>` de troca de sessão do topo do Player, substituído por chip informativo fixo (`🏛️ Sessão Ordinária • Estilo Violão`) e botão seguro "Trocar Sessão".
+- **Redirecionamento Automático:** Acessos diretos a `/player` sem sessão definida redirecionam suavemente para o Lobby.
+
+### 4. Correções de Sensibilidade e Despoluição Visual no Player
+- **Travamento do Carrossel:** Limitado `useGestoPalco.ts` para transição estrita de 1 momento por swipe horizontal (`MAX_PASSOS_X = 1`), eliminando o pulo indevido de momentos (1 para 3).
+- **Eliminação de Informações Duplicadas:** Removida a informação repetida de volume do card da música (o volume mestre é controlado na barra inferior).
+- **Ícone Dinâmico Amarelo de Surdina:** A tag de texto `SURDINA` sobreposta foi substituída por um botão circular sutil com ícone `Volume1` pulsante em âmbar/dourado, clicável para abrir as configurações e calibragem de surdina.
+
+---
+
 ## [26 de Outubro de 2026] - Redesign Litúrgico Nobre, Normalizador Web Audio API, Surdina por Momento, Composição via Acervo e Navegação Tátil Restaurada
 **Módulo:** `Player UX` / `Áudio DSP` / `Acervo & Momentos` / `Estabilidade VPS`
 

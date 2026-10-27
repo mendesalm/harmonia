@@ -11,6 +11,7 @@ import {
   Home,
   Menu,
   X,
+  Music,
 } from 'lucide-react';
 import { useAuth } from '../contextos/ContextoAutenticacao';
 import { usePwaInstall } from '../hooks/usePwaInstall';
@@ -42,7 +43,7 @@ export const Navbar: React.FC = () => {
 
   const linksMestre = [
     { to: '/', label: 'Início', icon: Home },
-    { to: '/player', label: 'Player', icon: PlayCircle },
+    { to: '/preparar-sessao', label: 'Player', icon: PlayCircle },
     { to: '/sessoes', label: 'Sessões', icon: ListOrdered },
     { to: '/eventos', label: 'Momentos', icon: LayoutTemplate },
     { to: '/musicas', label: 'Acervo', icon: Library },
@@ -54,6 +55,7 @@ export const Navbar: React.FC = () => {
 
   const linksAdmin = [
     { to: '/admin', label: 'Painel', icon: Shield },
+    { to: '/admin/musicas', label: 'Curadoria', icon: Music },
     { to: '/admin/lojas', label: 'Lojas', icon: LayoutTemplate },
     { to: '/admin/templates', label: 'Ritos', icon: Library },
     { to: '/admin/eventos', label: 'Eventos', icon: ListOrdered },

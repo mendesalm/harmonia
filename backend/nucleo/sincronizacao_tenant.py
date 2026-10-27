@@ -316,13 +316,17 @@ async def sincronizar_organizacoes_base(db: AsyncSession) -> Optional[Organizaca
     Executa a autocorreção completa de Ritos, Eventos, Templates e da Loja 2181.
     """
     try:
-        # Garante a existência da coluna em_surdina em sessoes_loja_eventos (self-healing migration)
+        # Garante a existência das colunas necessárias (self-healing migration)
         try:
             from sqlalchemy import text
             await db.execute(text("ALTER TABLE sessoes_loja_eventos ADD COLUMN IF NOT EXISTS em_surdina BOOLEAN DEFAULT NULL;"))
+            await db.execute(text("ALTER TABLE acervo_musicas ADD COLUMN IF NOT EXISTS estilo VARCHAR(50) NOT NULL DEFAULT 'UNIVERSAL';"))
+            await db.execute(text("ALTER TABLE acervo_musicas ADD COLUMN IF NOT EXISTS subclassificacao VARCHAR(20) NOT NULL DEFAULT 'GERAL';"))
+            await db.execute(text("CREATE INDEX IF NOT EXISTS ix_acervo_musicas_estilo ON acervo_musicas(estilo);"))
+            await db.execute(text("CREATE INDEX IF NOT EXISTS ix_acervo_musicas_subclassificacao ON acervo_musicas(subclassificacao);"))
             await db.commit()
         except Exception as e_col:
-            logger.debug(f"Verificação de coluna em_surdina: {e_col}")
+            logger.debug(f"Verificação de colunas e índices: {e_col}")
 
         # 1. Localiza ou cria o Rito Brasileiro
         res_rito = await db.execute(

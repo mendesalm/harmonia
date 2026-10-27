@@ -1,7 +1,7 @@
 # Harmonia - Guia de Handoff e Inicialização
 
-**Última Atualização:** 26 de Outubro de 2026  
-**Status da Sessão:** 🟢 **Produção Ativa e Sincronizada (`https://harmonia.e-sigma.app`)** — Redesign do Player Litúrgico com Paleta Nobre e-Sigma (Preto, Azul Noturno e Dourado), Persistência de Surdina por Momento Ritualístico, Normalizador Web Audio API contra Oscilações, Carrossel Horizontal com Visibilidade Periférica, Menu Sanduíche no Topo e Correção de Inicialização na VPS concluídos e publicados.
+**Última Atualização:** 27 de Outubro de 2026  
+**Status da Sessão:** 🟢 **Concluído e Validado (32 testes Pytest passando)** — Implementação do Sistema de Classificação Litúrgica de Músicas por Estilo (Universal, Clássica, Violão, Soundtracks, Popular) e Subclassificação Funcional (Geral vs Ambiente para Surdina), Painel SuperAdmin de Curadoria com atribuição de faixas a múltiplos momentos litúrgicos canônicos e ações em lote, Novo Lobby Ritualístico de Pré-Sessão para os Mestres de Harmonia (`PaginaPrepararSessao.tsx`), Eliminação do dropdown acidental de sessão dentro do player, Correção da sensibilidade do carrossel horizontal travado em 1 momento por gesto, e Substituição de tags de volume duplicadas no card pelo ícone amarelo dinâmico de surdina.
 
 ---
 
@@ -100,11 +100,43 @@ Harmonia/
 
 ---
 
+## 🎯 Resumo do que foi Concluído nesta Sessão (27/10/2026)
+
+1. **Correções Imediatas de Usabilidade e Estabilidade no Player**:
+   - **Travamento do Carrossel Horizontal:** No hook `useGestoPalco.ts`, calibrada a transição para estritamente 1 momento ritualístico por gesto (`MAX_PASSOS_X = 1`, `INERCIA_X_MS = 60`), eliminando o pulo indevido de momentos (1 para o 3) no celular ou mouse.
+   - **Despoluição Visual do Card:** Removida a informação redundante de volume de execução do card da música (o controle de volume já existe na barra inferior).
+   - **Ícone Dinâmico Amarelo de Surdina:** A tag de texto `SURDINA` que se sobrepunha ao braço da vitrola e metadados foi substituída por um botão circular sutil com ícone `Volume1` âmbar/dourado pulsante, clicável para abrir diretamente o modal de calibragem de surdina e volume.
+
+2. **Mecanismo de Classificação de Músicas por Estilo e Subclassificação**:
+   - **Modelagem de Dados & Self-Healing Migration:** Adicionadas as colunas `estilo` (padrão `UNIVERSAL`) e `subclassificacao` (padrão `GERAL`) na tabela `acervo_musicas`, com índices dedicados e autocorreção no lifespan.
+   - **Constantes Padronizadas:** Criado `backend/nucleo/constantes.py` com `EstiloMusica` (`UNIVERSAL`, `CLASSICA`, `VIOLAO`, `SOUNDTRACKS`, `POPULAR`) e `SubclassificacaoMusica` (`GERAL`, `AMBIENTE`).
+   - **Regra de Inclusão no Player:** O acervo da sessão é filtrado por `{Estilo Selecionado} ∪ {Universal}`, assegurando que momentos sem faixas exclusivas continuem sempre respaldados por faixas Universais.
+   - **Priorização de Surdina:** Em momentos ritualísticos com `em_surdina = True`, o algoritmo de sorteio prioriza automaticamente faixas com subclassificação `AMBIENTE` (ou `surdina = True`), com fallback inteligente para `GERAL`.
+
+3. **Painel SuperAdmin de Curadoria Global de Músicas (`PaginaCuradoriaMusicasAdmin.tsx`)**:
+   - Tabela de alta fidelidade com preview de áudio integrado (`AudioPlayer`), edição inline de Estilo e Subclassificação.
+   - **Designação Multi-Momentos:** Seletor de momentos ritualísticos canônicos com multi-tags removíveis (`MusicaEventoSugerido`), permitindo associar uma música a múltiplos momentos (ex: *Tronco de Beneficência*, *Aclamação*).
+   - **Ações em Lote:** Seleção múltipla por checkboxes com aplicação de estilo, subclassificação e adição de momentos canônicos para dezenas de faixas de uma só vez.
+   - **Segurança RBAC:** Endpoints protegidos com `exigir_super_admin`.
+
+4. **Novo Fluxo do Mestre de Harmonia (Lobby Pré-Sessão `PaginaPrepararSessao.tsx`)**:
+   - **Lobby Ritualístico:** Ao acessar o Player pelo menu ou pelo Dashboard, o Mestre de Harmonia é recepcionado por uma página dedicada em dois passos:
+     1. Escolhe o Tipo de Sessão da Oficina.
+     2. Escolhe o Estilo Musical desejado (cards visuais com ícones, temas e clima da sessão).
+     3. Resumo da esteira e botão de ação hero *Iniciar Harmonia no Templo*.
+   - **Eliminação do Dropdown no Player:** O `<select>` de troca de sessão foi completamente removido do topo do Player, eliminando riscos de toques acidentais durante a sessão no Templo.
+   - Substituído por um chip informativo (`🏛️ Sessão Ordinária • Estilo Violão`) com botão de navegação segura para reconfiguração.
+
+5. **Testes Automatizados**:
+   - Criado `backend/testes/test_classificacao_estilo.py` cobrindo normalização, priorização de faixas Ambiente em surdina e fallback gracioso. Suíte total com **32 testes Pytest passando 100%**.
+
+---
+
 ## 🧪 Como Executar e Testar Localmente
 
 ```powershell
-# Rodar suíte de testes automatizados (29 testes passando)
-.\venv\Scripts\pytest.exe backend/testes -q
+# Rodar suíte de testes automatizados (32 testes passando)
+& "C:\Users\engan\Desktop\Harmonia\venv\Scripts\pytest.exe" "C:\Users\engan\Desktop\Harmonia\backend\testes" -q
 
 # Build de validação do Frontend + PWA
 cd frontend

@@ -33,6 +33,10 @@ class Musica(Base):
     
     arquivo_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     
+    # Classificação Litúrgica (Estilo e Subclassificação Funcional para Surdina)
+    estilo: Mapped[str] = mapped_column(String(50), default="UNIVERSAL", nullable=False, index=True)
+    subclassificacao: Mapped[str] = mapped_column(String(20), default="GERAL", nullable=False, index=True) # GERAL, AMBIENTE
+
     # Flags de moderação e uso
     sinalizada_erro: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     status_uso: Mapped[str] = mapped_column(String(20), default="ATIVA", nullable=False) # ATIVA, ORFA

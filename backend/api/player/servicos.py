@@ -36,6 +36,7 @@ def _converter_musica_para_info(musica: Musica, preferida: bool = False) -> Musi
     """
     meta = musica.metadados or {}
     midia = classificar_midia(musica.arquivo_url, meta)
+    sub = getattr(musica, "subclassificacao", "GERAL") or "GERAL"
     return MusicaSorteadaInfo(
         id=musica.id,
         titulo=musica.titulo,
@@ -45,7 +46,9 @@ def _converter_musica_para_info(musica: Musica, preferida: bool = False) -> Musi
         link_externo=midia["link_externo"],
         duracao_segundos=meta.get("duracao_segundos"),
         preferida=preferida,
-        surdina=bool(meta.get("surdina", False)),
+        surdina=bool(meta.get("surdina", False)) or (sub == "AMBIENTE"),
+        estilo=getattr(musica, "estilo", "UNIVERSAL") or "UNIVERSAL",
+        subclassificacao=sub,
     )
 
 
@@ -66,20 +69,27 @@ def classificar_momento_surdina(
 def sortear_entre_candidatas(
     candidatas: List[MusicaSorteadaInfo],
     excluir_id: Optional[uuid.UUID] = None,
+    momento_em_surdina: bool = False,
 ) -> Optional[MusicaSorteadaInfo]:
     """
     Regra de sorteio de um momento ritualístico (função pura, testável sem banco):
 
-      1. Se existir UMA OU MAIS músicas preferidas, sorteia aleatoriamente apenas entre elas.
+      1. Se existir UMA OU MAIS músicas preferidas, sorteia apenas entre elas.
       2. Se não houver preferidas, sorteia entre todas as candidatas.
-      3. `excluir_id` evita repetir a música atual no re-sorteio, desde que haja outra opção
-         dentro do mesmo grupo (preferidas ou todas).
+      3. Se o momento estiver em surdina, prioriza faixas com subclassificação 'AMBIENTE' ou 'surdina=True'.
+      4. `excluir_id` evita repetir a música atual no re-sorteio, desde que haja outra opção.
     """
     if not candidatas:
         return None
 
     preferidas = [m for m in candidatas if m.preferida]
     grupo = preferidas if preferidas else candidatas
+
+    # Priorização estrita de faixas AMBIENTE em momentos de surdina
+    if momento_em_surdina:
+        grupo_ambiente = [m for m in grupo if m.subclassificacao == "AMBIENTE" or m.surdina]
+        if grupo_ambiente:
+            grupo = grupo_ambiente
 
     if excluir_id is not None and len(grupo) > 1:
         sem_atual = [m for m in grupo if m.id != excluir_id]
@@ -98,15 +108,26 @@ class ServicoPlayer:
         evento: Evento,
         loja_id: Optional[uuid.UUID],
         sessao_loja_evento_id: Optional[uuid.UUID] = None,
+        estilo: Optional[str] = None,
     ) -> List[MusicaSorteadaInfo]:
         """
         Busca as músicas candidatas para um momento ritualístico:
         1. Músicas vinculadas diretamente na playlist da sessão da Loja (`MusicaEvento`) -> marcadas como `preferida=True`.
         2. Músicas sugeridas no acervo global/da Loja (`MusicaEventoSugerido`) para o `evento.id` ou para qualquer
            evento equivalente com o mesmo `canonico_id`.
+        3. Aplica o filtro inclusivo de estilo: {Estilo Escolhido} + {UNIVERSAL}.
         """
         ids_preferidas: set[uuid.UUID] = set()
         mapa_musicas: dict[uuid.UUID, Musica] = {}
+
+        filtro_estilo = True
+        if estilo and estilo.strip().upper() != "UNIVERSAL":
+            estilo_limpo = estilo.strip().upper()
+            filtro_estilo = or_(
+                Musica.estilo == estilo_limpo,
+                Musica.estilo == "UNIVERSAL",
+                Musica.estilo.is_(None),
+            )
 
         if sessao_loja_evento_id:
             stmt_playlist = (
@@ -115,6 +136,7 @@ class ServicoPlayer:
                 .where(
                     MusicaEvento.sessao_loja_evento_id == sessao_loja_evento_id,
                     Musica.ativo == True,
+                    filtro_estilo,
                 )
             )
             res_pl = await db.execute(stmt_playlist)
@@ -142,6 +164,7 @@ class ServicoPlayer:
                 MusicaEventoSugerido.evento_id.in_(eventos_equivalentes_ids),
                 Musica.ativo == True,
                 filtro_escopo,
+                filtro_estilo,
             )
         )
         res_sug = await db.execute(stmt_sugeridas)
@@ -154,10 +177,15 @@ class ServicoPlayer:
         ]
 
     @staticmethod
-    async def carregar_sessao_para_player(db: AsyncSession, sessao_id: uuid.UUID) -> SessaoPlayerExecucao:
+    async def carregar_sessao_para_player(
+        db: AsyncSession,
+        sessao_id: uuid.UUID,
+        estilo: Optional[str] = None,
+    ) -> SessaoPlayerExecucao:
         """
         Carrega a sessão da Loja, localiza todos os eventos não suprimidos em ordem sequencial e,
-        para cada momento, sorteia aleatoriamente uma música elegível do acervo (priorizando a playlist da Loja).
+        para cada momento, sorteia uma música elegível do acervo com base no estilo litúrgico
+        e na classificação de surdina (priorizando faixas Ambiente).
         """
         await sincronizar_organizacoes_base(db)
         stmt = (
@@ -179,6 +207,8 @@ class ServicoPlayer:
             key=lambda x: x.ordem_execucao,
         )
 
+        estilo_normalizado = estilo.strip().upper() if estilo and estilo.strip() else "UNIVERSAL"
+
         for item in eventos_ordenados:
             evento = item.evento
             if not evento:
@@ -189,12 +219,26 @@ class ServicoPlayer:
                 evento=evento,
                 loja_id=sessao.loja_id,
                 sessao_loja_evento_id=item.id,
+                estilo=estilo_normalizado,
             )
 
-            # Várias preferidas são permitidas: sorteia entre elas; sem preferidas, sorteia entre todas
-            musica_escolhida = sortear_entre_candidatas(lista_candidatas_info)
-
             observacao_final = item.observacao_mestre_harmonia or evento.observacao_padrao_mestre_harmonia
+            em_surdina_momento = (
+                item.em_surdina
+                if item.em_surdina is not None
+                else classificar_momento_surdina(
+                    evento.nome,
+                    evento.descricao,
+                    observacao_final,
+                )
+            )
+
+            # Sorteia considerando preferidas, surdina (priorizando faixas AMBIENTE) e estilo
+            musica_escolhida = sortear_entre_candidatas(
+                lista_candidatas_info,
+                momento_em_surdina=em_surdina_momento,
+            )
+
             esteira.append(
                 MomentoRitualisticoExecucao(
                     posicao=item.ordem_execucao,
@@ -203,15 +247,7 @@ class ServicoPlayer:
                     evento_descricao=evento.descricao,
                     obrigatorio=not item.suprimido,
                     observacao_ritual=observacao_final,
-                    em_surdina=(
-                        item.em_surdina
-                        if item.em_surdina is not None
-                        else classificar_momento_surdina(
-                            evento.nome,
-                            evento.descricao,
-                            observacao_final,
-                        )
-                    ),
+                    em_surdina=em_surdina_momento,
                     musica_sorteada=musica_escolhida,
                     total_musicas_disponiveis=len(lista_candidatas_info),
                     candidatas=lista_candidatas_info,
@@ -230,6 +266,7 @@ class ServicoPlayer:
             rito=nome_rito,
             grau=1,
             configuracoes_audio={},
+            estilo_aplicado=estilo_normalizado,
             total_momentos=len(esteira),
             esteira_ritualistica=esteira,
         )
@@ -241,6 +278,7 @@ class ServicoPlayer:
         organizacao_id: uuid.UUID,
         musica_id_atual: Optional[uuid.UUID] = None,
         sessao_id: Optional[uuid.UUID] = None,
+        estilo: Optional[str] = None,
     ) -> Optional[MusicaSorteadaInfo]:
         """
         Re-sorteia uma música para um momento específico (botão 'Re-sortear').
@@ -254,22 +292,35 @@ class ServicoPlayer:
             return None
 
         sessao_loja_evento_id = None
+        em_surdina_momento = False
         if sessao_id:
             res_item = await db.execute(
-                select(SessaoLojaEvento.id).where(
+                select(SessaoLojaEvento).where(
                     SessaoLojaEvento.sessao_loja_id == sessao_id,
                     SessaoLojaEvento.evento_id == evento_id,
                 )
             )
-            sessao_loja_evento_id = res_item.scalar_one_or_none()
+            item_db = res_item.scalar_one_or_none()
+            if item_db:
+                sessao_loja_evento_id = item_db.id
+                em_surdina_momento = (
+                    item_db.em_surdina
+                    if item_db.em_surdina is not None
+                    else classificar_momento_surdina(evento.nome, evento.descricao)
+                )
 
         lista_info = await ServicoPlayer._buscar_candidatas_momento(
             db=db,
             evento=evento,
             loja_id=organizacao_id,
             sessao_loja_evento_id=sessao_loja_evento_id,
+            estilo=estilo,
         )
-        return sortear_entre_candidatas(lista_info, excluir_id=musica_id_atual)
+        return sortear_entre_candidatas(
+            lista_info,
+            excluir_id=musica_id_atual,
+            momento_em_surdina=em_surdina_momento,
+        )
 
     @staticmethod
     async def alternar_preferencia(

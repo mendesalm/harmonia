@@ -18,6 +18,8 @@ class MusicaSorteadaInfo(BaseModel):
     duracao_segundos: Optional[int]
     preferida: bool = False
     surdina: bool = Field(False, description="Indica se a música é configurada como Surdina permanente.")
+    estilo: str = Field("UNIVERSAL", description="Estilo musical litúrgico da peça")
+    subclassificacao: str = Field("GERAL", description="Subclassificação funcional (GERAL ou AMBIENTE)")
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -54,5 +56,6 @@ class SessaoPlayerExecucao(BaseModel):
     rito: str
     grau: int
     configuracoes_audio: Dict[str, Any] = Field(default_factory=dict)
+    estilo_aplicado: Optional[str] = Field("UNIVERSAL", description="Estilo musical filtrado para a sessão")
     total_momentos: int
     esteira_ritualistica: List[MomentoRitualisticoExecucao]

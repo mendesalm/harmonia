@@ -45,6 +45,8 @@ interface MasonicControlsProps {
   volumeGeral: number;
   onAjustarVolumeRelativo: (delta: number) => void;
   onAlterarVolumeGeral: (novoVolume: number) => void;
+  modalSurdinaAbertoControlado?: boolean;
+  onAlternarModalSurdinaControlado?: (aberto: boolean) => void;
 }
 
 /**
@@ -74,11 +76,23 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
   volumeGeral,
   onAjustarVolumeRelativo,
   onAlterarVolumeGeral,
+  modalSurdinaAbertoControlado,
+  onAlternarModalSurdinaControlado,
 }) => {
   const [modalOrientacaoAberto, setModalOrientacaoAberto] = useState(false);
   const [modalProximoAberto, setModalProximoAberto] = useState(false);
-  const [modalSurdinaAberto, setModalSurdinaAberto] = useState(false);
+  const [modalSurdinaAbertoInterno, setModalSurdinaAbertoInterno] = useState(false);
   const [sliderVolumeAberto, setSliderVolumeAberto] = useState(false);
+
+  const modalSurdinaAberto =
+    modalSurdinaAbertoControlado !== undefined ? modalSurdinaAbertoControlado : modalSurdinaAbertoInterno;
+  const setModalSurdinaAberto = (aberto: boolean) => {
+    if (onAlternarModalSurdinaControlado) {
+      onAlternarModalSurdinaControlado(aberto);
+    } else {
+      setModalSurdinaAbertoInterno(aberto);
+    }
+  };
 
   const formatarTempo = (secs: number) => {
     if (!secs || isNaN(secs)) return '00:00';

@@ -23,13 +23,16 @@ interface OpcoesGestoPalco {
 }
 
 /** Movimento mínimo (px) para decidir o eixo do gesto; antes disso o toque ainda é um "clique". */
-const LIMIAR_EIXO_PX = 8;
-/** Máximo de itens que um único arremesso (fling) pode atravessar. */
-const MAX_ITENS_POR_GESTO = 2;
+const LIMIAR_EIXO_PX = 12;
+/** Máximo de momentos ritualísticos que um único gesto horizontal pode atravessar: SEMPRE 1 (evita pular do 1 para o 3). */
+const MAX_PASSOS_X = 1;
+/** Máximo de faixas que um único gesto vertical pode atravessar. */
+const MAX_PASSOS_Y = 1;
 /** Intervalo mínimo entre passos disparados pela roda do mouse. */
-const INTERVALO_RODA_MS = 170;
+const INTERVALO_RODA_MS = 220;
 /** Quanto da velocidade final (px/ms) projeta o gesto além do ponto solto. */
-const INERCIA_MS = 170;
+const INERCIA_X_MS = 60;
+const INERCIA_Y_MS = 90;
 /** Fração do deslocamento mantida ao arrastar além da borda (resistência elástica). */
 const RESISTENCIA_BORDA = 0.25;
 
@@ -146,10 +149,12 @@ export function useGestoPalco({
 
     const passo = eixo === 'x' ? passoX : passoY;
     const velocidade = eixo === 'x' ? amostraRef.current.vx : amostraRef.current.vy;
-    // Projeta a inércia: velocidade negativa (para esquerda/cima) avança itens
-    const projetado = offsetAtualRef.current - (velocidade * INERCIA_MS) / passo;
+    const inercia = eixo === 'x' ? INERCIA_X_MS : INERCIA_Y_MS;
+    const maxPassos = eixo === 'x' ? MAX_PASSOS_X : MAX_PASSOS_Y;
+    // Projeta a inércia com amortecimento controlado
+    const projetado = offsetAtualRef.current - (velocidade * inercia) / passo;
     let passos = Math.round(projetado);
-    passos = Math.max(-MAX_ITENS_POR_GESTO, Math.min(MAX_ITENS_POR_GESTO, passos));
+    passos = Math.max(-maxPassos, Math.min(maxPassos, passos));
 
     setArrastando(false);
     setOffsetX(0);

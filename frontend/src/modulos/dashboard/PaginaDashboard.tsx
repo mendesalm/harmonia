@@ -24,7 +24,7 @@ export const PaginaDashboard: React.FC = () => {
     : 'Assinatura Ativa';
 
   const iniciarSequenciaPlayer = () => {
-    setModalSessaoAberto(true);
+    navigate('/preparar-sessao');
   };
 
   return (

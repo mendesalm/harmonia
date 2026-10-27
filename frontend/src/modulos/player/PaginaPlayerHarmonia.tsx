@@ -39,6 +39,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const { lojaAtiva } = useTenant();
   const [searchParams, setSearchParams] = useSearchParams();
   const sessaoParamId = searchParams.get('sessao');
+  const estiloParam = (searchParams.get('estilo') || 'UNIVERSAL').toUpperCase();
 
   const [sessoes, setSessoes] = useState<SessaoLojaResumo[]>([]);
   const [sessaoSelecionadaId, setSessaoSelecionadaId] = useState<string>(sessaoParamId || '');
@@ -48,6 +49,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const [indiceAtual, setIndiceAtual] = useState(0);
   const [modalUploadAberto, setModalUploadAberto] = useState(false);
   const [modalInterludioAberto, setModalInterludioAberto] = useState(false);
+  const [modalSurdinaCalibragemAberto, setModalSurdinaCalibragemAberto] = useState(false);
   const [avisoErro, setAvisoErro] = useState<string | null>(null);
 
   // Estado do Modo Interlúdio / Trilha de Fundo
@@ -150,7 +152,11 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   }, [lojaAtiva?.id]);
 
   useEffect(() => {
-    if (sessaoParamId && sessaoParamId !== sessaoSelecionadaId) {
+    if (!sessaoParamId) {
+      navigate('/preparar-sessao', { replace: true });
+      return;
+    }
+    if (sessaoParamId !== sessaoSelecionadaId) {
       setSessaoSelecionadaId(sessaoParamId);
     }
   }, [sessaoParamId]);
@@ -158,12 +164,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   useEffect(() => {
     if (sessaoSelecionadaId) {
       carregarEsteira(sessaoSelecionadaId);
-    } else if (sessoes.length > 0) {
-      const primeiraId = sessoes[0].id;
-      setSessaoSelecionadaId(primeiraId);
-      setSearchParams({ sessao: primeiraId }, { replace: true });
     }
-  }, [sessaoSelecionadaId, sessoes]);
+  }, [sessaoSelecionadaId, estiloParam]);
 
   const carregarSessoes = async (lojaId: string) => {
     try {
@@ -181,7 +183,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const carregarEsteira = async (idSessao: string, preservar = false) => {
     try {
       if (!preservar) setCarregandoSessao(true);
-      const res = await clienteHttp.get<SessaoPlayerExecucao>(`/player/sessao/${idSessao}`);
+      const params = estiloParam ? { estilo: estiloParam } : undefined;
+      const res = await clienteHttp.get<SessaoPlayerExecucao>(`/player/sessao/${idSessao}`, { params });
       const nova = res.data;
 
       setDadosSessao((anterior) => {
@@ -733,28 +736,31 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         onEnded={aoTerminarMusica}
       />
 
-      {/* Barra superior compacta de seleção de Sessão */}
+      {/* Barra superior de status ritualístico da Sessão e Estilo (Elimina dropdown indevido no templo) */}
       <div className="relative z-20 flex items-center justify-between gap-2 px-3 sm:px-6 py-2 bg-[#070e1c]/90 border-b border-macaonico-dourado/20 shrink-0 pr-24 sm:pr-28">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <ListOrdered className="w-4 h-4 text-macaonico-dourado shrink-0" />
-          <select
-            value={sessaoSelecionadaId}
-            onChange={(e) => {
-              const novoId = e.target.value;
-              setSessaoSelecionadaId(novoId);
-              setSearchParams({ sessao: novoId });
-            }}
-            aria-label="Selecionar Sessão Ritualística"
-            className="bg-sigma-surface/90 text-slate-100 text-xs sm:text-sm font-medium border border-macaonico-dourado/30 rounded-lg px-2.5 py-1.5 w-full max-w-sm focus:outline-none focus:border-macaonico-dourado truncate"
-          >
-            {sessoes.length === 0 && <option value="">Nenhum roteiro cadastrado</option>}
-            {sessoes.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nome_personalizado}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-cinzel font-bold text-xs sm:text-sm text-slate-100 truncate">
+              {dadosSessao?.sessao_nome || 'Sessão Ritualística'}
+            </span>
+            <span className="shrink-0 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#0e1a2f] border border-macaonico-dourado/40 text-macaonico-dourado shadow-sm">
+              Estilo: {estiloParam}
+            </span>
+          </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            feedbackTatil.clique();
+            navigate('/preparar-sessao');
+          }}
+          className="shrink-0 text-[11px] font-medium text-slate-300 hover:text-macaonico-dourado hover:bg-white/10 px-2.5 py-1 rounded-lg border border-slate-700/60 transition-colors"
+          title="Trocar de Sessão ou Estilo"
+        >
+          Trocar Sessão
+        </button>
       </div>
 
       {/* Banner ativo do Modo Interlúdio / Fundo com botão de retorno */}
@@ -812,6 +818,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
                 : volumeGeral
             }
             surdinaAtiva={surdinaAtiva}
+            onAbrirConfiguracoesSurdina={() => setModalSurdinaCalibragemAberto(true)}
             onMudarMomento={setIndiceAtual}
             onTrocarFaixa={trocarFaixaDoMomento}
             onAlternarPlayPause={alternarPlayPause}
@@ -863,6 +870,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           volumeGeral={volumeGeral}
           onAjustarVolumeRelativo={ajustarVolumeRelativo}
           onAlterarVolumeGeral={alterarVolumeGeral}
+          modalSurdinaAbertoControlado={modalSurdinaCalibragemAberto}
+          onAlternarModalSurdinaControlado={setModalSurdinaCalibragemAberto}
         />
       </div>
 

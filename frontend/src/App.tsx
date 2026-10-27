@@ -17,6 +17,8 @@ import { PaginaDashboardAdmin } from './modulos/admin/PaginaDashboardAdmin';
 import { PaginaLojasAdmin } from './modulos/admin/PaginaLojasAdmin';
 import { PaginaRitosAdmin } from './modulos/admin/PaginaRitosAdmin';
 import { PaginaEventosAdmin } from './modulos/admin/PaginaEventosAdmin';
+import { PaginaCuradoriaMusicasAdmin } from './modulos/admin/PaginaCuradoriaMusicasAdmin';
+import { PaginaPrepararSessao } from './modulos/player/PaginaPrepararSessao';
 import { useAuth } from './compartilhado/contextos/ContextoAutenticacao';
 
 const RotaRaiz = () => {
@@ -85,7 +87,7 @@ export const App: React.FC = () => {
                   element={
                     <RotaProtegida>
                       <div className="h-full overflow-y-auto pb-8">
-                        <PaginaMusicas />
+                        <PaginaCuradoriaMusicasAdmin />
                       </div>
                     </RotaProtegida>
                   }
@@ -97,6 +99,14 @@ export const App: React.FC = () => {
                   element={
                     <RotaProtegida>
                       <RotaRaiz />
+                    </RotaProtegida>
+                  }
+                />
+                <Route
+                  path="/preparar-sessao"
+                  element={
+                    <RotaProtegida>
+                      <PaginaPrepararSessao />
                     </RotaProtegida>
                   }
                 />

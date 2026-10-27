@@ -48,6 +48,8 @@ roteador_musicas = APIRouter(
 )
 async def listar_musicas(
     evento_id: Optional[uuid.UUID] = Query(None, description="Filtrar músicas sugeridas para um evento ritualístico"),
+    estilo: Optional[str] = Query(None, description="Filtrar por estilo litúrgico (inclusivo: Estilo + Universal)"),
+    subclassificacao: Optional[str] = Query(None, description="Filtrar por subclassificação (GERAL ou AMBIENTE)"),
     busca: Optional[str] = Query(None, description="Filtro textual para busca por título ou autor/artista"),
     db: AsyncSession = Depends(obter_banco_de_dados)
 ):
@@ -76,6 +78,13 @@ async def listar_musicas(
         termo = f"%{busca.strip()}%"
         stmt = stmt.where(or_(Musica.titulo.ilike(termo), Musica.autor_artista.ilike(termo)))
 
+    if estilo and estilo.strip().upper() != "UNIVERSAL":
+        estilo_limpo = estilo.strip().upper()
+        stmt = stmt.where(or_(Musica.estilo == estilo_limpo, Musica.estilo == "UNIVERSAL", Musica.estilo.is_(None)))
+
+    if subclassificacao and subclassificacao.strip():
+        stmt = stmt.where(Musica.subclassificacao == subclassificacao.strip().upper())
+
     stmt = stmt.order_by(Musica.titulo)
     res = await db.execute(stmt)
     musicas = res.scalars().all()
@@ -103,6 +112,8 @@ async def listar_musicas(
             "id": m.id,
             "titulo": m.titulo,
             "autor_artista": m.autor_artista,
+            "estilo": getattr(m, "estilo", "UNIVERSAL") or "UNIVERSAL",
+            "subclassificacao": getattr(m, "subclassificacao", "GERAL") or "GERAL",
             "upload_por_loja_id": m.upload_por_loja_id,
             "arquivo_url": m.arquivo_url,
             "caminho_arquivo": midia["caminho_arquivo"],

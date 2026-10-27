@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text, delete
+from sqlalchemy import select, text, delete, or_, func
 from sqlalchemy.orm import selectinload
-from typing import List
+from typing import List, Optional, Dict, Any
 import uuid
 from backend.nucleo.banco import obter_banco_de_dados
 from backend.modelos.canonico import TipoSessaoCanonico, MomentoCanonico
@@ -238,8 +238,23 @@ async def deletar_evento_global(momento_id: uuid.UUID, db: AsyncSession = Depend
 
 from sqlalchemy import func
 from backend.modelos.organizacao import Organizacao
-from backend.modelos.musica import Musica
+from backend.modelos.musica import Musica, MusicaEventoSugerido
+from backend.modelos.evento import Evento
 from backend.api.admin.schemas import EstatisticasDashboardSchema
+from backend.api.musicas.schemas import (
+    MusicaClassificacaoSuperAdmin,
+    MusicaClassificacaoLoteSchema,
+)
+from backend.nucleo.constantes import (
+    ESTILOS_DISPONIVEIS,
+    SUBCLASSIFICACOES_DISPONIVEIS,
+    normalizar_estilo,
+    normalizar_subclassificacao,
+)
+from backend.nucleo.dependencias import exigir_super_admin
+from backend.nucleo.auth_esigma import UsuarioEsigma
+from backend.api.musicas.midia import classificar_midia
+from loguru import logger
 
 @roteador_admin.get("/estatisticas", response_model=EstatisticasDashboardSchema, summary="Estatisticas do Dashboard")
 async def obter_estatisticas(db: AsyncSession = Depends(obter_banco_de_dados)):
@@ -261,5 +276,266 @@ async def obter_estatisticas(db: AsyncSession = Depends(obter_banco_de_dados)):
         "total_eventos": total_eventos,
         "total_musicas": total_musicas
     }
+
+
+@roteador_admin.get(
+    "/musicas/opcoes-classificacao",
+    summary="Opções de Estilos e Momentos para Curadoria",
+    description="Retorna a lista de estilos, subclassificações e momentos litúrgicos para a interface de curadoria.",
+)
+async def obter_opcoes_classificacao(
+    db: AsyncSession = Depends(obter_banco_de_dados),
+    usuario: UsuarioEsigma = Depends(exigir_super_admin),
+):
+    stmt_momentos = select(MomentoCanonico).order_by(MomentoCanonico.ordem_sugerida, MomentoCanonico.nome)
+    res_m = await db.execute(stmt_momentos)
+    momentos = [
+        {"id": str(m.id), "nome": m.nome, "ordem": m.ordem_sugerida}
+        for m in res_m.scalars().all()
+    ]
+
+    return {
+        "estilos": ESTILOS_DISPONIVEIS,
+        "subclassificacoes": SUBCLASSIFICACOES_DISPONIVEIS,
+        "momentos_canonicos": momentos,
+    }
+
+
+@roteador_admin.get(
+    "/musicas/catalogo",
+    summary="Catálogo Global de Curadoria Litúrgica de Músicas",
+    description="Lista o acervo musical completo com dados de estilo, subclassificação e momentos associados.",
+)
+async def listar_catalogo_curadoria(
+    busca: Optional[str] = Query(None, description="Busca por título ou artista"),
+    estilo: Optional[str] = Query(None, description="Filtrar por estilo"),
+    subclassificacao: Optional[str] = Query(None, description="Filtrar por subclassificação"),
+    momento_id: Optional[uuid.UUID] = Query(None, description="Filtrar por momento canônico ou evento"),
+    apenas_sem_classificacao: bool = Query(False, description="Exibir apenas faixas com estilo UNIVERSAL padrão"),
+    limite: int = Query(200, description="Limite de registros"),
+    pagina: int = Query(1, description="Página"),
+    db: AsyncSession = Depends(obter_banco_de_dados),
+    usuario: UsuarioEsigma = Depends(exigir_super_admin),
+):
+    stmt = (
+        select(Musica)
+        .options(
+            selectinload(Musica.eventos_sugeridos)
+            .selectinload(MusicaEventoSugerido.evento)
+            .selectinload(Evento.canonico)
+        )
+    )
+
+    if busca and busca.strip():
+        termo = f"%{busca.strip()}%"
+        stmt = stmt.where(or_(Musica.titulo.ilike(termo), Musica.autor_artista.ilike(termo)))
+
+    if estilo and estilo.strip():
+        stmt = stmt.where(Musica.estilo == estilo.strip().upper())
+    elif apenas_sem_classificacao:
+        stmt = stmt.where(Musica.estilo == "UNIVERSAL")
+
+    if subclassificacao and subclassificacao.strip():
+        stmt = stmt.where(Musica.subclassificacao == subclassificacao.strip().upper())
+
+    stmt = stmt.order_by(Musica.titulo)
+    offset = max(0, (pagina - 1) * limite)
+    stmt = stmt.offset(offset).limit(limite)
+
+    res = await db.execute(stmt)
+    musicas = res.scalars().all()
+
+    # Contagem total para paginação
+    count_stmt = select(func.count(Musica.id))
+    if busca and busca.strip():
+        termo = f"%{busca.strip()}%"
+        count_stmt = count_stmt.where(or_(Musica.titulo.ilike(termo), Musica.autor_artista.ilike(termo)))
+    if estilo and estilo.strip():
+        count_stmt = count_stmt.where(Musica.estilo == estilo.strip().upper())
+    elif apenas_sem_classificacao:
+        count_stmt = count_stmt.where(Musica.estilo == "UNIVERSAL")
+    if subclassificacao and subclassificacao.strip():
+        count_stmt = count_stmt.where(Musica.subclassificacao == subclassificacao.strip().upper())
+
+    total_registros = (await db.execute(count_stmt)).scalar() or 0
+
+    itens = []
+    for m in musicas:
+        eventos_vinculados = []
+        chaves_vistas = set()
+        for es in m.eventos_sugeridos:
+            if not es.evento:
+                continue
+            chave = es.evento.canonico_id or es.evento_id
+            if chave not in chaves_vistas:
+                chaves_vistas.add(chave)
+                eventos_vinculados.append({
+                    "evento_id": str(es.evento_id),
+                    "canonico_id": str(es.evento.canonico_id) if es.evento.canonico_id else None,
+                    "nome": es.evento.canonico.nome if es.evento.canonico else es.evento.nome,
+                })
+
+        midia = classificar_midia(m.arquivo_url, m.metadados)
+        itens.append({
+            "id": str(m.id),
+            "titulo": m.titulo,
+            "autor_artista": m.autor_artista,
+            "estilo": getattr(m, "estilo", "UNIVERSAL") or "UNIVERSAL",
+            "subclassificacao": getattr(m, "subclassificacao", "GERAL") or "GERAL",
+            "arquivo_url": m.arquivo_url,
+            "caminho_arquivo": midia["caminho_arquivo"],
+            "link_externo": midia["link_externo"],
+            "tipo_midia": midia["tipo_midia"],
+            "duracao_segundos": (m.metadados or {}).get("duracao_segundos"),
+            "eventos_vinculados": eventos_vinculados,
+            "ativo": m.ativo,
+        })
+
+    return {
+        "total": total_registros,
+        "pagina": pagina,
+        "limite": limite,
+        "itens": itens,
+    }
+
+
+@roteador_admin.patch(
+    "/musicas/{musica_id}/classificacao",
+    summary="Classificar Estilo, Subclassificação e Momentos Litúrgicos de uma Música",
+    description="Permite que o Superadmin altere o estilo, a subclassificação e associe a música a múltiplos momentos.",
+)
+async def classificar_musica(
+    musica_id: uuid.UUID,
+    payload: MusicaClassificacaoSuperAdmin,
+    db: AsyncSession = Depends(obter_banco_de_dados),
+    usuario: UsuarioEsigma = Depends(exigir_super_admin),
+):
+    stmt = (
+        select(Musica)
+        .where(Musica.id == musica_id)
+        .options(selectinload(Musica.eventos_sugeridos))
+    )
+    res = await db.execute(stmt)
+    musica = res.scalar_one_or_none()
+    if not musica:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Música não encontrada.")
+
+    estilo_norm = normalizar_estilo(payload.estilo)
+    sub_norm = normalizar_subclassificacao(payload.subclassificacao)
+
+    musica.estilo = estilo_norm
+    musica.subclassificacao = sub_norm
+
+    # Atualiza momentos litúrgicos associados se fornecido
+    if payload.eventos_sugeridos_ids is not None:
+        # Resolve todos os eventos correspondentes (inclusive por canônico para cobrir Rito Brasileiro e REAA)
+        target_ids = set()
+        for ev_id in payload.eventos_sugeridos_ids:
+            # Verifica se ev_id é MomentoCanonico ou Evento
+            res_mcan = await db.execute(select(MomentoCanonico).where(MomentoCanonico.id == ev_id))
+            mcan = res_mcan.scalar_one_or_none()
+            if mcan:
+                res_evs = await db.execute(select(Evento.id).where(Evento.canonico_id == mcan.id))
+                for eid in res_evs.scalars().all():
+                    target_ids.add(eid)
+            else:
+                target_ids.add(ev_id)
+                # Se for evento com canonico_id, inclui os equivalentes
+                res_ev = await db.execute(select(Evento).where(Evento.id == ev_id))
+                ev = res_ev.scalar_one_or_none()
+                if ev and ev.canonico_id:
+                    res_eq = await db.execute(select(Evento.id).where(Evento.canonico_id == ev.canonico_id))
+                    for eid in res_eq.scalars().all():
+                        target_ids.add(eid)
+
+        # Remove associações antigas e insere novas
+        await db.execute(delete(MusicaEventoSugerido).where(MusicaEventoSugerido.musica_id == musica.id))
+        for eid in target_ids:
+            db.add(MusicaEventoSugerido(musica_id=musica.id, evento_id=eid))
+
+    await db.commit()
+    logger.info(
+        f"Música '{musica.titulo}' (id={musica.id}) classificada pelo Superadmin: "
+        f"estilo={estilo_norm}, sub={sub_norm}, total_momentos={len(payload.eventos_sugeridos_ids or [])}"
+    )
+
+    return {
+        "status": "ok",
+        "id": str(musica.id),
+        "estilo": musica.estilo,
+        "subclassificacao": musica.subclassificacao,
+    }
+
+
+@roteador_admin.post(
+    "/musicas/classificacao-lote",
+    summary="Classificar Músicas em Lote",
+    description="Aplica estilo, subclassificação e momentos ritualísticos a múltiplas músicas selecionadas.",
+)
+async def classificar_musicas_lote(
+    payload: MusicaClassificacaoLoteSchema,
+    db: AsyncSession = Depends(obter_banco_de_dados),
+    usuario: UsuarioEsigma = Depends(exigir_super_admin),
+):
+    if not payload.musicas_ids:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nenhuma música informada.")
+
+    estilo_norm = normalizar_estilo(payload.estilo) if payload.estilo else None
+    sub_norm = normalizar_subclassificacao(payload.subclassificacao) if payload.subclassificacao else None
+
+    # Resolve os IDs dos eventos alvo
+    target_eventos_ids = set()
+    if payload.eventos_sugeridos_ids:
+        for ev_id in payload.eventos_sugeridos_ids:
+            res_mcan = await db.execute(select(MomentoCanonico).where(MomentoCanonico.id == ev_id))
+            mcan = res_mcan.scalar_one_or_none()
+            if mcan:
+                res_evs = await db.execute(select(Evento.id).where(Evento.canonico_id == mcan.id))
+                for eid in res_evs.scalars().all():
+                    target_eventos_ids.add(eid)
+            else:
+                target_eventos_ids.add(ev_id)
+                res_ev = await db.execute(select(Evento).where(Evento.id == ev_id))
+                ev = res_ev.scalar_one_or_none()
+                if ev and ev.canonico_id:
+                    res_eq = await db.execute(select(Evento.id).where(Evento.canonico_id == ev.canonico_id))
+                    for eid in res_eq.scalars().all():
+                        target_eventos_ids.add(eid)
+
+    for m_id in payload.musicas_ids:
+        res = await db.execute(select(Musica).where(Musica.id == m_id))
+        musica = res.scalar_one_or_none()
+        if not musica:
+            continue
+
+        if estilo_norm:
+            musica.estilo = estilo_norm
+        if sub_norm:
+            musica.subclassificacao = sub_norm
+
+        if payload.eventos_sugeridos_ids is not None:
+            if not payload.adicionar_eventos:
+                await db.execute(delete(MusicaEventoSugerido).where(MusicaEventoSugerido.musica_id == musica.id))
+            
+            # Adiciona os novos que ainda não existam
+            res_existentes = await db.execute(
+                select(MusicaEventoSugerido.evento_id).where(MusicaEventoSugerido.musica_id == musica.id)
+            )
+            existentes = set(res_existentes.scalars().all())
+            for eid in target_eventos_ids:
+                if eid not in existentes:
+                    db.add(MusicaEventoSugerido(musica_id=musica.id, evento_id=eid))
+
+    await db.commit()
+    logger.info(
+        f"Classificação em lote aplicada pelo Superadmin para {len(payload.musicas_ids)} músicas."
+    )
+    return {
+        "status": "ok",
+        "total_afetadas": len(payload.musicas_ids),
+        "estilo": estilo_norm,
+        "subclassificacao": sub_norm,
+    }
+
 
 

@@ -36,9 +36,10 @@ roteador_player = APIRouter(
 )
 async def carregar_sessao_player(
     sessao_id: uuid.UUID,
+    estilo: Optional[str] = Query(None, description="Estilo musical litúrgico da sessão (ex: UNIVERSAL, VIOLAO, CLASSICA)"),
     db: AsyncSession = Depends(obter_banco_de_dados)
 ):
-    return await ServicoPlayer.carregar_sessao_para_player(db=db, sessao_id=sessao_id)
+    return await ServicoPlayer.carregar_sessao_para_player(db=db, sessao_id=sessao_id, estilo=estilo)
 
 
 @roteador_player.get(
@@ -60,6 +61,7 @@ async def sortear_musica(
     organizacao_id: uuid.UUID = Query(..., description="UUID da Loja (ignorado para não-SuperAdmin)"),
     musica_atual_id: Optional[uuid.UUID] = Query(None, description="UUID da música atual para evitar repetição"),
     sessao_id: Optional[uuid.UUID] = Query(None, description="UUID da sessão (habilita a prioridade das preferidas)"),
+    estilo: Optional[str] = Query(None, description="Estilo musical filtrado"),
     usuario: UsuarioEsigma = Depends(obter_usuario_esigma),
     db: AsyncSession = Depends(obter_banco_de_dados)
 ):
@@ -74,6 +76,7 @@ async def sortear_musica(
         organizacao_id=loja_efetiva,
         musica_id_atual=musica_atual_id,
         sessao_id=sessao_id,
+        estilo=estilo,
     )
 
 
