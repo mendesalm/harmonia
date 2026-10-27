@@ -155,15 +155,15 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
   const momentoAtivo = momentos[indiceMomento];
   const faixasAtivas = momentoAtivo?.candidatas ?? [];
+  const temAlbumNoMomento = faixasAtivas.length > 0;
   const musicaAtiva = momentoAtivo?.musica_sorteada ?? faixasAtivas[0];
-  const idxFaixaAtiva = Math.max(
-    0,
-    faixasAtivas.findIndex((f) => f.id === musicaAtiva?.id)
-  );
+  const idxFaixaAtiva = temAlbumNoMomento
+    ? Math.max(0, faixasAtivas.findIndex((f) => f.id === musicaAtiva?.id))
+    : -1;
 
   // Animação dinâmica do bargraph VU meter
   useEffect(() => {
-    if (!tocando) {
+    if (!tocando || !temAlbumNoMomento) {
       setVuAtivos([]);
       return;
     }
@@ -175,12 +175,13 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
       setVuAtivos(Array.from({ length: total }, (_, i) => i));
     }, 180);
     return () => clearInterval(interval);
-  }, [tocando, volumeExecucao]);
+  }, [tocando, volumeExecucao, temAlbumNoMomento]);
 
   // Ângulo dinâmico do braço de precisão H-33
   // Repouso: 0deg | Leitura: 14deg a 24deg (não recua durante pause!)
+  // Se o momento não tiver nenhum álbum cadastrado, o braço permanece estritamente em repouso no suporte (0deg)
   const anguloBraco =
-    !tocando && progressoFaixa === 0
+    !temAlbumNoMomento || (!tocando && progressoFaixa === 0)
       ? 0
       : 14 + Math.min(1, Math.max(0, progressoFaixa)) * 3.8;
 
@@ -285,16 +286,16 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   const bercoEmblema = eRitoBrasileiro ? '#150205' : '#0A1428';
 
   return (
-    <div className="w-full flex-1 min-h-0 flex flex-col items-center justify-start pt-1 sm:pt-2 pb-1 px-1 sm:px-2 select-none overflow-y-auto">
-      {/* CONTAINER CENTRAL UNIFICADO COM LARGURA RIGOROSA (MAX-W-[360px] SM:MAX-W-[380px]) */}
-      <div className="w-full max-w-[360px] sm:max-w-[380px] flex flex-col items-center gap-1.5">
+    <div className="w-full flex-1 min-h-0 flex flex-col items-center justify-between p-1 sm:p-2 select-none overflow-hidden">
+      {/* CONTAINER CENTRAL UNIFICADO COM LARGURA RIGOROSA (MAX-W-[360px] SM:MAX-W-[380px]) DISTRIBUÍDO NA ALTURA DISPONÍVEL */}
+      <div className="w-full max-w-[360px] sm:max-w-[380px] h-full flex flex-col justify-between gap-1 sm:gap-1.5">
         {/* =========================================================================
             BOX 1 (SUPERIOR INDEPENDENTE): ACERVO LITÚRGICO • CARROSSEL 3D
             ========================================================================= */}
-        <section className="w-full rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#0A1428] via-[#070F1E] to-[#040812] border border-[#1E325C]/80 shadow-[0_10px_28px_rgba(0,0,0,0.7)] p-2 sm:p-2.5 flex flex-col items-center">
+        <section className="w-full flex-[4_4_0%] min-h-[155px] rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#0A1428] via-[#070F1E] to-[#040812] border border-[#1E325C]/80 shadow-[0_10px_28px_rgba(0,0,0,0.7)] p-2 sm:p-2.5 flex flex-col items-center justify-center">
           {/* PALCO 3D DO CARROSSEL DE ÁLBUNS */}
           <div
-            className="relative w-full h-[168px] sm:h-[178px] overflow-hidden select-none cursor-grab active:cursor-grabbing flex items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#050B17] via-[#040812] to-[#02050E]"
+            className="relative w-full h-full min-h-[145px] overflow-hidden select-none cursor-grab active:cursor-grabbing flex items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#050B17] via-[#040812] to-[#02050E]"
             style={{ perspective: 1100, touchAction: 'none' }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
@@ -366,7 +367,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                         {momento.evento_nome}
                       </h3>
                       <span className="text-[7.5px] font-mono text-[#FDE68A] font-semibold mt-0.5 flex items-center justify-center gap-1">
-                        {totalFaixas} Trilhas LP
+                        {totalFaixas > 0 ? `${totalFaixas} Trilhas LP` : 'Sem Trilhas LP'}
                       </span>
                     </div>
                   </div>
@@ -437,9 +438,9 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
         {/* =========================================================================
             BOX 2 (INFERIOR INDEPENDENTE): VITROLA H-33 DECK
             ========================================================================= */}
-        <div className="relative w-full rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#0E1C36] via-[#0A1428] to-[#070F1E] border-2 border-[#DDB96B]/40 shadow-[0_14px_36px_-10px_rgba(0,0,0,0.85)] p-2.5 sm:p-3 flex flex-col items-center">
+        <div className="relative w-full flex-[5_5_0%] min-h-[210px] rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#0E1C36] via-[#0A1428] to-[#070F1E] border-2 border-[#DDB96B]/40 shadow-[0_14px_36px_-10px_rgba(0,0,0,0.85)] p-2.5 sm:p-3 flex flex-col justify-between items-center">
           {/* HEADER DO DECK: LOGO CURSIVO H-33 + DISPLAY LED DIGITAL AO LADO */}
-          <div className="w-full flex items-center justify-between gap-2 pb-1.5 mb-1 border-b border-[#DDB96B]/25">
+          <div className="w-full flex items-center justify-between gap-2 pb-1.5 mb-1 border-b border-[#DDB96B]/25 shrink-0">
             {/* Logo Cursivo H-33 */}
             <LogoCursivoH33 />
 
@@ -452,7 +453,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                     TEMPO
                   </span>
                   <span className="text-[11px] font-mono font-bold text-[#00E5FF] tracking-wider leading-none">
-                    {formatarTempo(tempoAtual)}
+                    {temAlbumNoMomento ? formatarTempo(tempoAtual) : '--:--'}
                   </span>
                 </div>
 
@@ -485,19 +486,22 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
               {/* Linha 2: Trilha ativa e Artista */}
               <div className="w-full pt-0.5 border-t border-[#1E325C]/70 flex items-center gap-1 overflow-hidden">
                 <span className="text-[7.5px] font-mono font-bold text-[#00E5FF]/80 flex-shrink-0 uppercase">
-                  TRK {String(idxFaixaAtiva + 1).padStart(2, '0')}:
+                  {temAlbumNoMomento ? `TRK ${String(idxFaixaAtiva + 1).padStart(2, '0')}:` : 'TRK --:'}
                 </span>
                 <span className="text-[8.5px] font-mono font-bold text-[#FDE68A] truncate tracking-wide leading-tight">
-                  {musicaAtiva?.titulo || 'Sem trilha designada'}
-                  {musicaAtiva?.autor_artista ? ` • ${musicaAtiva.autor_artista}` : ''}
+                  {temAlbumNoMomento
+                    ? `${musicaAtiva?.titulo || 'Trilha selecionada'}${
+                        musicaAtiva?.autor_artista ? ` • ${musicaAtiva.autor_artista}` : ''
+                      }`
+                    : 'Nenhum álbum neste momento litúrgico'}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* ÁREA DO DECK: ÍCONE DE EQUALIZADOR + VINIL REPOSICIONADO + BRAÇO AUDIÓFILO */}
+          {/* ÁREA DO DECK: ÍCONE DE EQUALIZADOR + PRATO (COM OU SEM VINIL) + BRAÇO AUDIÓFILO */}
           <div
-            className="relative w-full h-[195px] sm:h-[205px] flex items-center justify-center my-0.5"
+            className="relative w-full flex-1 min-h-[160px] flex items-center justify-center my-0.5"
             style={{ overflow: 'visible' }}
           >
             {/* Ícone Gráfico de Equalizador / Faders no canto superior esquerdo do deck */}
@@ -527,56 +531,81 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
               </svg>
             </button>
 
-            {/* PRATO METÁLICO E VINIL (+8% À DIREITA) */}
+            {/* PRATO METÁLICO: SE NÃO HÁ ÁLBUM, NÃO MOSTRA O DISCO DE VINIL */}
             <div className="relative w-[180px] h-[180px] sm:w-[190px] sm:h-[190px] rounded-full bg-[#050B17] border-4 border-[#1E325C] shadow-inner flex items-center justify-center flex-shrink-0 z-20 ml-[62px] sm:ml-[72px]">
               {/* Spindle Central Dourado */}
               <div className="absolute w-3 h-3 rounded-full bg-[#DDB96B] shadow-lg z-30 flex items-center justify-center">
                 <div className="w-1 h-1 rounded-full bg-black" />
               </div>
 
-              {/* DISCO DE VINIL ACETINADO */}
-              <div
-                style={{
-                  background:
-                    'radial-gradient(circle, #070F1E 0%, #070F1E 16%, #080808 17%, #1a1a1a 20%, #050505 24%, #181818 28%, #050505 33%, #1f1f1f 38%, #040404 43%, #171717 49%, #050505 55%, #1c1c1c 61%, #040404 67%, #161616 74%, #040404 81%, #121212 89%, #020202 100%)',
-                  boxShadow:
-                    'inset 0 0 15px rgba(0,0,0,0.95), 0 14px 35px rgba(0,0,0,0.85), 0 0 0 1px rgba(221, 185, 107, 0.35)',
-                }}
-                className={`relative w-[170px] h-[170px] sm:w-[180px] sm:h-[180px] rounded-full flex items-center justify-center z-30 cursor-pointer shadow-2xl ${
-                  tocando ? 'animate-[spin_2.2s_linear_infinite]' : ''
-                }`}
-                onClick={() => setModalTracklistAberto(true)}
-                title="Toque no vinil para abrir a lista de faixas"
-              >
-                {/* Brilho Cônico do Vinil */}
+              {temAlbumNoMomento ? (
+                /* DISCO DE VINIL ACETINADO COM SELO LITÚRGICO */
                 <div
                   style={{
                     background:
-                      'conic-gradient(from 45deg, rgba(255, 255, 255, 0.14) 0deg, transparent 55deg, rgba(255, 255, 255, 0.08) 110deg, transparent 175deg, rgba(255, 255, 255, 0.15) 235deg, transparent 295deg, rgba(255, 255, 255, 0.1) 360deg)',
+                      'radial-gradient(circle, #070F1E 0%, #070F1E 16%, #080808 17%, #1a1a1a 20%, #050505 24%, #181818 28%, #050505 33%, #1f1f1f 38%, #040404 43%, #171717 49%, #050505 55%, #1c1c1c 61%, #040404 67%, #161616 74%, #040404 81%, #121212 89%, #020202 100%)',
+                    boxShadow:
+                      'inset 0 0 15px rgba(0,0,0,0.95), 0 14px 35px rgba(0,0,0,0.85), 0 0 0 1px rgba(221, 185, 107, 0.35)',
                   }}
-                  className="absolute inset-0 rounded-full pointer-events-none"
-                />
-
-                {/* SELO CENTRAL DO DISCO (BORDÔ SE RITO BRASILEIRO, DEEP BLUE DEMAIS RITOS) */}
-                <div
-                  style={{
-                    background: fundoCapa,
-                    boxShadow: '0 10px 25px rgba(0,0,0,0.9), inset 0 0 12px rgba(0,0,0,0.85)',
-                  }}
-                  className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-full border-2 border-[#DDB96B] flex flex-col items-center justify-center p-1 text-center shadow-md"
+                  className={`relative w-[170px] h-[170px] sm:w-[180px] sm:h-[180px] rounded-full flex items-center justify-center z-30 cursor-pointer shadow-2xl ${
+                    tocando ? 'animate-[spin_2.2s_linear_infinite]' : ''
+                  }`}
+                  onClick={() => setModalTracklistAberto(true)}
+                  title="Toque no vinil para abrir a lista de faixas"
                 >
-                  <span className="text-[5px] font-cinzel font-black text-[#FDE68A] tracking-wider">
-                    H-33
-                  </span>
-                  <span className="text-[6.5px] sm:text-[7px] font-bold text-white font-cinzel leading-tight line-clamp-2 max-w-[60px] sm:max-w-[65px] drop-shadow">
-                    {momentoAtivo.evento_nome}
-                  </span>
-                  <span className="text-[5px] text-[#DDB96B] font-mono uppercase mt-0.5">
-                    ÁLBUM {paraRomano(indiceMomento + 1)} • RITO BR.
-                  </span>
-                  <div className="w-2 h-2 rounded-full bg-[#050B17] border border-[#DDB96B]/60 mt-0.5" />
+                  {/* Brilho Cônico do Vinil */}
+                  <div
+                    style={{
+                      background:
+                        'conic-gradient(from 45deg, rgba(255, 255, 255, 0.14) 0deg, transparent 55deg, rgba(255, 255, 255, 0.08) 110deg, transparent 175deg, rgba(255, 255, 255, 0.15) 235deg, transparent 295deg, rgba(255, 255, 255, 0.1) 360deg)',
+                    }}
+                    className="absolute inset-0 rounded-full pointer-events-none"
+                  />
+
+                  {/* SELO CENTRAL DO DISCO (BORDÔ SE RITO BRASILEIRO, DEEP BLUE DEMAIS RITOS) */}
+                  <div
+                    style={{
+                      background: fundoCapa,
+                      boxShadow: '0 10px 25px rgba(0,0,0,0.9), inset 0 0 12px rgba(0,0,0,0.85)',
+                    }}
+                    className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-full border-2 border-[#DDB96B] flex flex-col items-center justify-center p-1 text-center shadow-md"
+                  >
+                    <span className="text-[5px] font-cinzel font-black text-[#FDE68A] tracking-wider">
+                      H-33
+                    </span>
+                    <span className="text-[6.5px] sm:text-[7px] font-bold text-white font-cinzel leading-tight line-clamp-2 max-w-[60px] sm:max-w-[65px] drop-shadow">
+                      {momentoAtivo.evento_nome}
+                    </span>
+                    <span className="text-[5px] text-[#DDB96B] font-mono uppercase mt-0.5">
+                      ÁLBUM {paraRomano(indiceMomento + 1)} • RITO BR.
+                    </span>
+                    <div className="w-2 h-2 rounded-full bg-[#050B17] border border-[#DDB96B]/60 mt-0.5" />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                /* PRATO VAZIO SEM VINIL: Feltro/Slipmat de borracha concêntrico */
+                <div
+                  onClick={() => setModalTracklistAberto(true)}
+                  className="relative w-[170px] h-[170px] sm:w-[180px] sm:h-[180px] rounded-full flex flex-col items-center justify-center z-20 cursor-pointer border border-[#1E325C]/70 shadow-inner group"
+                  style={{
+                    background: 'radial-gradient(circle, #081122 0%, #050B17 65%, #02050E 100%)',
+                    boxShadow: 'inset 0 0 25px rgba(0,0,0,0.95)',
+                  }}
+                  title="Momento sem álbum cadastrado. Toque para adicionar trilhas."
+                >
+                  {/* Anéis de feltro em borracha mecânica */}
+                  <div className="w-32 h-32 rounded-full border border-dashed border-[#1E325C]/50 flex items-center justify-center pointer-events-none">
+                    <div className="w-20 h-20 rounded-full border border-dashed border-[#1E325C]/35 flex flex-col items-center justify-center p-2 text-center pointer-events-none">
+                      <span className="text-[7px] font-cinzel text-slate-500 uppercase tracking-widest leading-none">
+                        Prato Vazio
+                      </span>
+                      <span className="text-[6.5px] text-[#DDB96B]/80 font-mono mt-1 font-semibold group-hover:text-yellow-300 transition-colors">
+                        + Compor
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* BRAÇO AUDIÓFILO PRECISION H-33 (PIVÔ FIXADO À DIREITA) */}
