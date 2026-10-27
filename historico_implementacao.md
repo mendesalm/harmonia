@@ -4,6 +4,34 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [27 de Outubro de 2026 - Noite] - Redesign da Vitrola H-33: 1 Momento = 1 Álbum LP (65% do Box), Prato Vazio sem Disco e Supressão de Controles Redundantes
+**Módulo:** `Player Litúrgico H-33` / `Carrossel 3D de Álbuns` / `Controles Táteis` / `Qualidade & Codificação`
+
+### 1. Acervo Litúrgico (Box 1) - Capas de Álbuns a 65% do Box
+- **Dimensionamento Proporcional Dinâmico:** Cada momento litúrgico é representado visualmente por um álbum LP de capa quadrada (`rounded-none`), com largura e altura calculadas rigorosamente como **65% da largura do box** container (`tamanhoCapa = Math.round(larguraBox * 0.65)`).
+- **Projeção Tridimensional Fluida:** O passo horizontal do carrossel 3D e as translações em `geometria.ts` adaptam-se dinamicamente ao tamanho da capa.
+- **Regra de Cores Litúrgicas do Rito:**
+  - **Rito Brasileiro:** Capas com gradiente nobre Bordô Litúrgico (`#5A0A18` via `#38050D` para `#1C0206`).
+  - **Demais Ritos:** Azul Noturno Soberano (*Deep Blue Sovereign*, `#0E1C36` para `#070F1E`).
+  - **Sem Bordas Douradas:** Estritamente sem bordas douradas externas nas capas dos álbuns.
+- **Micro-layout Interno Nobre:** Top bar com dinâmica (`pp • SURDINA` ou `mf • FORTE`), brasão central com Esquadro & Compasso e 'G' em ouro maçônico, e rodapé com nome do momento e contagem de faixas LP.
+
+### 2. Vitrola H-33 Deck (Box 2) - Regra do Prato Vazio e Controles Audiófilos
+- **Prato Vazio sem Vinil:** Se um momento litúrgico não possui trilhas/álbum cadastrado (`candidatas.length === 0`), a vitrola **não exibe o disco de vinil**, apresentando o slipmat/feltro de borracha concêntrico mecânico com atalho estilizado "+ Compor".
+- **Braço Audiófilo Precision:** Em repouso total travado em 0° no suporte quando não há álbum ou a reprodução está parada; acopla no disco apenas quando houver faixa em execução.
+- **Display LED Digital Integrado:** Exibe o tempo decorrido, VU meter estéreo e trilha ativa (`TRK --: Nenhum álbum neste momento litúrgico` no caso de momento vazio).
+- **Fader com Entalhes Gravados:** Controle de volume linear com escala entalhada em `0`, `pp` (28%), `mp` (60%) e `100`.
+
+### 3. Vão Central e Supressão de Elementos Redundantes
+- **Indicador do Vão Central:** Barra de progresso dos álbuns com largura contida (`max-w-[280px] self-center`), eliminando espaço morto entre os dois boxes e sem transbordar da tela.
+- **Supressão Total dos Botões Redundantes:** Removida a barra de progresso (seekbar) duplicada e a linha inferior de botões extras (`Orientação`, `Surdina`, `Próximo?`, `100%`) de `MasonicControls.tsx`. A área inferior exibe unicamente a pílula ergonômica de controle litúrgico (`MOMENTO` / `FAIXA` / `Play-Pause 76x76` / `FAIXA` / `MOMENTO`).
+- **Cabeçalho Unificado:** Menu sanduíche à esquerda, título da sessão centralizado em fonte Cinzel dourada e espaçador de equilíbrio à direita.
+
+### 4. Correção Global de Codificação UTF-8
+- **Resolução de Erro de Customização Antigravity:** Identificado e corrigido byte `0xE7` não-UTF8 (codificação Windows-1252 / ANSI) em `.agent/rules/GEMINI.md`, convertendo o arquivo para UTF-8 estrito sem BOM e sanando o aviso `file is not valid utf8`.
+
+---
+
 ## [27 de Outubro de 2026] - Classificação Litúrgica por Estilo, Subclassificação de Surdina (Geral/Ambiente), Curadoria Multi-Momentos SuperAdmin e Novo Lobby do Player
 **Módulo:** `Classificação Musical` / `Curadoria SuperAdmin` / `Player UX & Carrossel` / `Lobby Litúrgico`
 

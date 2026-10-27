@@ -1,7 +1,13 @@
 # Harmonia - Guia de Handoff e Inicialização
 
-**Última Atualização:** 27 de Outubro de 2026  
-**Status da Sessão:** 🟢 **Concluído e Validado (32 testes Pytest passando)** — Implementação do Design Nobre de Card Musical Litúrgico com Efeito Marquee Inteligente (anti-truncamento para títulos de momentos e faixas), Selo de Dinâmica Clássica (`pp` Pianissimo para Surdina e `mf` Mezzo-Forte), Equalizador Espectral Multicolorido, Pílula de Volume, Atalho Superior de Sliders de Calibragem, Botão `+` Centralizado no Rodapé da Moldura, Sistema de Classificação de Músicas por Estilo (Universal, Clássica, Violão, Soundtracks, Popular) e Subclassificação Funcional (Geral vs Ambiente), Curadoria Multi-Momentos no SuperAdmin e Novo Lobby do Mestre de Harmonia.
+**Última Atualização:** 27 de Outubro de 2026 (Encerramento da Sessão)  
+**Status da Sessão:** 🟢 **Concluído, Validado e Sincronizado (Build Frontend OK + 32 testes Pytest passando 100%)** — Redesign do Player Litúrgico Vitrola H-33:
+- Box 1 (Acervo Litúrgico): Capas dos álbuns quadradas e sem borda dourada externa, dimensionadas dinamicamente a rigorosamente **65% da largura do box container** (`tamanhoCapa = Math.round(larguraBox * 0.65)`).
+- Regra de Cores Litúrgicas do Rito: Bordô nobre (`#5A0A18` -> `#220308`) exclusivo para o Rito Brasileiro; Deep Blue Sovereign (`#0E1C36` -> `#070F1E`) para os demais ritos.
+- Box 2 (Vitrola H-33 Deck): Prato vazio com slipmat concêntrico e braço travado em repouso a 0° quando o momento não possui álbum/trilhas; display LED digital integrado com tempo decorrido, VU meter e status de trilha; fader com entalhes `pp` (28%) e `mp` (60%).
+- Vão Central & Supressão de Redundâncias: Indicador de progresso contido (`max-w-[280px] self-center`) eliminando espaço morto; supressão completa da seekbar duplicada e da barra inferior de botões extras (`Orientação`, `Surdina`, `Próximo?`, `100%`), preservando unicamente a pílula de controle tátil (`MOMENTO` / `FAIXA` / `Play/Pause 76x76` / `FAIXA` / `MOMENTO`).
+- Cabeçalho: Menu sanduíche à esquerda e título da sessão litúrgica centralizado em caixa alta Cinzel dourada.
+- Correção UTF-8 Global: Eliminado byte inválido Windows-1252 em `.agent/rules/GEMINI.md`, solucionando o erro de carregamento de customização.
 
 ---
 
@@ -141,6 +147,14 @@ Harmonia/
 
 7. **Correção Crítica no Dispositivo Nativo (Haptics / Vibração)**:
    - Adicionado método `acaoForte()` à API de `feedbackTatil` em `dispositivoNativo.ts` (utilizando `ImpactStyle.Heavy` do `@capacitor/haptics`), sanando o erro `ze.acaoForte is not a function` na inicialização do Player e garantindo execução 100% estável no mobile e na web.
+
+8. **Redesign do Player Vitrola H-33 e Alinhamento Visual Fiel**:
+   - **Tamanho da Capa dos Álbuns (65% do Box):** Em `PalcoCarrosseis.tsx`, a capa do álbum LP quadrado tem largura e altura calculadas em 65% da largura do box container (`Math.round(larguraBox * 0.65)`).
+   - **Regra de Cores Litúrgicas do Rito:** Bordô nobre exclusivamente para o Rito Brasileiro (`#5A0A18` -> `#220308`) e Deep Blue Sovereign para os demais ritos. Bordas douradas externas suprimidas.
+   - **Regra do Prato Vazio:** Quando um momento litúrgico não tem faixas (`candidatas.length === 0`), a vitrola não mostra disco de vinil; exibe o slipmat concêntrico com indicador de "+ Compor", braço travado no descanso (0°) e display LED informando `TRK --: Nenhum álbum neste momento litúrgico`.
+   - **Supressão Total dos Botões Redundantes:** Removidos a seekbar inferior duplicada e a linha de botões extras (`Orientação`, `Surdina`, `Próximo?`, `100%`) em `MasonicControls.tsx`.
+   - **Barra Central:** Indicador de álbuns contido em `max-w-[280px]` auto-centralizado no vão entre os dois boxes.
+   - **Correção da Customização Antigravity:** Corrigida codificação ANSI/Windows-1252 em `.agent/rules/GEMINI.md` para UTF-8 válido.
 
 ---
 
