@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Disc3, Plus, Star, Volume1, Volume2 } from 'lucide-react';
+import { Disc3, Plus, Star, Volume1, Volume2, SlidersHorizontal } from 'lucide-react';
 import { MomentoExecucao, MusicaSorteada } from '../../../compartilhado/tipos';
 import { feedbackTatil } from '../../../compartilhado/utilitarios/dispositivoNativo';
+import { TextoMarquee } from '../../../compartilhado/componentes/TextoMarquee';
 import { useGestoPalco } from '../hooks/useGestoPalco';
 import { DiscoFaixa } from './DiscoFaixa';
 import { Equalizador } from './Equalizador';
@@ -309,26 +310,20 @@ const MolduraMomento: React.FC<MolduraMomentoProps> = ({
       {/* Face ativa (só é montada perto do centro) */}
       {intensidade > 0.02 && (
         <div className="absolute inset-0" style={{ opacity: intensidade }}>
-          {/* Cabeçalho: título do momento */}
+          {/* Cabeçalho: título do momento com Marquee suave para evitar cortes */}
           <div
             key={momento.evento_id}
-            className="harmonia-entrar absolute inset-x-0 top-0 flex flex-col items-center justify-center border-b border-macaonico-dourado/20 px-4 text-center bg-[#070F1E]/80 backdrop-blur-sm"
+            className="harmonia-entrar absolute inset-x-0 top-0 flex flex-col items-center justify-center border-b border-macaonico-dourado/20 px-3 text-center bg-[#070F1E]/90 backdrop-blur-sm"
             style={{ height: M.alturaCabecalho }}
           >
-            <div className="flex items-center justify-center gap-1.5 max-w-full px-2">
-              <h3 className="line-clamp-1 text-[13px] font-extrabold uppercase leading-tight tracking-wide text-slate-100 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
-                {momento.evento_nome}
-              </h3>
-              {momento.em_surdina && (
-                <span
-                  className="shrink-0 text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-sm"
-                  title="Momento ritualístico classificado como Surdina permanente"
-                >
-                  SURDINA
-                </span>
-              )}
+            <div className="w-full flex items-center justify-center px-2">
+              <TextoMarquee
+                texto={momento.evento_nome}
+                tag="h3"
+                className="text-[12.5px] sm:text-[13.5px] font-extrabold uppercase font-cinzel text-macaonico-dourado tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+              />
             </div>
-            <span className="mt-0.5 font-mono text-[10px] font-bold tracking-widest text-[#DDB96B]/80">
+            <span className="mt-0.5 font-mono text-[10px] font-bold tracking-widest text-slate-400">
               {faixas.length} {faixas.length === 1 ? 'FAIXA' : 'FAIXAS'} • {indice + 1}/{total}
             </span>
           </div>
@@ -384,19 +379,20 @@ const MolduraMomento: React.FC<MolduraMomentoProps> = ({
             )}
           </div>
 
-          {/* Atalho para catalogar mais músicas neste momento */}
+          {/* Atalho '+' centralizado na base da moldura para compor/adicionar músicas */}
           {faixas.length > 0 && (
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
+                feedbackTatil.clique();
                 onAbrirUpload();
               }}
-              aria-label="Catalogar nova música para este momento"
-              title="Catalogar nova música para este momento"
-              className="absolute bottom-2.5 right-3 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-macaonico-dourado/30 bg-macaonico-dourado/10 text-macaonico-dourado transition-all hover:scale-110 hover:bg-macaonico-dourado/25"
+              aria-label="Adicionar ou compor músicas para este momento"
+              title="Adicionar ou compor músicas para este momento"
+              className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border border-macaonico-dourado/50 bg-[#070e1a]/95 text-macaonico-dourado hover:scale-110 active:scale-95 shadow-[0_2px_12px_rgba(0,0,0,0.85)] transition-all cursor-pointer"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4 stroke-[2.5]" />
             </button>
           )}
         </div>
@@ -499,22 +495,20 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
           />
         </div>
 
-        {/* Ícone dinâmico amarelo de Surdina (clicável para abrir configurações de surdina e volume) */}
-        {surdinaAtiva && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              feedbackTatil.clique();
-              onAbrirConfiguracoesSurdina?.();
-            }}
-            className="absolute left-2.5 top-2.5 z-20 flex items-center justify-center w-7 h-7 rounded-full bg-amber-500/25 border border-amber-400/60 text-amber-300 hover:bg-amber-500/40 active:scale-95 transition-all shadow-[0_0_12px_rgba(245,158,11,0.35)] cursor-pointer"
-            style={{ opacity: f.intensidade }}
-            title="Momento Litúrgico em Modo Surdina. Clique para calibrar volume e configurações."
-          >
-            <Volume1 className="w-4 h-4 text-amber-300 animate-pulse" />
-          </button>
-        )}
+        {/* Ícone de Sliders / Configuração de Áudio e Surdina (canto superior esquerdo do card) */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            feedbackTatil.clique();
+            onAbrirConfiguracoesSurdina?.();
+          }}
+          className="absolute left-2.5 top-2.5 z-20 flex items-center justify-center w-7 h-7 rounded-lg text-macaonico-dourado/80 hover:text-macaonico-dourado hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+          style={{ opacity: f.intensidade }}
+          title="Configurações de Áudio e Calibragem de Surdina"
+        >
+          <SlidersHorizontal className="w-4 h-4 text-macaonico-dourado" />
+        </button>
 
         {/* Texto compacto (faixa vizinha) */}
         <div
@@ -525,21 +519,61 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
           <span className="truncate text-[10px] text-slate-500">{faixa.autor_artista || 'Acervo Harmonia'}</span>
         </div>
 
-        {/* Texto completo (faixa ativa) */}
+        {/* Texto completo da faixa ativa com Marquee deslizante */}
         <div
           className="absolute inset-x-3 text-center"
-          style={{ top: 12 + DISCO_BASE + 12, opacity: f.intensidade }}
+          style={{ top: 10 + DISCO_BASE + 8, opacity: f.intensidade }}
         >
-          <div className="flex items-center justify-center min-w-0">
-            <p className="truncate text-[16px] font-bold leading-tight text-slate-100">{faixa.titulo}</p>
+          <div className="w-full flex items-center justify-center px-1">
+            <TextoMarquee
+              texto={faixa.titulo}
+              className="text-[14px] sm:text-[15.5px] font-bold text-slate-100 font-inter drop-shadow-sm text-center"
+            />
           </div>
-          <p className="mt-1 truncate text-[12px] font-medium text-slate-300">
+          <p className="mt-0.5 truncate text-[11px] font-medium text-slate-400">
             {faixa.autor_artista || 'Acervo Harmonia'}
-            {duracao ? <span className="font-normal text-slate-400"> • {duracao}</span> : null}
+            {duracao ? <span className="font-normal text-slate-500"> • {duracao}</span> : null}
           </p>
         </div>
-        <div className="absolute inset-x-0 bottom-3.5" style={{ opacity: f.intensidade }}>
-          <Equalizador tocando={tocando} altura={22} cor="#DDB96B" />
+
+        {/* Linha Inferior Tríplice: Pílula de Volume + Equalizador Espectral + Dinâmica Litúrgica (pp / mf) */}
+        <div
+          className="absolute inset-x-3.5 bottom-2.5 flex items-center justify-between z-10"
+          style={{ opacity: f.intensidade }}
+        >
+          {/* Esquerda: Pílula de Volume */}
+          <div
+            className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-mono font-bold shadow-sm transition-all ${
+              surdinaAtiva
+                ? 'bg-amber-500/20 text-amber-300 border-amber-400/50 shadow-[0_0_8px_rgba(245,158,11,0.2)]'
+                : 'bg-[#060D1A]/90 text-slate-300 border-slate-700/80'
+            }`}
+            title={`Volume de execução: ${volumeExecucao !== undefined ? `${volumeExecucao}%` : 'Normal'}`}
+          >
+            <Volume1 className="w-3 h-3 text-amber-300" />
+            <span>{volumeExecucao !== undefined ? `${volumeExecucao}%` : '10%'}</span>
+          </div>
+
+          {/* Centro: Equalizador Espectral */}
+          <div className="flex items-center justify-center">
+            <Equalizador tocando={tocando} altura={16} />
+          </div>
+
+          {/* Direita: Selo de Dinâmica Clássica (pp = pianissimo / surdina; mf = mezzo-forte / geral) */}
+          <div
+            className={`flex items-center justify-center px-1.5 py-0.5 rounded border text-[11px] font-serif font-bold italic tracking-tighter shadow-sm select-none ${
+              faixa.subclassificacao === 'AMBIENTE' || surdinaAtiva
+                ? 'text-amber-300 border-amber-400/50 bg-amber-500/15 shadow-[0_0_8px_rgba(245,158,11,0.2)]'
+                : 'text-slate-400 border-slate-700/80 bg-slate-800/40'
+            }`}
+            title={
+              faixa.subclassificacao === 'AMBIENTE' || surdinaAtiva
+                ? 'Pianissimo (pp): Dinâmica suave para momentos em surdina contínua'
+                : 'Mezzo-forte (mf): Dinâmica regular de execução'
+            }
+          >
+            {faixa.subclassificacao === 'AMBIENTE' || surdinaAtiva ? 'pp' : 'mf'}
+          </div>
         </div>
 
         {/* Estrela de preferência (várias faixas podem ser preferidas; o sorteio ocorre entre elas) */}
@@ -553,16 +587,16 @@ const CardFaixa: React.FC<CardFaixaProps> = ({
           aria-pressed={preferida}
           aria-label={preferida ? 'Remover das preferidas' : 'Marcar como preferida'}
           title={preferida ? 'Preferida: entra no sorteio deste momento' : 'Marcar como preferida'}
-          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-white/10"
+          className="absolute right-2.5 top-2.5 z-20 flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-macaonico-dourado hover:bg-white/10 active:scale-95 transition-all"
           style={{ opacity: f.intensidade, pointerEvents: f.intensidade > 0.6 ? 'auto' : 'none' }}
         >
           <Star
             key={String(preferida)}
             className={`h-[18px] w-[18px] ${
-              preferida ? 'harmonia-estrela-marcada text-[#DDB96B]' : 'text-slate-500'
+              preferida ? 'harmonia-estrela-marcada text-[#DDB96B]' : 'text-slate-400/80'
             }`}
             fill={preferida ? 'currentColor' : 'none'}
-            strokeWidth={2.2}
+            strokeWidth={1.8}
           />
         </button>
       </div>

@@ -36,6 +36,15 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 - **Eliminação de Informações Duplicadas:** Removida a informação repetida de volume do card da música (o volume mestre é controlado na barra inferior).
 - **Ícone Dinâmico Amarelo de Surdina:** A tag de texto `SURDINA` sobreposta foi substituída por um botão circular sutil com ícone `Volume1` pulsante em âmbar/dourado, clicável para abrir as configurações e calibragem de surdina.
 
+### 5. Redesign do Card Litúrgico & Marquee Inteligente (`TextoMarquee.tsx`)
+- **Marquee Inteligente em Vaivém (Ping-Pong):** Criação do componente `TextoMarquee.tsx` para o título do momento e da faixa musical. Títulos curtos permanecem fixos; títulos longos deslizam suavemente com pausas de leitura nas pontas, eliminando qualquer truncamento no templo.
+- **Estrutura Nobre Fiel ao Mockup:**
+  - Canto superior esquerdo: botão de `SlidersHorizontal` dourado para calibragem de surdina.
+  - Canto superior direito: botão de `Star` (preferência).
+  - Centro: vitrola com disco concêntrico e braço mecânico de reprodução.
+  - Base do card: pílula de volume `[ 🔊 X% ]`, equalizador espectral multicolorido animado e selo clássico de dinâmica litúrgica: **`pp`** (*pianissimo*) para faixas Ambiente/Surdina e **`mf`** (*mezzo-forte*) para dinâmicas gerais.
+  - Rodapé da moldura: botão circular `+` dourado centralizado para compor/adicionar faixas.
+
 ---
 
 ## [26 de Outubro de 2026] - Redesign Litúrgico Nobre, Normalizador Web Audio API, Surdina por Momento, Composição via Acervo e Navegação Tátil Restaurada

@@ -1,7 +1,7 @@
 # Harmonia - Guia de Handoff e Inicialização
 
 **Última Atualização:** 27 de Outubro de 2026  
-**Status da Sessão:** 🟢 **Concluído e Validado (32 testes Pytest passando)** — Implementação do Sistema de Classificação Litúrgica de Músicas por Estilo (Universal, Clássica, Violão, Soundtracks, Popular) e Subclassificação Funcional (Geral vs Ambiente para Surdina), Painel SuperAdmin de Curadoria com atribuição de faixas a múltiplos momentos litúrgicos canônicos e ações em lote, Novo Lobby Ritualístico de Pré-Sessão para os Mestres de Harmonia (`PaginaPrepararSessao.tsx`), Eliminação do dropdown acidental de sessão dentro do player, Correção da sensibilidade do carrossel horizontal travado em 1 momento por gesto, e Substituição de tags de volume duplicadas no card pelo ícone amarelo dinâmico de surdina.
+**Status da Sessão:** 🟢 **Concluído e Validado (32 testes Pytest passando)** — Implementação do Design Nobre de Card Musical Litúrgico com Efeito Marquee Inteligente (anti-truncamento para títulos de momentos e faixas), Selo de Dinâmica Clássica (`pp` Pianissimo para Surdina e `mf` Mezzo-Forte), Equalizador Espectral Multicolorido, Pílula de Volume, Atalho Superior de Sliders de Calibragem, Botão `+` Centralizado no Rodapé da Moldura, Sistema de Classificação de Músicas por Estilo (Universal, Clássica, Violão, Soundtracks, Popular) e Subclassificação Funcional (Geral vs Ambiente), Curadoria Multi-Momentos no SuperAdmin e Novo Lobby do Mestre de Harmonia.
 
 ---
 
@@ -129,6 +129,15 @@ Harmonia/
 
 5. **Testes Automatizados**:
    - Criado `backend/testes/test_classificacao_estilo.py` cobrindo normalização, priorização de faixas Ambiente em surdina e fallback gracioso. Suíte total com **32 testes Pytest passando 100%**.
+
+6. **Redesign do Card Litúrgico & Efeito Marquee Inteligente (`TextoMarquee.tsx`)**:
+   - **Marquee Inteligente em Vaivém (Ping-Pong):** Componente `TextoMarquee.tsx` implementado para o título do momento litúrgico no cabeçalho e para o título da música no card. O texto permanece estático se couber na tela e desliza suavemente caso ultrapasse a largura do container, eliminando qualquer truncamento ou corte feio de palavras.
+   - **Disposição Simétrica dos Quatro Cantos:**
+     - Topo Esquerdo: Botão com ícone `SlidersHorizontal` dourado, abrindo as calibragens de surdina e áudio.
+     - Topo Direito: Estrela de preferência (`Star`), dourada quando ativada.
+     - Centro: Disco de vinil girando + braço mecânico da vitrola articulado à direita.
+     - Base do Card: Linha tríplice com Pílula de Volume `[ 🔊 10% ]`, Equalizador animado multicolorido e Selo Musical Clássico de Dinâmica: **`pp`** (*pianissimo*) para faixas Ambiente/Surdina e **`mf`** (*mezzo-forte*) para dinâmicas regulares.
+   - **Botão `+` Centralizado:** Botão de catalogação e adição de faixas posicionado centralizado no rodapé da moldura do momento.
 
 ---
 
