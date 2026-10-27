@@ -8,7 +8,7 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 **Módulo:** `Player UX Vitrola H-33` / `Design Stitch` / `Acervo & Capas` / `Vinil & Braço Mecânico`
 
 ### 1. Capas dos Álbuns (Box 1) - Estética Cerimonial e Moldura Dupla Dourada
-- **Moldura Ornamental Nobre:** Inclusão de dupla moldura interna com filete dourado contínuo (`border-[#DDB96B]/40`) e filete dourado tracejado (`border-dashed border-[#DDB96B]/25`), acompanhado de cantos finamente arredondados (`rounded-lg`).
+- **Moldura Ornamental Nobre:** Inclusão de dupla moldura interna com filete dourado contínuo (`border-[#DDB96B]/40`) e filete dourado tracejado (`border-dashed border-[#DDB96B]/25`), mantendo formato rigorosamente quadrado (cantos retos, `rounded-none` e `borderRadius: 0`).
 - **Novo Emblema Maçônico Vetorial Stitch:** Medalhão circular com fundo escurecido e sombra interna (`shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)]`), contendo o Esquadro facetado em dupla tonalidade metálica (`#EED184` e `#AB7F28`) com o Compasso e a letra 'G' central em ouro brilhante (`#FDF3D7`) com efeito `drop-shadow`.
 - **Tipografia Solene:** Título do momento em Cinzel dourado e subtítulo das faixas em *Cormorant Garamond* itálico (`font-serif italic text-[#DDB96B] tracking-widest`).
 - **Gradientes Soberanos Stitch:** Bordô nobre para o Rito Brasileiro (`linear-gradient(135deg, #460811, #2d060c, #120306)`) e Obsidian/Midnight para os demais ritos.

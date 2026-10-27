@@ -351,7 +351,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                       position: 'absolute',
                       width: tamanhoCapa,
                       height: tamanhoCapa,
-                      borderRadius: 10,
+                      borderRadius: 0, // Estritamente quadrada com cantos retos nas proporções de 65%!
                       border: '1.5px solid rgba(227, 190, 97, 0.75)',
                       transform: `translate3d(${t.x}px, ${t.y}px, ${t.z}px) rotateY(${t.rotY}deg) scale(${t.escala})`,
                       opacity: t.opacidade,
@@ -367,11 +367,11 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                       filter: ativo ? 'none' : 'brightness(0.72)',
                       cursor: 'pointer',
                     }}
-                    className="p-3 sm:p-3.5 flex flex-col justify-between cursor-pointer select-none relative overflow-hidden"
+                    className="p-3 sm:p-3.5 flex flex-col justify-between cursor-pointer select-none relative overflow-hidden rounded-none"
                   >
-                    {/* Moldura dupla dourada ornamental refinada do Stitch */}
-                    <div className="absolute inset-[3px] border border-[#DDB96B]/40 rounded pointer-events-none" />
-                    <div className="absolute inset-[6px] border border-dashed border-[#DDB96B]/25 rounded pointer-events-none" />
+                    {/* Moldura dupla dourada ornamental refinada do Stitch (estritamente quadrada) */}
+                    <div className="absolute inset-[3px] border border-[#DDB96B]/40 rounded-none pointer-events-none" />
+                    <div className="absolute inset-[6px] border border-dashed border-[#DDB96B]/25 rounded-none pointer-events-none" />
 
                     {/* Top bar da capa: Identificador e Dinâmica */}
                     <div className="w-full flex items-center justify-between text-[8px] sm:text-[9px] uppercase tracking-wider relative z-10 border-b border-[#DDB96B]/20 pb-1 pointer-events-none">
