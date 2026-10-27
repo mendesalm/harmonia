@@ -102,6 +102,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
   };
 
   const progressoPercentual = duracaoTotal > 0 ? (tempoAtual / duracaoTotal) * 100 : 0;
+  const temMaisDeUmaFaixa = (momentoAtual?.candidatas?.length ?? 0) > 1;
 
   const orientacaoAtual =
     momentoAtual?.observacao_ritual?.trim() ||
@@ -175,11 +176,15 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
             >
               <button
                 type="button"
+                disabled={!onPrevMoment}
                 onClick={() => {
+                  if (!onPrevMoment) return;
                   feedbackTatil.clique();
-                  onPrevMoment?.();
+                  onPrevMoment();
                 }}
-                className="text-[#DDB96B]/85 hover:text-[#DDB96B] transition-all flex flex-col items-center justify-center py-1 px-1.5 active:scale-95"
+                className={`text-[#DDB96B]/85 hover:text-[#DDB96B] transition-all flex flex-col items-center justify-center py-1 px-1.5 active:scale-95 ${
+                  onPrevMoment ? 'opacity-100 cursor-pointer' : 'opacity-25 pointer-events-none'
+                }`}
                 title="Momento Litúrgico Anterior"
                 aria-label="Momento Anterior"
               >
@@ -191,12 +196,16 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
 
               <button
                 type="button"
+                disabled={!temMaisDeUmaFaixa}
                 onClick={() => {
+                  if (!temMaisDeUmaFaixa) return;
                   feedbackTatil.clique();
                   onPrevTrack?.();
                 }}
-                className="text-[#DDB96B]/85 hover:text-[#DDB96B] transition-all flex flex-col items-center justify-center py-1 px-1.5 active:scale-95"
-                title="Música/Faixa Anterior"
+                className={`text-[#DDB96B]/85 hover:text-[#DDB96B] transition-all flex flex-col items-center justify-center py-1 px-1.5 active:scale-95 ${
+                  temMaisDeUmaFaixa ? 'opacity-100 cursor-pointer' : 'opacity-25 pointer-events-none'
+                }`}
+                title={temMaisDeUmaFaixa ? "Música/Faixa Anterior" : "Apenas 1 faixa neste momento"}
                 aria-label="Faixa Anterior"
               >
                 <SkipBack className="w-4 h-4 sm:w-5 sm:h-5 drop-shadow-[0_0_6px_rgba(221,185,107,0.3)]" fill="currentColor" />
@@ -216,12 +225,16 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
             >
               <button
                 type="button"
+                disabled={!temMaisDeUmaFaixa}
                 onClick={() => {
+                  if (!temMaisDeUmaFaixa) return;
                   feedbackTatil.clique();
                   onNextTrack?.();
                 }}
-                className="text-[#DDB96B]/85 hover:text-[#DDB96B] transition-all flex flex-col items-center justify-center py-1 px-1.5 active:scale-95"
-                title="Próxima Música/Faixa"
+                className={`text-[#DDB96B]/85 hover:text-[#DDB96B] transition-all flex flex-col items-center justify-center py-1 px-1.5 active:scale-95 ${
+                  temMaisDeUmaFaixa ? 'opacity-100 cursor-pointer' : 'opacity-25 pointer-events-none'
+                }`}
+                title={temMaisDeUmaFaixa ? "Próxima Música/Faixa" : "Apenas 1 faixa neste momento"}
                 aria-label="Próxima Faixa"
               >
                 <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 drop-shadow-[0_0_6px_rgba(221,185,107,0.3)]" fill="currentColor" />
@@ -232,11 +245,15 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
 
               <button
                 type="button"
+                disabled={!onNextMoment}
                 onClick={() => {
+                  if (!onNextMoment) return;
                   feedbackTatil.clique();
-                  onNextMoment?.();
+                  onNextMoment();
                 }}
-                className="text-[#DDB96B]/85 hover:text-[#DDB96B] transition-all flex flex-col items-center justify-center py-1 px-1.5 active:scale-95"
+                className={`text-[#DDB96B]/85 hover:text-[#DDB96B] transition-all flex flex-col items-center justify-center py-1 px-1.5 active:scale-95 ${
+                  onNextMoment ? 'opacity-100 cursor-pointer' : 'opacity-25 pointer-events-none'
+                }`}
                 title="Próximo Momento Litúrgico"
                 aria-label="Próximo Momento"
               >

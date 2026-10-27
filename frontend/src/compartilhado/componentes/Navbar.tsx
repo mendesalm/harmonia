@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   PlayCircle,
@@ -29,6 +29,12 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
   const [menuSanduicheAberto, setMenuSanduicheAberto] = useState(false);
 
+  useEffect(() => {
+    const escutarAbertura = () => setMenuSanduicheAberto(true);
+    window.addEventListener('harmonia:abrir-menu', escutarAbertura);
+    return () => window.removeEventListener('harmonia:abrir-menu', escutarAbertura);
+  }, []);
+
   if (!usuario) return null;
 
   const noPlayer = location.pathname.startsWith('/player');
@@ -43,7 +49,7 @@ export const Navbar: React.FC = () => {
 
   const linksMestre = [
     { to: '/', label: 'Início', icon: Home },
-    { to: '/preparar-sessao', label: 'Player', icon: PlayCircle },
+    { to: '/preparar-sessao', label: noPlayer ? 'Trocar Sessão' : 'Player', icon: PlayCircle },
     { to: '/sessoes', label: 'Sessões', icon: ListOrdered },
     { to: '/eventos', label: 'Momentos', icon: LayoutTemplate },
     { to: '/musicas', label: 'Acervo', icon: Library },
@@ -67,27 +73,10 @@ export const Navbar: React.FC = () => {
 
   const links = emModoAdmin || (ehSuperAdmin && !possuiLojaVinculada) ? linksAdmin : linksMestre;
 
-  // Quando na página do player, adota o formato Sanduíche retrátil para maximizar a área da tela
+  // Quando na página do player, a abertura é acionada pelo menu sanduíche oficial no cabeçalho
   if (noPlayer) {
     return (
       <>
-        {/* Botão de Menu Sanduíche no Cabeçalho (canto superior direito) */}
-        <button
-          type="button"
-          onClick={() => {
-            feedbackTatil.clique();
-            setMenuSanduicheAberto(true);
-          }}
-          className="fixed top-2 right-2.5 sm:right-4 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#071122]/95 hover:bg-[#0d1e38] text-macaonico-dourado border border-macaonico-dourado/40 shadow-[0_4px_16px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all active:scale-95 cursor-pointer"
-          title="Abrir Menu de Navegação"
-          aria-label="Abrir Menu de Navegação"
-        >
-          <Menu className="w-4 h-4" />
-          <span className="text-[10px] font-cinzel uppercase tracking-wider font-bold">
-            Menu
-          </span>
-        </button>
-
         {/* Gaveta / Drawer do Menu Sanduíche */}
         {menuSanduicheAberto && (
           <div

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ListOrdered, Sparkles, ArrowLeft, Volume2, Pause, Play } from 'lucide-react';
+import { ListOrdered, Sparkles, ArrowLeft, Volume2, Pause, Play, Menu } from 'lucide-react';
 import { SessaoPlayerExecucao, Musica, MusicaSorteada } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
@@ -736,32 +736,34 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         onEnded={aoTerminarMusica}
       />
 
-      {/* Barra superior de status ritualístico da Sessão e Estilo (Elimina dropdown indevido no templo) */}
-      <div className="relative z-20 flex items-center justify-between gap-2 px-3 sm:px-6 py-2 bg-[#070e1c]/90 border-b border-macaonico-dourado/20 shrink-0 pr-24 sm:pr-28">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <ListOrdered className="w-4 h-4 text-macaonico-dourado shrink-0" />
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="font-cinzel font-bold text-xs sm:text-sm text-slate-100 truncate">
-              {dadosSessao?.sessao_nome || 'Sessão Ritualística'}
-            </span>
-            <span className="shrink-0 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#0e1a2f] border border-macaonico-dourado/40 text-macaonico-dourado shadow-sm">
-              Estilo: {estiloParam}
-            </span>
-          </div>
+      {/* Cabeçalho da Aplicação com Menu Sanduíche à esquerda e Título da Sessão centralizado */}
+      <header className="relative z-30 flex items-center justify-between px-3 sm:px-4 py-2.5 bg-[#050A14]/95 backdrop-blur-md border-b border-macaonico-dourado/20 shrink-0 shadow-sm">
+        {/* Lado Esquerdo: Menu Sanduíche */}
+        <div className="flex items-center w-10 sm:w-16">
+          <button
+            type="button"
+            onClick={() => {
+              feedbackTatil.clique();
+              window.dispatchEvent(new CustomEvent('harmonia:abrir-menu'));
+            }}
+            className="p-1.5 -ml-1 text-macaonico-dourado hover:text-[#FDE68A] hover:bg-white/5 rounded-lg transition-all active:scale-95 cursor-pointer flex items-center justify-center"
+            title="Abrir Menu de Navegação"
+            aria-label="Menu Sanduíche"
+          >
+            <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            feedbackTatil.clique();
-            navigate('/preparar-sessao');
-          }}
-          className="shrink-0 text-[11px] font-medium text-slate-300 hover:text-macaonico-dourado hover:bg-white/10 px-2.5 py-1 rounded-lg border border-slate-700/60 transition-colors"
-          title="Trocar de Sessão ou Estilo"
-        >
-          Trocar Sessão
-        </button>
-      </div>
+        {/* Centro: Título da Sessão Ritualística Centralizado */}
+        <div className="flex-1 min-w-0 text-center px-1">
+          <h1 className="font-cinzel font-bold text-xs sm:text-sm text-macaonico-dourado tracking-[0.14em] sm:tracking-[0.18em] uppercase truncate drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]">
+            {dadosSessao?.sessao_nome || 'SESSÃO MAGNA DE INICIAÇÃO'}
+          </h1>
+        </div>
+
+        {/* Lado Direito: Espaçador simétrico para garantir alinhamento central */}
+        <div className="flex items-center justify-end w-10 sm:w-16" />
+      </header>
 
       {/* Banner ativo do Modo Interlúdio / Fundo com botão de retorno */}
       {modoInterludioAtivo && musicaFundoAtiva && (
@@ -812,6 +814,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             indiceMomento={indiceAtual}
             tocando={tocando && !modoInterludioAtivo}
             progressoFaixa={duracaoTotal > 0 ? tempoAtual / duracaoTotal : 0}
+            tempoAtual={tempoAtual}
+            duracaoTotal={duracaoTotal}
             volumeExecucao={
               surdinaAtiva
                 ? Math.max(1, Math.round((volumeGeral * percentualSurdina) / 100))
@@ -824,6 +828,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             onAlternarPlayPause={alternarPlayPause}
             onAlternarPreferencia={alternarPreferencia}
             onAbrirUpload={() => setModalUploadAberto(true)}
+            onAlterarVolume={alterarVolumeGeral}
           />
         </div>
       ) : (
@@ -853,8 +858,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           onPlayPause={alternarPlayPause}
           onPrevTrack={() => navegarFaixa(-1)}
           onNextTrack={() => navegarFaixa(1)}
-          onPrevMoment={voltarAnterior}
-          onNextMoment={avancarProximo}
+          onPrevMoment={indiceAtual > 0 ? voltarAnterior : undefined}
+          onNextMoment={dadosSessao && indiceAtual < dadosSessao.esteira_ritualistica.length - 1 ? avancarProximo : undefined}
           tempoAtual={tempoAtual}
           duracaoTotal={duracaoTotal}
           onSeek={onSeek}
