@@ -677,7 +677,6 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
             {/* BRAÇO MECÂNICO AUDIÓFILO DE LATÃO DOURADO (PRECISION TONEARM ASSEMBLY) */}
             <div
-              ref={bracoBoxRef}
               className="absolute right-1.5 top-1.5 w-24 h-48 pointer-events-none z-30"
               data-purpose="precision-tonearm"
             >
