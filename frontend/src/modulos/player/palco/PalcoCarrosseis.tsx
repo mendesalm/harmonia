@@ -173,13 +173,52 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
     ? Math.max(0, faixasAtivas.findIndex((f) => f.id === musicaAtiva?.id))
     : -1;
 
-  // Estado e Gestos de Arrasto do Braço da Vitrola para Troca de Faixas
-  const [arrastandoBraco, setArrastandoBraco] = useState(false);
-  const [anguloArrastoBraco, setAnguloArrastoBraco] = useState<number | null>(null);
-  const [faixaHoverArrasto, setFaixaHoverArrasto] = useState<number | null>(null);
-  const bracoBoxRef = useRef<HTMLDivElement>(null);
-  const bracoPointerIdRef = useRef<number | null>(null);
-  const anguloInicialArrastoRef = useRef<number>(0);
+  // Temporizador e contador de cliques no braço da vitrola (1 clique = avançar, 2 cliques = retroceder)
+  const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const clickContadorRef = useRef<number>(0);
+
+  useEffect(() => {
+    return () => {
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+      }
+    };
+  }, []);
+
+  /**
+   * Manipulador de cliques no braço da vitrola:
+   * - 1 clique (click simples): Avança para a próxima faixa (circular)
+   * - 2 cliques (duplo clique): Retrocede para a faixa anterior (circular)
+   */
+  const lidarCliqueBraco = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!temAlbumNoMomento || faixasAtivas.length <= 1) return;
+
+    clickContadorRef.current += 1;
+
+    if (clickContadorRef.current === 1) {
+      clickTimerRef.current = setTimeout(() => {
+        // 1 Clique confirmado: Avança para a próxima faixa
+        const total = faixasAtivas.length;
+        const proxima = (idxFaixaAtiva + 1) % total;
+        feedbackTatil.clique();
+        onTrocarFaixa(proxima, true);
+        clickContadorRef.current = 0;
+        clickTimerRef.current = null;
+      }, 260);
+    } else if (clickContadorRef.current >= 2) {
+      // 2 Cliques confirmados (Duplo Clique): Retrocede para a faixa anterior
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+        clickTimerRef.current = null;
+      }
+      clickContadorRef.current = 0;
+      const total = faixasAtivas.length;
+      const anterior = (idxFaixaAtiva - 1 + total) % total;
+      feedbackTatil.acaoForte();
+      onTrocarFaixa(anterior, true);
+    }
+  };
 
   // Animação dinâmica do bargraph VU meter
   useEffect(() => {
@@ -201,7 +240,6 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   // Repouso: 0deg (apoiado no suporte de descanso do chassi)
   // Execução ativa: 22deg (borda externa do vinil) a 38deg (ranhura final próxima ao selo)
   // Se pausado no meio da faixa, o braço permanece sobre a faixa atual sem recuar abruptamente
-  // Durante o arrasto manual pelo usuário, o braço assume instantaneamente o ângulo do toque
   const calcularAnguloExecucao = () => {
     if (!temAlbumNoMomento || (!tocando && progressoFaixa === 0)) return 0;
     const total = Math.max(1, faixasAtivas.length);
@@ -212,112 +250,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
     return baseFaixa + excursaoFaixa;
   };
 
-  const anguloBraco =
-    arrastandoBraco && anguloArrastoBraco !== null
-      ? anguloArrastoBraco
-      : calcularAnguloExecucao();
-
-  const calcularAnguloPorPointer = (clientX: number, clientY: number): number => {
-    if (!bracoBoxRef.current) return 0;
-    const rect = bracoBoxRef.current.getBoundingClientRect();
-    // Centro do pivô do gimbal em (58px, 22px) relativo ao bracoBoxRef
-    const pivX = rect.left + 58;
-    const pivY = rect.top + 22;
-    const dx = clientX - pivX;
-    const dy = clientY - pivY;
-    const rad = Math.atan2(-dx, dy);
-    const deg = (rad * 180) / Math.PI;
-    return Math.max(0, Math.min(42, deg));
-  };
-
-  const estimarFaixaPorAngulo = (angulo: number): number => {
-    if (faixasAtivas.length <= 1) return 0;
-    const fracao = Math.max(0, Math.min(0.999, (angulo - 21) / 17));
-    return Math.min(faixasAtivas.length - 1, Math.floor(fracao * faixasAtivas.length));
-  };
-
-  const iniciarArrastoBraco = (e: React.PointerEvent) => {
-    if (!temAlbumNoMomento) return;
-    e.stopPropagation();
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      // Ignora falhas de captura em navegadores sem suporte
-    }
-    bracoPointerIdRef.current = e.pointerId;
-    const ang = calcularAnguloPorPointer(e.clientX, e.clientY);
-    anguloInicialArrastoRef.current = ang;
-    setArrastandoBraco(true);
-    setAnguloArrastoBraco(ang);
-    setFaixaHoverArrasto(estimarFaixaPorAngulo(ang));
-    feedbackTatil.clique();
-  };
-
-  const moverArrastoBraco = (e: React.PointerEvent) => {
-    if (!arrastandoBraco || bracoPointerIdRef.current !== e.pointerId) return;
-    e.stopPropagation();
-    const novoAng = calcularAnguloPorPointer(e.clientX, e.clientY);
-    setAnguloArrastoBraco(novoAng);
-    const faixa = estimarFaixaPorAngulo(novoAng);
-    if (faixa !== faixaHoverArrasto) {
-      setFaixaHoverArrasto(faixa);
-      feedbackTatil.acaoSuave();
-    }
-  };
-
-  const finalizarArrastoBraco = (e: React.PointerEvent) => {
-    if (!arrastandoBraco) return;
-    e.stopPropagation();
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch {
-      // Ignora
-    }
-    bracoPointerIdRef.current = null;
-    const anguloFinal = anguloArrastoBraco ?? calcularAnguloPorPointer(e.clientX, e.clientY);
-    const deltaAngulo = anguloFinal - anguloInicialArrastoRef.current;
-
-    setArrastandoBraco(false);
-    setAnguloArrastoBraco(null);
-    setFaixaHoverArrasto(null);
-
-    // Se soltou fora do disco (ângulo < 15deg): pousa no suporte de descanso e pausa a reprodução
-    if (anguloFinal < 15) {
-      if (tocando) {
-        onAlternarPlayPause();
-      }
-      feedbackTatil.clique();
-      return;
-    }
-
-    // Se realizou um gesto de arraste/flick expressivo (+- 6 graus):
-    if (faixasAtivas.length > 1 && Math.abs(deltaAngulo) > 6) {
-      if (deltaAngulo > 0) {
-        // Arrasto para a esquerda/dentro do vinil: próxima faixa
-        const proxima = Math.min(faixasAtivas.length - 1, idxFaixaAtiva + 1);
-        onTrocarFaixa(proxima, true);
-        feedbackTatil.acaoForte();
-        return;
-      } else {
-        // Arrasto para a direita/fora do vinil: faixa anterior
-        const anterior = Math.max(0, idxFaixaAtiva - 1);
-        onTrocarFaixa(anterior, true);
-        feedbackTatil.acaoForte();
-        return;
-      }
-    }
-
-    // Caso contrário, assenta na faixa proporcional sob a agulha:
-    const faixaAlvo = estimarFaixaPorAngulo(anguloFinal);
-    if (faixaAlvo >= 0 && faixaAlvo < faixasAtivas.length) {
-      if (faixaAlvo !== idxFaixaAtiva) {
-        onTrocarFaixa(faixaAlvo, true);
-      } else if (!tocando) {
-        onAlternarPlayPause();
-      }
-      feedbackTatil.acaoForte();
-    }
-  };
+  const anguloBraco = calcularAnguloExecucao();
 
   const palcoBoxRef = useRef<HTMLDivElement>(null);
   const [larguraBox, setLarguraBox] = useState(360);
@@ -618,26 +551,26 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
               </svg>
             </button>
 
-            {/* Display LED Digital com cantos arredondados Stitch */}
-            <div className="flex-1 max-w-[215px] sm:max-w-[235px] px-2 py-0.5 rounded-xl flex flex-col gap-0.5 border border-[#1E325C] shadow-inner bg-[#02050E]">
+            {/* Display LED Digital com cantos arredondados Stitch ampliado */}
+            <div className="flex-1 px-3 py-1 sm:py-1.5 rounded-xl flex flex-col gap-1 border border-[#1E325C] shadow-inner bg-[#02050E]">
               {/* Linha 1: Tempo + Bargraph VU Level */}
               <div className="w-full flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[7px] text-[#00E5FF] font-mono uppercase tracking-wider">
+                <div className="flex items-center gap-2">
+                  <span className="text-[8px] sm:text-[9px] text-[#00E5FF] font-mono uppercase tracking-wider font-semibold">
                     TEMPO
                   </span>
-                  <span className="text-[11px] font-mono font-bold text-[#00E5FF] tracking-wider leading-none">
+                  <span className="text-xs sm:text-[13px] font-mono font-bold text-[#00E5FF] tracking-wider leading-none">
                     {temAlbumNoMomento ? formatarTempo(tempoAtual) : '--:--'}
                   </span>
                 </div>
 
-                <div className="w-px h-3 bg-[#1E325C]" />
+                <div className="w-px h-3.5 bg-[#1E325C]" />
 
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[7px] text-[#00E5FF] font-mono uppercase tracking-wider">
+                <div className="flex items-center gap-2">
+                  <span className="text-[8px] sm:text-[9px] text-[#00E5FF] font-mono uppercase tracking-wider font-semibold">
                     VU
                   </span>
-                  <div className="flex items-end gap-0.5 h-2.5 w-14 sm:w-16">
+                  <div className="flex items-end gap-0.5 h-3 w-20 sm:w-24">
                     {Array.from({ length: 12 }, (_, i) => {
                       const ativo = vuAtivos.includes(i);
                       let corBg = 'bg-[#061A28]';
@@ -649,7 +582,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                       return (
                         <div
                           key={`vu-bar-deck-${i}`}
-                          className={`w-[2px] h-full rounded-[1px] transition-colors duration-100 ${corBg}`}
+                          className={`w-[2.5px] h-full rounded-[1px] transition-colors duration-100 ${corBg}`}
                         />
                       );
                     })}
@@ -658,31 +591,18 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
               </div>
 
               {/* Linha 2: Trilha ativa e Artista */}
-              <div className="w-full pt-0.5 border-t border-[#1E325C]/70 flex items-center gap-1 overflow-hidden">
-                <span className="text-[7.5px] font-mono font-bold text-[#00E5FF]/80 flex-shrink-0 uppercase">
-                  {arrastandoBraco && faixaHoverArrasto !== null
-                    ? `FAIXA ${String(faixaHoverArrasto + 1).padStart(2, '0')}:`
-                    : temAlbumNoMomento
-                    ? `TRK ${String(idxFaixaAtiva + 1).padStart(2, '0')}:`
-                    : 'TRK --:'}
+              <div className="w-full pt-1 border-t border-[#1E325C]/70 flex items-center gap-1.5 overflow-hidden">
+                <span className="text-[8px] sm:text-[9px] font-mono font-bold text-[#00E5FF] flex-shrink-0 uppercase">
+                  {temAlbumNoMomento ? `TRK ${String(idxFaixaAtiva + 1).padStart(2, '0')}:` : 'TRK --:'}
                 </span>
-                <span className="text-[8.5px] font-mono font-bold text-[#FDE68A] truncate tracking-wide leading-tight">
-                  {arrastandoBraco && faixaHoverArrasto !== null && faixasAtivas[faixaHoverArrasto]
-                    ? `[Soltar para Tocar] ${faixasAtivas[faixaHoverArrasto].titulo}`
-                    : temAlbumNoMomento
+                <span className="text-[9.5px] sm:text-[11px] font-mono font-bold text-[#FDE68A] truncate tracking-wide leading-tight">
+                  {temAlbumNoMomento
                     ? `${musicaAtiva?.titulo || 'Trilha selecionada'}${
                         musicaAtiva?.autor_artista ? ` • ${musicaAtiva.autor_artista}` : ''
                       }`
                     : 'Nenhum álbum neste momento litúrgico'}
                 </span>
               </div>
-            </div>
-
-            {/* Lâmpada de Rito Estrito */}
-            <div className="flex items-center gap-1.5 bg-black/60 px-2 py-0.5 rounded-full border border-[#DDB96B]/30 text-[8.5px] font-mono text-[#DDB96B] shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_5px_#34d399] animate-pulse" />
-              <span className="hidden sm:inline">ESTRITO RITO</span>
-              <span className="sm:hidden">RITO</span>
             </div>
           </div>
 
@@ -776,9 +696,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                 style={{
                   transformOrigin: '58px 22px',
                   transform: `rotate(${anguloBraco}deg)`,
-                  transition: arrastandoBraco
-                    ? 'none'
-                    : 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)',
+                  transition: 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)',
                 }}
               >
                 {/* Base Torneada e Rolamento Central do Gimbal (centro exato em 58px, 22px) */}
@@ -837,22 +755,15 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                   <div className="w-0.5 h-1 bg-[#fff] rounded-full opacity-80" />
                 </div>
 
-                {/* Área de Toque / Hitbox Confortável para Arrasto do Braço e Troca de Faixas */}
+                {/* Área de Toque / Hitbox: 1 clique = Avançar Faixa | 2 cliques = Retroceder Faixa */}
                 <div
-                  className="absolute left-[34px] top-[138px] w-14 h-16 pointer-events-auto cursor-grab active:cursor-grabbing touch-none select-none z-40 flex items-center justify-center group"
-                  onPointerDown={iniciarArrastoBraco}
-                  onPointerMove={moverArrastoBraco}
-                  onPointerUp={finalizarArrastoBraco}
-                  onPointerCancel={finalizarArrastoBraco}
-                  title="Arraste o braço da vitrola para trocar de faixa no disco"
+                  className="absolute left-[28px] top-[125px] w-18 h-24 pointer-events-auto cursor-pointer active:scale-95 touch-manipulation select-none z-40 flex items-center justify-center group transition-transform"
+                  onClick={lidarCliqueBraco}
+                  title="1 clique: Avançar faixa • 2 cliques: Retroceder faixa"
                 >
-                  {/* Tooltip Audiófilo flutuante exibindo a faixa apontada em tempo real */}
-                  {arrastandoBraco && faixaHoverArrasto !== null && faixasAtivas[faixaHoverArrasto] && (
-                    <div className="absolute -top-7 -left-16 bg-black/95 text-[#FDE68A] border border-[#DDB96B] px-2 py-0.5 rounded text-[8px] font-mono font-bold whitespace-nowrap shadow-2xl pointer-events-none animate-pulse flex items-center gap-1 z-50">
-                      <span className="text-[#00E5FF]">TRK {String(faixaHoverArrasto + 1).padStart(2, '0')}:</span>
-                      <span className="truncate max-w-[120px]">{faixasAtivas[faixaHoverArrasto].titulo}</span>
-                    </div>
-                  )}
+                  <div className="w-10 h-10 rounded-full border border-yellow-400/0 group-hover:border-yellow-400/40 group-active:border-yellow-400/80 transition-all flex items-center justify-center">
+                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-400/0 group-hover:bg-yellow-400/30 group-active:bg-yellow-400/60 animate-pulse" />
+                  </div>
                 </div>
               </div>
             </div>

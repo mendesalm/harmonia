@@ -4,6 +4,21 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [28 de Outubro de 2026 - Manhã (Remoção Estrito Rito, Display Expandido & Navegação por Cliques no Braço)] - Refinamento de UX do Player H-33
+**Módulo:** `Player UX Vitrola H-33` / `Painel do Deck` / `Controles do Tonearm` / `Display de Informações`
+
+### 1. Remoção do Badge "Estrito Rito" e Expansão do Display LED
+- **Supressão do Elemento:** Removido o badge estático `[ ● ESTRITO RITO ]` do cabeçalho do deck da vitrola.
+- **Ampliação do Display Digital:** Com a liberação do espaço horizontal, o visor digital de informações passou a ocupar `flex-1` integralmente, aumentando os paddings (`px-3 py-1.5`), as fontes de leitura (`TEMPO`, título da faixa e artista) e o tamanho do bargraph estéreo VU meter (`w-20 sm:w-24`, barras mais visíveis de `2.5px`).
+
+### 2. Navegação de Faixas por Cliques no Braço da Vitrola
+- **Substituição do Gesto de Arrasto:** Eliminada a complexidade de arrastar o braço, substituindo-a por gestos intuitivos de clique sobre a área do cabeçote/agulha:
+  - **1 Clique (Simples):** Avança circularmente para a próxima faixa do momento litúrgico (`onTrocarFaixa(proxima, true)` + `feedbackTatil.clique()`).
+  - **2 Cliques (Duplo Clique dentro de 260ms):** Retrocede circularmente para a faixa anterior (`onTrocarFaixa(anterior, true)` + `feedbackTatil.acaoForte()`).
+- **Transição Angular Fluida:** A posição do braço no disco é recalculada automaticamente e transiciona suavemente (`cubic-bezier`) para o novo ângulo da faixa selecionada.
+
+---
+
 ## [28 de Outubro de 2026 - Manhã (Restauração do Braço Reto & Calibração Exata na Borda Externa)] - Correção Geométrica do Tonearm Precision
 **Módulo:** `Player UX Vitrola H-33` / `Tonearm Precision` / `Geometria e Alinhamento`
 
