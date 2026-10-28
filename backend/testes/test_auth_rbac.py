@@ -193,3 +193,18 @@ async def test_rbac_rotas_admin_bloqueiam_membro_comum_e_liberam_super_admin(cli
         assert dados_admin["tipo"] == "ADMIN"
         assert dados_admin["role"] == "super_admin"
         assert "super_admin" in dados_admin["permissoes"]
+
+
+def test_reconhecimento_superadmin_por_email_sistema_esigma():
+    """Garante que a conta do ecossistema 'sistema@e-sigma.app' seja incondicionalmente SuperAdmin."""
+    from backend.nucleo.auth_esigma import UsuarioEsigma
+
+    usuario_sistema = UsuarioEsigma(
+        email="sistema@e-sigma.app",
+        user_id="2f14b4a1-dcd7-4579-87b5-86aa73f7e412",
+        role="super_admin",
+        organizacao_id=None,
+    )
+    assert usuario_sistema.is_super_admin is True
+    assert usuario_sistema.harmonia_ativo is True
+

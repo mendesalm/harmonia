@@ -4,6 +4,16 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [28 de Outubro de 2026 - Manhã (Reconhecimento Explícito de sistema@e-sigma.app como SuperAdmin)] - Fortalecimento RBAC
+**Módulo:** `Autenticação SSO e-Sigma` / `RBAC Global` / `Suporte a SuperAdmin Central`
+
+### 1. Inclusão Explícita de `sistema@e-sigma.app`
+- **Garantia Incondicional de SuperAdmin:** Adicionada a conta mestre do ecossistema (`sistema@e-sigma.app`) à propriedade `is_super_admin` de `UsuarioEsigma` (`backend/nucleo/auth_esigma.py`), ao lado de `mendesalm@gmail.com`.
+- **Privilégios Globais:** Usuários com este privilégio possuem acesso total aos endpoints `/api/v1/admin/*`, status `harmonia_ativo = True` mesmo sem vínculo direto com loja única, e redirecionamento automático para a área de Dashboard Global (`/admin`).
+- **Testes Unitários:** Adicionado caso de teste automatizado em `backend/testes/test_auth_rbac.py` validando o reconhecimento incondicional de `sistema@e-sigma.app`.
+
+---
+
 ## [28 de Outubro de 2026 - Manhã (Configuração Litúrgica na Capa do Álbum e Play/Stop no Disco)] - Ajuste de Interatividade do Player
 **Módulo:** `Player UX Vitrola H-33` / `Carrossel 3D de Álbuns` / `Disco de Vinil (Prato)` / `Modal de Composição Litúrgica`
 
