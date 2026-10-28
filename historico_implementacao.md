@@ -4,6 +4,24 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [28 de Outubro de 2026 - Manhã (Restauração do Braço Reto & Calibração Exata na Borda Externa)] - Correção Geométrica do Tonearm Precision
+**Módulo:** `Player UX Vitrola H-33` / `Tonearm Precision` / `Geometria e Alinhamento`
+
+### 1. Eliminação da Curvatura Excessiva (Restauração da Haste Reta Nobre)
+- **Haste Reta Audiófila:** Substituído o traçado hiper-curvado em S por uma haste metálica estritamente reta de latão usinado (`M 58 22 L 58 148`) com conexão angular sutil para a cápsula (`L 54 158`), resgatando a sobriedade estética e a fidelidade visual aprovada.
+- **Realinhamento do Suporte de Descanso (`Tonearm Rest Clip`):** Reposicionado para `X = 52px` (centro em 58px) e `Y = 112px`, de modo que em repouso (0°), a haste reta descanse diretamente sobre o suporte fixo no chassi sem desvios laterais.
+- **Cápsula e Hitbox:** Realinhadas no eixo da haste reta com offset angular de 16° para a agulha luminosa e LED âmbar, além de centralização da hitbox ergonômica de arrasto.
+
+### 2. Calibração Angular Cirúrgica na Borda Externa do Vinil
+- **Problema Corrigido:** Na versão anterior, o braço iniciava o play com ângulo de 36° (que somado ao desvio prévio da curvatura atingia 50°), fazendo a agulha pousar no meio do disco, colada ao selo litúrgico central ("H • 33").
+- **Nova Escala Angular de Reprodução:**
+  - **Repouso (0°):** Travado verticalmente no suporte de descanso lateral fora do prato.
+  - **Play Inicial (30°):** A agulha pousa exatamente na primeira ranhura da **borda externa** do vinil (`raio = 83.5px`, rente ao anel exterior de 89px).
+  - **Evolução Gradual (30° a 48°):** Durante a reprodução (0% a 100%) e distribuição entre faixas, a agulha percorre suavemente a superfície até a ranhura final próxima ao selo (`raio = 42px`, selo em 37px).
+  - **Arrasto Manual Atualizado:** Faixa de arraste e detecção proporcional calibrada para a nova excursão de 30° a 48° (com retorno ao descanso abaixo de 20°).
+
+---
+
 ## [27 de Outubro de 2026 - Noite (Arrasto do Braço para Troca de Faixas & Vinil 1800ms)] - Interação Audiófila Tátil no Tonearm e Rotação Dinâmica do Vinil
 **Módulo:** `Player UX Vitrola H-33` / `Interação Tátil Audiófila` / `Gestos Pointer` / `Animação Hi-Fi`
 

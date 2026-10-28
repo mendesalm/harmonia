@@ -199,15 +199,15 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
   // Ângulo dinâmico do braço de precisão audiófilo H-33
   // Repouso: 0deg (apoiado no suporte de descanso do chassi)
-  // Execução ativa: 36deg (borda externa do vinil) a 53deg (ranhura final próxima ao selo)
+  // Execução ativa: 30deg (borda externa do vinil) a 48deg (ranhura final próxima ao selo)
   // Se pausado no meio da faixa, o braço permanece sobre a faixa atual sem recuar abruptamente
   // Durante o arrasto manual pelo usuário, o braço assume instantaneamente o ângulo do toque
   const calcularAnguloExecucao = () => {
     if (!temAlbumNoMomento || (!tocando && progressoFaixa === 0)) return 0;
     const total = Math.max(1, faixasAtivas.length);
     const indice = Math.max(0, idxFaixaAtiva);
-    const fatia = 17 / total;
-    const baseFaixa = 36 + indice * fatia;
+    const fatia = 18 / total;
+    const baseFaixa = 30 + indice * fatia;
     const excursaoFaixa = fatia * Math.min(1, Math.max(0, progressoFaixa));
     return baseFaixa + excursaoFaixa;
   };
@@ -227,12 +227,12 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
     const dy = clientY - pivY;
     const rad = Math.atan2(-dx, dy);
     const deg = (rad * 180) / Math.PI;
-    return Math.max(0, Math.min(58, deg));
+    return Math.max(0, Math.min(52, deg));
   };
 
   const estimarFaixaPorAngulo = (angulo: number): number => {
     if (faixasAtivas.length <= 1) return 0;
-    const fracao = Math.max(0, Math.min(0.999, (angulo - 34) / 19));
+    const fracao = Math.max(0, Math.min(0.999, (angulo - 29) / 19));
     return Math.min(faixasAtivas.length - 1, Math.floor(fracao * faixasAtivas.length));
   };
 
@@ -281,8 +281,8 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
     setAnguloArrastoBraco(null);
     setFaixaHoverArrasto(null);
 
-    // Se soltou fora do disco (ângulo < 22deg): pousa no suporte de descanso e pausa a reprodução
-    if (anguloFinal < 22) {
+    // Se soltou fora do disco (ângulo < 20deg): pousa no suporte de descanso e pausa a reprodução
+    if (anguloFinal < 20) {
       if (tocando) {
         onAlternarPlayPause();
       }
@@ -761,9 +761,9 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
               className="absolute right-1.5 top-1.5 w-24 h-48 pointer-events-none z-30"
               data-purpose="precision-tonearm"
             >
-              {/* Suporte de Repouso Fixo no Chassi (Tonearm Rest Clip) */}
+              {/* Suporte de Repouso Fixo no Chassi (Tonearm Rest Clip) - Alinhado no eixo da haste reta (X = 58px) */}
               <div
-                className="absolute right-2 top-28 w-3 h-5 flex flex-col items-center justify-center opacity-70"
+                className="absolute left-[52px] top-[112px] w-3 h-5 flex flex-col items-center justify-center opacity-70"
                 title="Suporte de descanso"
               >
                 <div className="w-2.5 h-1 bg-gradient-to-r from-[#805a17] to-[#d4af37] rounded-sm" />
@@ -791,21 +791,34 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                 </div>
 
                 {/* Contrapeso Traseiro (Counterweight) usinado atrás do pivô */}
-                <div className="absolute left-[52px] -top-1 w-3.5 h-4 bg-gradient-to-b from-[#d4af37] via-[#fff0b3] to-[#805a17] border border-[#523a10] rounded-sm shadow-md" />
+                <div className="absolute left-[51px] -top-1.5 w-3.5 h-4.5 bg-gradient-to-b from-[#d4af37] via-[#fff0b3] to-[#805a17] border border-[#523a10] rounded-sm shadow-md" />
 
-                {/* Tubo Curvo em S com Gradiente Metálico nascendo diretamente do Centro do Pivô */}
+                {/* Tubo Reto Metálico Nobre de Latão Dourado nascendo diretamente do Centro do Pivô */}
                 <svg
                   className="w-full h-full filter drop-shadow-[2px_5px_7px_rgba(0,0,0,0.85)]"
                   fill="none"
                   viewBox="0 0 96 192"
                   style={{ overflow: 'visible' }}
                 >
-                  {/* Haste em S partindo de (58, 22) até a Cápsula em (22, 162) */}
-                  <path
-                    d="M 58 22 C 58 55, 78 85, 72 120 C 66 145, 45 152, 22 162"
+                  {/* Haste reta do braço partindo de (58, 22) até (58, 148) */}
+                  <line
+                    x1="58"
+                    y1="22"
+                    x2="58"
+                    y2="148"
                     stroke="url(#brassGradientStitch)"
                     strokeLinecap="round"
                     strokeWidth="3.4"
+                  />
+                  {/* Conector chanfrado suave para a cápsula */}
+                  <line
+                    x1="58"
+                    y1="148"
+                    x2="54"
+                    y2="158"
+                    stroke="url(#brassGradientStitch)"
+                    strokeLinecap="round"
+                    strokeWidth="3.2"
                   />
                   <defs>
                     <linearGradient id="brassGradientStitch" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -820,8 +833,8 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
                 {/* Cápsula Audiófila Headshell com Agulha e LED Âmbar pousando com precisão no vinil */}
                 <div
-                  className="absolute left-[13px] top-[152px] w-4.5 h-7 bg-gradient-to-br from-[#1a1c22] via-[#2c2e3a] to-[#0c0d12] border border-[#FDE68A] rounded-sm shadow-xl flex flex-col items-center justify-between p-0.5"
-                  style={{ transform: 'rotate(24deg)' }}
+                  className="absolute left-[45px] top-[152px] w-4.5 h-7 bg-gradient-to-br from-[#1a1c22] via-[#2c2e3a] to-[#0c0d12] border border-[#FDE68A] rounded-sm shadow-xl flex flex-col items-center justify-between p-0.5"
+                  style={{ transform: 'rotate(16deg)' }}
                 >
                   <div className="w-3 h-0.5 bg-gradient-to-r from-[#caa037] to-[#fff1ba] rounded-full" />
                   <div className="w-1.5 h-2 bg-[#ffb938] rounded-full shadow-[0_0_6px_#ffb938]" />
@@ -830,7 +843,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
                 {/* Área de Toque / Hitbox Confortável para Arrasto do Braço e Troca de Faixas */}
                 <div
-                  className="absolute left-[1px] top-[138px] w-14 h-16 pointer-events-auto cursor-grab active:cursor-grabbing touch-none select-none z-40 flex items-center justify-center group"
+                  className="absolute left-[34px] top-[138px] w-14 h-16 pointer-events-auto cursor-grab active:cursor-grabbing touch-none select-none z-40 flex items-center justify-center group"
                   onPointerDown={iniciarArrastoBraco}
                   onPointerMove={moverArrastoBraco}
                   onPointerUp={finalizarArrastoBraco}
