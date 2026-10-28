@@ -7,18 +7,17 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 ## [28 de Outubro de 2026 - Manhã (Restauração do Braço Reto & Calibração Exata na Borda Externa)] - Correção Geométrica do Tonearm Precision
 **Módulo:** `Player UX Vitrola H-33` / `Tonearm Precision` / `Geometria e Alinhamento`
 
-### 1. Eliminação da Curvatura Excessiva (Restauração da Haste Reta Nobre)
-- **Haste Reta Audiófila:** Substituído o traçado hiper-curvado em S por uma haste metálica estritamente reta de latão usinado (`M 58 22 L 58 148`) com conexão angular sutil para a cápsula (`L 54 158`), resgatando a sobriedade estética e a fidelidade visual aprovada.
-- **Realinhamento do Suporte de Descanso (`Tonearm Rest Clip`):** Reposicionado para `X = 52px` (centro em 58px) e `Y = 112px`, de modo que em repouso (0°), a haste reta descanse diretamente sobre o suporte fixo no chassi sem desvios laterais.
-- **Cápsula e Hitbox:** Realinhadas no eixo da haste reta com offset angular de 16° para a agulha luminosa e LED âmbar, além de centralização da hitbox ergonômica de arrasto.
+### 1. Visibilidade e Renderização da Haste Reta Nobre (SVG userSpaceOnUse)
+- **Correção da Visibilidade do Tubo:** Resolvido o bug de renderização no SVG onde linhas com largura zero falhavam na aplicação do gradiente linear com `objectBoundingBox`. O gradiente agora utiliza `gradientUnits="userSpaceOnUse"`, garantindo visibilidade total, além de filete interno de reflexo especular de alta relojoaria.
+- **Haste Reta Audiófila:** Traçado estritamente reto em latão usinado (`M 58 22 L 58 148 L 54 158`), eliminando a curvatura excessiva anterior.
+- **Suporte de Descanso (`Tonearm Rest Clip`):** Alinhado perfeitamente sob o eixo vertical da haste (`X = 52px`, centro em 58px) a 0° no descanso do chassi.
 
-### 2. Calibração Angular Cirúrgica na Borda Externa do Vinil
-- **Problema Corrigido:** Na versão anterior, o braço iniciava o play com ângulo de 36° (que somado ao desvio prévio da curvatura atingia 50°), fazendo a agulha pousar no meio do disco, colada ao selo litúrgico central ("H • 33").
-- **Nova Escala Angular de Reprodução:**
-  - **Repouso (0°):** Travado verticalmente no suporte de descanso lateral fora do prato.
-  - **Play Inicial (30°):** A agulha pousa exatamente na primeira ranhura da **borda externa** do vinil (`raio = 83.5px`, rente ao anel exterior de 89px).
-  - **Evolução Gradual (30° a 48°):** Durante a reprodução (0% a 100%) e distribuição entre faixas, a agulha percorre suavemente a superfície até a ranhura final próxima ao selo (`raio = 42px`, selo em 37px).
-  - **Arrasto Manual Atualizado:** Faixa de arraste e detecção proporcional calibrada para a nova excursão de 30° a 48° (com retorno ao descanso abaixo de 20°).
+### 2. Calibração Angular Cirúrgica na Borda Externa do Vinil (22° a 38°)
+- **Cálculo Preciso sobre os Pixels da Interface:**
+  - **Repouso (0°):** Braço estritamente na vertical sobre o clip de descanso lateral fora do disco (`distância = 143px`).
+  - **Play Inicial (22°):** Ao iniciar o play (00:01), o braço avança 22°, posicionando a cápsula e agulha exatamente na **borda externa** (sulco de entrada do vinil, `distância = 87.3px`, no diâmetro externo de 93px).
+  - **Fim da Reprodução (38°):** Percorre gradualmente toda a superfície das faixas até 38° (`distância = 53.3px`), rente ao selo litúrgico central sem invadi-lo.
+  - **Arrasto Manual Proporcional:** Intervalo de 22° a 38° mapeado para seleção de faixas, com retorno ao repouso se solto abaixo de 15°.
 
 ---
 

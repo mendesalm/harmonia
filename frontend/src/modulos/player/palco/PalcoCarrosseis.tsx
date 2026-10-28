@@ -199,15 +199,15 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
   // Ângulo dinâmico do braço de precisão audiófilo H-33
   // Repouso: 0deg (apoiado no suporte de descanso do chassi)
-  // Execução ativa: 30deg (borda externa do vinil) a 48deg (ranhura final próxima ao selo)
+  // Execução ativa: 22deg (borda externa do vinil) a 38deg (ranhura final próxima ao selo)
   // Se pausado no meio da faixa, o braço permanece sobre a faixa atual sem recuar abruptamente
   // Durante o arrasto manual pelo usuário, o braço assume instantaneamente o ângulo do toque
   const calcularAnguloExecucao = () => {
     if (!temAlbumNoMomento || (!tocando && progressoFaixa === 0)) return 0;
     const total = Math.max(1, faixasAtivas.length);
     const indice = Math.max(0, idxFaixaAtiva);
-    const fatia = 18 / total;
-    const baseFaixa = 30 + indice * fatia;
+    const fatia = 16 / total;
+    const baseFaixa = 22 + indice * fatia;
     const excursaoFaixa = fatia * Math.min(1, Math.max(0, progressoFaixa));
     return baseFaixa + excursaoFaixa;
   };
@@ -227,12 +227,12 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
     const dy = clientY - pivY;
     const rad = Math.atan2(-dx, dy);
     const deg = (rad * 180) / Math.PI;
-    return Math.max(0, Math.min(52, deg));
+    return Math.max(0, Math.min(42, deg));
   };
 
   const estimarFaixaPorAngulo = (angulo: number): number => {
     if (faixasAtivas.length <= 1) return 0;
-    const fracao = Math.max(0, Math.min(0.999, (angulo - 29) / 19));
+    const fracao = Math.max(0, Math.min(0.999, (angulo - 21) / 17));
     return Math.min(faixasAtivas.length - 1, Math.floor(fracao * faixasAtivas.length));
   };
 
@@ -281,8 +281,8 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
     setAnguloArrastoBraco(null);
     setFaixaHoverArrasto(null);
 
-    // Se soltou fora do disco (ângulo < 20deg): pousa no suporte de descanso e pausa a reprodução
-    if (anguloFinal < 20) {
+    // Se soltou fora do disco (ângulo < 15deg): pousa no suporte de descanso e pausa a reprodução
+    if (anguloFinal < 15) {
       if (tocando) {
         onAlternarPlayPause();
       }
@@ -800,28 +800,8 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                   viewBox="0 0 96 192"
                   style={{ overflow: 'visible' }}
                 >
-                  {/* Haste reta do braço partindo de (58, 22) até (58, 148) */}
-                  <line
-                    x1="58"
-                    y1="22"
-                    x2="58"
-                    y2="148"
-                    stroke="url(#brassGradientStitch)"
-                    strokeLinecap="round"
-                    strokeWidth="3.4"
-                  />
-                  {/* Conector chanfrado suave para a cápsula */}
-                  <line
-                    x1="58"
-                    y1="148"
-                    x2="54"
-                    y2="158"
-                    stroke="url(#brassGradientStitch)"
-                    strokeLinecap="round"
-                    strokeWidth="3.2"
-                  />
                   <defs>
-                    <linearGradient id="brassGradientStitch" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <linearGradient id="brassGradientStitch" gradientUnits="userSpaceOnUse" x1="52" y1="20" x2="64" y2="160">
                       <stop offset="0%" stopColor="#FFF0B3" />
                       <stop offset="35%" stopColor="#E4C46F" />
                       <stop offset="65%" stopColor="#D4AF37" />
@@ -829,6 +809,22 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                       <stop offset="100%" stopColor="#FFD966" />
                     </linearGradient>
                   </defs>
+                  {/* Haste metálica reta do braço partindo de (58, 22) até a junção do cabeçote em (58, 148) */}
+                  <path
+                    d="M 58 22 L 58 148 L 54 158"
+                    stroke="url(#brassGradientStitch)"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="3.6"
+                  />
+                  {/* Filete de reflexo especular de alta relojoaria */}
+                  <path
+                    d="M 57.4 24 L 57.4 146"
+                    stroke="#FFFDF0"
+                    strokeOpacity="0.55"
+                    strokeLinecap="round"
+                    strokeWidth="1.1"
+                  />
                 </svg>
 
                 {/* Cápsula Audiófila Headshell com Agulha e LED Âmbar pousando com precisão no vinil */}
