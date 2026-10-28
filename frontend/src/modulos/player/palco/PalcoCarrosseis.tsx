@@ -156,15 +156,6 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   // Regra de cores litúrgicas: Bordô nobre para Rito Brasileiro, Deep Blue para os demais
   const eRitoBrasileiro = (rito || '').toUpperCase().includes('BRASILEIRO');
 
-  // Gestos de swipe no carrossel
-  const inicioXRef = useRef(0);
-  const lastXRef = useRef(0);
-  const lastTimeRef = useRef(0);
-  const velocidadeXRef = useRef(0);
-  const arrastouMaisQueCliqueRef = useRef(false);
-  const pointerDownTimeRef = useRef(0);
-  const pointerIdRef = useRef<number | null>(null);
-
   const momentoAtivo = momentos[indiceMomento];
   const faixasAtivas = momentoAtivo?.candidatas ?? [];
   const temAlbumNoMomento = faixasAtivas.length > 0;
@@ -268,6 +259,18 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
     return () => observer.disconnect();
   }, []);
 
+  // Lógica de gestos e cliques do carrossel 3D
+  const pointerIdRef = useRef<number | null>(null);
+  const inicioXRef = useRef(0);
+  const lastXRef = useRef(0);
+  const lastTimeRef = useRef(0);
+  const pointerDownTimeRef = useRef(0);
+  const velocidadeXRef = useRef(0);
+  const arrastouMaisQueCliqueRef = useRef(false);
+  const capturouPointerRef = useRef(false);
+  const cardIndexClicadoRef = useRef<number | null>(null);
+  const ultimoCliqueTempoRef = useRef(0);
+
   // Regra do usuário: O tamanho da capa dos discos é rigorosamente 65% do box que o contém
   const tamanhoCapa = Math.round(larguraBox * 0.65);
   const PASSO_X = Math.round(tamanhoCapa * 1.05);
@@ -282,12 +285,8 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
     pointerDownTimeRef.current = performance.now();
     velocidadeXRef.current = 0;
     arrastouMaisQueCliqueRef.current = false;
+    capturouPointerRef.current = false;
     setArrastando(true);
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      /* ignore */
-    }
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -295,7 +294,18 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
     const dx = e.clientX - inicioXRef.current;
     if (!arrastouMaisQueCliqueRef.current && Math.abs(dx) > 6) {
       arrastouMaisQueCliqueRef.current = true;
+      cardIndexClicadoRef.current = null;
+      if (!capturouPointerRef.current) {
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          capturouPointerRef.current = true;
+        } catch {
+          /* ignore */
+        }
+      }
     }
+
+    if (!arrastouMaisQueCliqueRef.current) return;
 
     const now = performance.now();
     const dt = now - lastTimeRef.current;
@@ -317,20 +327,28 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
     setArrastando(false);
     const duracao = performance.now() - pointerDownTimeRef.current;
 
-    try {
-      if (pointerIdRef.current !== null) {
+    if (capturouPointerRef.current && pointerIdRef.current !== null) {
+      try {
         e.currentTarget.releasePointerCapture(pointerIdRef.current);
-        pointerIdRef.current = null;
+      } catch {
+        /* ignore */
       }
-    } catch {
-      /* ignore */
+      capturouPointerRef.current = false;
     }
+    pointerIdRef.current = null;
 
-    // Clique sem arraste
+    // Se for clique rápido sem arrasto:
     if (!arrastouMaisQueCliqueRef.current && duracao < 650) {
       setOffsetXFracionario(0);
+      const idxClicado = cardIndexClicadoRef.current;
+      cardIndexClicadoRef.current = null;
+      if (idxClicado !== null) {
+        lidarCliqueCard(idxClicado);
+      }
       return;
     }
+
+    cardIndexClicadoRef.current = null;
 
     // Inércia de projeção com controle fino de 1 momento por vez
     const projecao = offsetXFracionario - (velocidadeXRef.current * 60) / PASSO_X;
@@ -350,11 +368,24 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
     }
   };
 
+  /**
+   * Ao clicar na capa do álbum:
+   * - Se for o card ativo: abre o modal de configuração do momento litúrgico (acervo + upload)
+   * - Se for um card vizinho: centraliza e foca o momento correspondente
+   */
   const lidarCliqueCard = (idx: number) => {
-    if (arrastouMaisQueCliqueRef.current) return;
+    const agora = performance.now();
+    if (agora - ultimoCliqueTempoRef.current < 250) return;
+    ultimoCliqueTempoRef.current = agora;
+
     feedbackTatil.clique();
     if (idx === indiceMomento) {
-      setModalTracklistAberto(true);
+      // Abre o modal de configuração do momento litúrgico (compor músicas do acervo ou upload)
+      if (onAbrirUpload) {
+        onAbrirUpload();
+      } else {
+        setModalTracklistAberto(true);
+      }
     } else {
       onMudarMomento(idx);
     }
@@ -401,7 +432,18 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                 return (
                   <div
                     key={`album-card-${momento.evento_id}-${i}`}
-                    onClick={() => lidarCliqueCard(i)}
+                    onPointerDown={() => {
+                      cardIndexClicadoRef.current = i;
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      lidarCliqueCard(i);
+                    }}
+                    title={
+                      ativo
+                        ? 'Clique para configurar o momento litúrgico (adicionar músicas do acervo ou upload)'
+                        : `ÁLBUM ${paraRomano(i + 1)} • ${momento.evento_nome}`
+                    }
                     style={{
                       position: 'absolute',
                       width: tamanhoCapa,

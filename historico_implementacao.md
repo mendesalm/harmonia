@@ -4,6 +4,20 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [28 de Outubro de 2026 - Manhã (Abertura do Modal de Composição ao Clicar na Capa do Álbum)] - Correção de Eventos Pointer e Abertura de Modal
+**Módulo:** `Player UX Vitrola H-33` / `Carrossel 3D de Álbuns` / `Modal de Composição Litúrgica`
+
+### 1. Desbloqueio dos Eventos de Clique nas Capas dos Álbuns
+- **Causa Raiz Identificada:** O container pai do carrossel 3D invocava `setPointerCapture` imediatamente no evento `onPointerDown`, o que capturava o fluxo de eventos e suprimia a propagação do evento `click` para os cards filhos das capas dos álbuns.
+- **Captura Condicional de Ponteiro:** A captura via `setPointerCapture` agora só é ativada se houver deslocamento real de arrasto (`Math.abs(dx) > 6px`). Cliques e toques estáticos não acionam a captura, garantindo que o evento de clique seja propagado com 100% de confiabilidade em mobile e desktop.
+- **Garantia Dupla no `finalizarGesto`:** Caso o navegador cancele o clique sintético, `finalizarGesto` detecta toques sem arrasto (`duracao < 650ms`) e aciona diretamente o card clicado.
+
+### 2. Abertura do Modal de Configuração do Momento Litúrgico (Acervo + Upload)
+- **Ação do Clique:** Ao clicar na capa do álbum ativo no carrossel, o player agora invoca `onAbrirUpload()` (`ModalComporMomento`), abrindo a interface completa para buscar músicas no acervo existente com pré-escuta de áudio e vinculação direta ao momento ou realizar novos uploads/vídeos do YouTube.
+- **Clique em Álbuns Vizinhos:** Se o clique ocorrer em uma capa vizinha, o carrossel gira e centraliza aquele momento.
+
+---
+
 ## [28 de Outubro de 2026 - Manhã (Remoção Estrito Rito, Display Expandido & Navegação por Cliques no Braço)] - Refinamento de UX do Player H-33
 **Módulo:** `Player UX Vitrola H-33` / `Painel do Deck` / `Controles do Tonearm` / `Display de Informações`
 
