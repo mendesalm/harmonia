@@ -4,6 +4,23 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [28 de Outubro de 2026 - Manhã (Estruturação Hierárquica de Pastas Locais por Metadados Litúrgicos)] - Downloader & Organização Local
+**Módulo:** `Downloader Litúrgico` / `Organização Automática de Pastas` / `Tags ID3 Locais`
+
+### 1. Hierarquia de Diretórios Locais por Metadados
+- **Estruturação Automática:** O utilitário [`downloader_liturgico.py`](file:///c:/Users/engan/Desktop/Harmonia/scripts/downloader_liturgico.py) passa a organizar os arquivos de áudio baixados em uma árvore hierárquica baseada nos metadados selecionados:
+  ```
+  Desktop\Musicas_{Spotify|YouTube}\
+    └── {ESTILO}\                  (ex: CLASSICA, VIOLAO, SOUNDTRACKS, etc.)
+        └── {SUBCLASSIFICACAO}\     (ex: GERAL ou AMBIENTE / Surdina)
+            └── {MOMENTO_LITURGICO}\(ex: Entrada do Pavilhão Nacional, Acervo Geral)
+                └── {Artista} - {Título}.mp3
+  ```
+- **Gravação de Tags ID3:** Além da estrutura em pastas físicas, o arquivo MP3 recebe tags ID3 internas (`title`, `artist`, `genre` e `album`), garantindo identificação correta em players externos locais (VLC, Windows Media Player, etc.).
+- **Limpeza Automática:** Os downloads ocorrem em uma pasta temporária de trabalho que é limpa e removida ao final do processamento, mantendo o diretório local perfeitamente catalogado e sem arquivos soltos na raiz.
+
+---
+
 ## [28 de Outubro de 2026 - Manhã (Correção de Foreign Key e Erro 500 no Upload de Músicas)] - Estabilidade & Resolução Canônica
 **Módulo:** `Upload de Músicas` / `Resolução de IDs Canônicos e Eventos` / `Downloader Litúrgico`
 

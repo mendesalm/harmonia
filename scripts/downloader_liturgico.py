@@ -298,6 +298,7 @@ def coletar_metadados_liturgicos(
 
     # 4. Momentos Liturgicos Designados
     eventos_selecionados = []
+    nomes_momentos_selecionados = []
     if momentos:
         print("\nMomentos Liturgicos Designados:")
         print("   (Digite os numeros separados por virgula, ex: 1, 4 - ou ENTER para Acervo Geral)")
@@ -312,6 +313,7 @@ def coletar_metadados_liturgicos(
                     num = int(parte) - 1
                     if 0 <= num < len(momentos):
                         eventos_selecionados.append(momentos[num]["id"])
+                        nomes_momentos_selecionados.append(momentos[num]["nome"])
 
     return {
         "titulo": titulo_final,
@@ -319,7 +321,77 @@ def coletar_metadados_liturgicos(
         "estilo": estilo_escolhido,
         "subclassificacao": sub_escolhida,
         "eventos_sugeridos_ids": eventos_selecionados,
+        "nomes_momentos": nomes_momentos_selecionados,
     }
+
+
+def sanitizar_nome_sistema_arquivos(texto: str) -> str:
+    """Sanitiza o texto para uso seguro como nome de arquivo ou pasta no Windows."""
+    caracteres_invalidos = '<>:"/\\|?*'
+    limpo = "".join(c for c in (texto or "") if c not in caracteres_invalidos).strip()
+    return limpo or "Geral"
+
+
+def organizar_arquivo_localmente(
+    caminho_mp3: Path, pasta_base: Path, metadados: Dict[str, Any]
+) -> Path:
+    """
+    Move e organiza o arquivo MP3 na estrutura de pastas baseada nos metadados litúrgicos:
+    {PASTA_BASE} / {ESTILO} / {SUBCLASSIFICACAO} / {MOMENTO_LITURGICO} / {Artista} - {Titulo}.mp3
+    Também grava tags ID3 locais no arquivo MP3.
+    """
+    estilo_pasta = sanitizar_nome_sistema_arquivos(metadados.get("estilo") or "UNIVERSAL")
+    sub_pasta = sanitizar_nome_sistema_arquivos(metadados.get("subclassificacao") or "GERAL")
+
+    nomes_momentos = metadados.get("nomes_momentos", [])
+    if nomes_momentos:
+        momento_pasta = sanitizar_nome_sistema_arquivos(nomes_momentos[0])
+    else:
+        momento_pasta = "Acervo Geral"
+
+    pasta_destino_final = pasta_base / estilo_pasta / sub_pasta / momento_pasta
+    pasta_destino_final.mkdir(parents=True, exist_ok=True)
+
+    artista_arq = sanitizar_nome_sistema_arquivos(metadados.get("autor_artista") or "Desconhecido")
+    titulo_arq = sanitizar_nome_sistema_arquivos(metadados.get("titulo") or caminho_mp3.stem)
+    nome_final = f"{artista_arq} - {titulo_arq}.mp3"
+    caminho_final = pasta_destino_final / nome_final
+
+    if caminho_mp3.resolve() != caminho_final.resolve():
+        if caminho_final.exists():
+            caminho_final = pasta_destino_final / f"{artista_arq} - {titulo_arq}_{caminho_mp3.stem[:6]}.mp3"
+        try:
+            shutil.move(str(caminho_mp3), str(caminho_final))
+        except Exception as erro:
+            print(f"[!] Aviso ao mover arquivo: {erro}")
+            caminho_final = caminho_mp3
+
+    # Grava metadados ID3 internos se mutagen estiver instalado
+    if mutagen is not None and caminho_final.exists():
+        try:
+            try:
+                audio = EasyID3(str(caminho_final))
+            except Exception:
+                audio = mutagen.File(str(caminho_final), easy=True)
+                if audio is None:
+                    audio = MP3(str(caminho_final), ID3=EasyID3)
+                    audio.add_tags()
+
+            audio["title"] = metadados.get("titulo") or titulo_arq
+            audio["artist"] = metadados.get("autor_artista") or artista_arq
+            audio["genre"] = estilo_pasta
+            audio["album"] = momento_pasta
+            audio.save()
+        except Exception:
+            pass
+
+    rel_path = caminho_final
+    try:
+        rel_path = caminho_final.relative_to(pasta_base.parent)
+    except Exception:
+        pass
+    print(f"[OK] Arquivo local organizado em: {rel_path}")
+    return caminho_final
 
 
 def transferir_para_harmonia(
@@ -367,6 +439,8 @@ def processar_fluxo(tipo: str, link_ou_url: Optional[str] = None):
     banner()
 
     pasta_destino = PASTA_DOWNLOADS_SPOTIFY if tipo == "spotify" else PASTA_DOWNLOADS_YOUTUBE
+    pasta_temp = pasta_destino / "_temp_download"
+    pasta_temp.mkdir(parents=True, exist_ok=True)
 
     if not link_ou_url:
         origem_str = "Spotify (track/album/playlist)" if tipo == "spotify" else "YouTube (video/playlist)"
@@ -379,41 +453,58 @@ def processar_fluxo(tipo: str, link_ou_url: Optional[str] = None):
         print("[!] Nenhuma URL informada.")
         return
 
-    # Download
+    # Download direto para pasta temporária de trabalho
     if tipo == "spotify":
-        arquivos = baixar_spotify(link_ou_url, pasta_destino)
+        arquivos = baixar_spotify(link_ou_url, pasta_temp)
     else:
-        arquivos = baixar_youtube(link_ou_url, pasta_destino)
+        arquivos = baixar_youtube(link_ou_url, pasta_temp)
 
     if not arquivos:
         print("[!] Nenhum arquivo MP3 foi localizado apos a operacao.")
+        try:
+            pasta_temp.rmdir()
+        except Exception:
+            pass
         input("\nPressione ENTER para continuar...")
         return
 
     print(f"\n[OK] {len(arquivos)} faixa(s) pronta(s) para classificacao liturgica!")
 
-    # Pergunta previa sobre envio ao Harmonia
+    # Carrega momentos litúrgicos para enriquecer a taxonomia de pastas locais
+    sessao_salva = carregar_sessao()
+    token_disponivel = sessao_salva.get("token") if sessao_salva else ""
+    momentos = carregar_momentos_liturgicos(token_disponivel)
+
+    # Pergunta prévia sobre envio ao Harmonia
     perguntar_envio = input("\nDeseja transferir as faixas para o Acervo do Harmonia? [S/n]: ").strip().lower()
     deseja_enviar = perguntar_envio in ("", "s", "sim", "y")
 
     token = None
-    momentos = []
     if deseja_enviar:
         token = obter_token_autenticado()
-        momentos = carregar_momentos_liturgicos(token)
+        if not momentos:
+            momentos = carregar_momentos_liturgicos(token)
 
-    # Processa cada faixa
+    # Processa e organiza cada faixa na estrutura de pastas baseada nos metadados
     for idx, arq in enumerate(arquivos, 1):
         print(f"\n>>> Faixa {idx} de {len(arquivos)}")
         meta = coletar_metadados_liturgicos(arq, momentos)
 
+        # Move o arquivo para a árvore hierárquica: {ESTILO} / {SUBCLASSIFICACAO} / {MOMENTO} / {Arquivo}.mp3
+        arq_organizado = organizar_arquivo_localmente(arq, pasta_destino, meta)
+
         if deseja_enviar and token:
-            transferir_para_harmonia(token, arq, meta)
-        else:
-            print(f"[i] Musica mantida localmente em: {arq}")
+            transferir_para_harmonia(token, arq_organizado, meta)
+
+    # Limpa pasta temporária
+    try:
+        shutil.rmtree(pasta_temp, ignore_errors=True)
+    except Exception:
+        pass
 
     print("\n" + "=" * 72)
-    print("[FIM] Processamento liturgico concluido com sucesso!")
+    print("[FIM] Processamento liturgico e organizacao de pastas concluidos!")
+    print(f"Estrutura gerada em: {pasta_destino}")
     print("=" * 72)
 
 
@@ -451,7 +542,9 @@ def main():
                 token = obter_token_autenticado()
                 momentos = carregar_momentos_liturgicos(token)
                 meta = coletar_metadados_liturgicos(p, momentos)
-                transferir_para_harmonia(token, p, meta)
+                pasta_base = Path.home() / "Desktop" / "Musicas_Harmonia"
+                p_organizado = organizar_arquivo_localmente(p, pasta_base, meta)
+                transferir_para_harmonia(token, p_organizado, meta)
             else:
                 print("[!] Arquivo nao encontrado.")
             input("\nPressione ENTER para voltar ao menu...")
