@@ -25,6 +25,8 @@ async def registrar_upload_musica(
     nova_musica = Musica(
         titulo=dados.titulo,
         autor_artista=dados.autor_artista,
+        estilo=dados.estilo,
+        subclassificacao=dados.subclassificacao,
         upload_por_loja_id=dados.upload_por_loja_id,
         arquivo_url=arquivo_url,
         metadados=dados.metadados,

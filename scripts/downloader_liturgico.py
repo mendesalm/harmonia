@@ -1,0 +1,438 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# EM CONFORMIDADE COM AS REGRAS DE OURO DO E-SIGMA
+"""
+Harmonia - Downloader Litúrgico (Spotify & YouTube) com Metadados e Upload Direto.
+
+Permite baixar músicas do Spotify ou do YouTube em alta fidelidade (320 kbps),
+atribuir metadados litúrgicos maçônicos (Estilo, Subclassificação funcional e
+Momentos Ritualísticos Canônicos) e transferir automaticamente para o Acervo do Harmonia.
+"""
+import argparse
+import getpass
+import json
+import os
+import shutil
+import sys
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+import requests
+
+try:
+    import imageio_ffmpeg
+    FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
+except Exception:
+    FFMPEG_EXE = "ffmpeg"
+
+try:
+    import mutagen
+    from mutagen.easyid3 import EasyID3
+    from mutagen.mp3 import MP3
+except Exception:
+    mutagen = None
+
+API_PADRAO = os.getenv("HARMONIA_API_URL", "https://harmonia.e-sigma.app/api/v1").rstrip("/")
+ESIGMA_LOGIN_URL = os.getenv("ESIGMA_LOGIN_URL", "https://e-sigma.app/api/v1/auth/login")
+ARQUIVO_TOKEN = Path.home() / ".harmonia_cli_token.json"
+PASTA_DOWNLOADS_SPOTIFY = Path.home() / "Desktop" / "Musicas_Spotify"
+PASTA_DOWNLOADS_YOUTUBE = Path.home() / "Desktop" / "Musicas_YouTube"
+
+ESTILOS_OPCOES = [
+    ("UNIVERSAL", "Universal (Base litúrgica para qualquer sessão)"),
+    ("CLASSICA", "Clássica (Erudita, orquestral, barroca ou renascentista)"),
+    ("VIOLAO", "Violão (Acústico, cordas dedilhadas e solo)"),
+    ("SOUNDTRACKS", "Soundtracks (Temas cinematográficos e orquestrados)"),
+    ("POPULAR", "Popular (Arranjos instrumentais MPB ou folclóricos)"),
+]
+
+SUBCLASSIFICACOES_OPCOES = [
+    ("GERAL", "Geral (Dinâmica regular para momentos solenes e marcantes)"),
+    ("AMBIENTE", "Ambiente / Surdina (Textura suave e serena para momentos em PP)"),
+]
+
+
+def limpar_tela():
+    """Limpa a tela do terminal."""
+    os.system("cls" if os.name == "nt" else "clear")
+
+
+def banner():
+    """Exibe cabeçalho nobre do utilitário."""
+    print("=" * 72)
+    print("   🏛️  HARMONIA - DOWNLOADER LITÚRGICO & UPLOADER PARA O ACERVO  🎵")
+    print("   Qualidade 320 kbps • Classificação Canônica • Sincronização Direta")
+    print("=" * 72)
+
+
+def salvar_sessao(token: str, email: str):
+    """Salva token e email em arquivo local de sessão."""
+    try:
+        with open(ARQUIVO_TOKEN, "w", encoding="utf-8") as f:
+            json.dump({"token": token, "email": email}, f)
+    except Exception:
+        pass
+
+
+def carregar_sessao() -> Optional[Dict[str, str]]:
+    """Carrega dados da sessão salva."""
+    if ARQUIVO_TOKEN.exists():
+        try:
+            with open(ARQUIVO_TOKEN, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return None
+    return None
+
+
+def obter_token_autenticado() -> str:
+    """Valida token salvo ou autentica interativamente contra o e-Sigma IdP."""
+    sessao = carregar_sessao()
+    if sessao and sessao.get("token"):
+        headers = {"Authorization": f"Bearer {sessao['token']}"}
+        try:
+            res = requests.get("https://e-sigma.app/api/v1/auth/validate", headers=headers, timeout=5)
+            if res.status_code == 200:
+                print(f"[✓] Conectado ao e-Sigma como: {sessao.get('email', 'Usuário Autenticado')}")
+                return sessao["token"]
+        except Exception:
+            pass
+
+    print("\n--- 🔐 Autenticação no e-Sigma (IdP Central) ---")
+    while True:
+        email = input("E-mail ou CIM: ").strip()
+        senha = getpass.getpass("Senha: ").strip()
+        if not email or not senha:
+            print("[!] E-mail e senha são obrigatórios.")
+            continue
+
+        try:
+            print("Validando credenciais junto ao e-Sigma...")
+            res = requests.post(
+                ESIGMA_LOGIN_URL,
+                json={"username": email, "password": senha, "modulo_origem": "harmonia"},
+                timeout=12,
+            )
+            if res.status_code != 200:
+                res = requests.post(
+                    ESIGMA_LOGIN_URL,
+                    data={"username": email, "password": senha, "modulo_origem": "harmonia"},
+                    timeout=12,
+                )
+
+            if res.status_code == 200:
+                dados = res.json()
+                token = dados.get("access_token") or dados.get("token")
+                if token:
+                    salvar_sessao(token, email)
+                    print("[✓] Autenticado com sucesso!")
+                    return token
+
+            print(f"[!] Falha na autenticação (HTTP {res.status_code}): {res.text}")
+        except Exception as erro:
+            print(f"[!] Erro ao conectar ao e-Sigma: {erro}")
+
+
+def carregar_momentos_liturgicos(token: str) -> List[Dict[str, Any]]:
+    """Obtém momentos litúrgicos do Harmonia (canônicos e eventos ativos)."""
+    headers = {"Authorization": f"Bearer {token}"}
+    # Tenta listar momentos canônicos do admin
+    try:
+        res = requests.get(f"{API_PADRAO}/admin/canonicos/momentos", headers=headers, timeout=8)
+        if res.status_code == 200:
+            itens = res.json()
+            if isinstance(itens, list) and len(itens) > 0:
+                return [{"id": str(i["id"]), "nome": i["nome"], "ordem": i.get("ordem_sugerida", 99)} for i in itens]
+    except Exception:
+        pass
+
+    # Fallback para eventos de loja
+    try:
+        res = requests.get(f"{API_PADRAO}/eventos", headers=headers, timeout=8)
+        if res.status_code == 200:
+            itens = res.json()
+            if isinstance(itens, list):
+                return [{"id": str(i["id"]), "nome": i["nome"], "ordem": i.get("ordem", 99)} for i in itens]
+    except Exception:
+        pass
+
+    return []
+
+
+def extrair_tags_arquivo(caminho_mp3: Path) -> Tuple[str, str]:
+    """Lê tags ID3 do arquivo MP3."""
+    titulo = caminho_mp3.stem
+    artista = "Desconhecido"
+    if mutagen is not None:
+        try:
+            audio = EasyID3(str(caminho_mp3))
+            if "title" in audio and audio["title"]:
+                titulo = audio["title"][0]
+            if "artist" in audio and audio["artist"]:
+                artista = audio["artist"][0]
+        except Exception:
+            pass
+    return titulo, artista
+
+
+def baixar_youtube(url: str, pasta_destino: Path) -> List[Path]:
+    """Baixa vídeo ou playlist do YouTube via yt-dlp em 320 kbps."""
+    import yt_dlp
+
+    pasta_destino.mkdir(parents=True, exist_ok=True)
+    arquivos_antes = set(pasta_destino.glob("*.mp3"))
+
+    ydl_opts = {
+        "ffmpeg_location": FFMPEG_EXE,
+        "format": "ba/b",
+        "outtmpl": str(pasta_destino / "%(title)s.%(ext)s"),
+        "postprocessors": [
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "320",
+            }
+        ],
+        "postprocessor_args": ["-nostdin"],
+        "quiet": False,
+        "ignoreerrors": True,
+    }
+
+    print(f"\n[*] Baixando do YouTube via yt-dlp (320 kbps)...")
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])
+
+    arquivos_depois = set(pasta_destino.glob("*.mp3"))
+    novos = list(arquivos_depois - arquivos_antes)
+    if not novos:
+        # Se não detectou novo por diferença, pega os mais recentes modificados nos últimos 2 minutos
+        novos = [f for f in pasta_destino.glob("*.mp3")]
+    return sorted(novos, key=lambda f: f.stat().st_mtime, reverse=True)
+
+
+def baixar_spotify(link: str, pasta_destino: Path) -> List[Path]:
+    """Baixa faixa, álbum ou playlist do Spotify via spotdl."""
+    pasta_destino.mkdir(parents=True, exist_ok=True)
+    arquivos_antes = set(pasta_destino.glob("**/*.mp3"))
+
+    print(f"\n[*] Baixando do Spotify via spotdl (320 kbps)...")
+    cmd = (
+        f'"{sys.executable}" -m spotdl download "{link}" '
+        f'--format mp3 --bitrate 320k --output "{pasta_destino}/{{artist}} - {{title}}.{{output-ext}}"'
+    )
+    codigo = os.system(cmd)
+    if codigo != 0:
+        print(f"[!] spotdl retornou código {codigo}. Tentando comando direto...")
+
+    arquivos_depois = set(pasta_destino.glob("**/*.mp3"))
+    novos = list(arquivos_depois - arquivos_antes)
+    if not novos:
+        novos = [f for f in pasta_destino.glob("**/*.mp3")]
+    return sorted(novos, key=lambda f: f.stat().st_mtime, reverse=True)
+
+
+def coletar_metadados_liturgicos(
+    caminho_mp3: Path, momentos: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """Menu interativo para coletar e confirmar metadados litúrgicos."""
+    tag_tit, tag_art = extrair_tags_arquivo(caminho_mp3)
+
+    print("\n" + "-" * 72)
+    print(f"🎵 Arquivo: {caminho_mp3.name}")
+    print("-" * 72)
+
+    # 1. Título e Artista
+    t_input = input(f"Título da Música [{tag_tit}]: ").strip()
+    titulo_final = t_input if t_input else tag_tit
+
+    a_input = input(f"Compositor / Intérprete [{tag_art}]: ").strip()
+    artista_final = a_input if a_input else tag_art
+
+    # 2. Estilo Litúrgico
+    print("\n🏛️  Estilo Litúrgico:")
+    for i, (chave, desc) in enumerate(ESTILOS_OPCOES, 1):
+        print(f"   [{i}] {desc}")
+    op_estilo = input("Escolha o Estilo [1-5, padrão 1 - UNIVERSAL]: ").strip()
+    estilo_escolhido = "UNIVERSAL"
+    if op_estilo.isdigit() and 1 <= int(op_estilo) <= len(ESTILOS_OPCOES):
+        estilo_escolhido = ESTILOS_OPCOES[int(op_estilo) - 1][0]
+
+    # 3. Subclassificação
+    print("\n🔊 Subclassificação Funcional:")
+    for i, (chave, desc) in enumerate(SUBCLASSIFICACOES_OPCOES, 1):
+        print(f"   [{i}] {desc}")
+    op_sub = input("Escolha a Subclassificação [1-2, padrão 1 - GERAL]: ").strip()
+    sub_escolhida = "GERAL"
+    if op_sub.isdigit() and 1 <= int(op_sub) <= len(SUBCLASSIFICACOES_OPCOES):
+        sub_escolhida = SUBCLASSIFICACOES_OPCOES[int(op_sub) - 1][0]
+
+    # 4. Momentos Litúrgicos Designados
+    eventos_selecionados = []
+    if momentos:
+        print("\n🕯️  Momentos Litúrgicos Designados:")
+        print("   (Digite os números separados por vírgula, ex: 1, 4 - ou ENTER para Acervo Geral)")
+        for idx, m in enumerate(momentos[:35], 1):
+            print(f"   [{idx:2d}] {m.get('nome')}")
+
+        op_mom = input("\nNúmeros dos momentos correspondentes: ").strip()
+        if op_mom:
+            for parte in op_mom.split(","):
+                parte = parte.strip()
+                if parte.isdigit():
+                    num = int(parte) - 1
+                    if 0 <= num < len(momentos):
+                        eventos_selecionados.append(momentos[num]["id"])
+
+    return {
+        "titulo": titulo_final,
+        "autor_artista": artista_final,
+        "estilo": estilo_escolhido,
+        "subclassificacao": sub_escolhida,
+        "eventos_sugeridos_ids": eventos_selecionados,
+    }
+
+
+def transferir_para_harmonia(
+    token: str, caminho_mp3: Path, metadados: Dict[str, Any]
+) -> bool:
+    """Envia o arquivo MP3 e seus metadados litúrgicos para o backend do Harmonia."""
+    headers = {"Authorization": f"Bearer {token}"}
+    print(f"\n[*] Transferindo '{metadados['titulo']}' para o Acervo do Harmonia...")
+
+    try:
+        with open(caminho_mp3, "rb") as f:
+            files = {"arquivo": (caminho_mp3.name, f, "audio/mpeg")}
+            data = {
+                "titulo": metadados["titulo"],
+                "autor_artista": metadados["autor_artista"],
+                "estilo": metadados["estilo"],
+                "subclassificacao": metadados["subclassificacao"],
+                "eventos_sugeridos_ids": json.dumps(metadados["eventos_sugeridos_ids"]),
+            }
+            res = requests.post(
+                f"{API_PADRAO}/musicas/upload",
+                headers=headers,
+                files=files,
+                data=data,
+                timeout=180,
+            )
+
+        if res.status_code in (200, 201):
+            resp_json = res.json()
+            print(f"[✓] Sucesso! Música registrada no Acervo Oficial!")
+            print(f"    ID: {resp_json.get('id')}")
+            print(f"    Estilo: {metadados['estilo']} | Subclassificação: {metadados['subclassificacao']}")
+            return True
+        else:
+            print(f"[!] Erro no upload (HTTP {res.status_code}): {res.text}")
+            return False
+    except Exception as erro:
+        print(f"[!] Falha na transferência: {erro}")
+        return False
+
+
+def processar_fluxo(tipo: str, link_ou_url: Optional[str] = None):
+    """Executa o ciclo completo de download, metadados e transferência."""
+    limpar_tela()
+    banner()
+
+    pasta_destino = PASTA_DOWNLOADS_SPOTIFY if tipo == "spotify" else PASTA_DOWNLOADS_YOUTUBE
+
+    if not link_ou_url:
+        origem_str = "Spotify (track/album/playlist)" if tipo == "spotify" else "YouTube (vídeo/playlist)"
+        print(f"\nOrigem selecionada: {origem_str.upper()}")
+        print(f"Pasta de destino local: {pasta_destino}")
+        print("-" * 72)
+        link_ou_url = input(f"Cole a URL do {tipo.capitalize()} aqui: ").strip()
+
+    if not link_ou_url:
+        print("[!] Nenhuma URL informada.")
+        return
+
+    # Download
+    if tipo == "spotify":
+        arquivos = baixar_spotify(link_ou_url, pasta_destino)
+    else:
+        arquivos = baixar_youtube(link_ou_url, pasta_destino)
+
+    if not arquivos:
+        print("[!] Nenhum arquivo MP3 foi localizado após a operação.")
+        input("\nPressione ENTER para continuar...")
+        return
+
+    print(f"\n[✓] {len(arquivos)} faixa(s) pronta(s) para classificação litúrgica!")
+
+    # Pergunta prévia sobre envio ao Harmonia
+    perguntar_envio = input("\nDeseja transferir as faixas para o Acervo do Harmonia? [S/n]: ").strip().lower()
+    deseja_enviar = perguntar_envio in ("", "s", "sim", "y")
+
+    token = None
+    momentos = []
+    if deseja_enviar:
+        token = obter_token_autenticado()
+        momentos = carregar_momentos_liturgicos(token)
+
+    # Processa cada faixa
+    for idx, arq in enumerate(arquivos, 1):
+        print(f"\n>>> Faixa {idx} de {len(arquivos)}")
+        meta = coletar_metadados_liturgicos(arq, momentos)
+
+        if deseja_enviar and token:
+            transferir_para_harmonia(token, arq, meta)
+        else:
+            print(f"[i] Música mantida localmente em: {arq}")
+
+    print("\n" + "=" * 72)
+    print("✨ Processamento litúrgico concluído com sucesso!")
+    print("=" * 72)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Harmonia - Downloader Litúrgico Spotify & YouTube")
+    parser.add_argument("--tipo", choices=["spotify", "youtube"], help="Tipo de serviço (spotify ou youtube)")
+    parser.add_argument("--url", help="URL direta da música/álbum/playlist")
+    args = parser.parse_args()
+
+    if args.tipo:
+        processar_fluxo(args.tipo, args.url)
+        return
+
+    while True:
+        limpar_tela()
+        banner()
+        print("\nEscolha a fonte de áudio:")
+        print("  [1] Baixar do Spotify (Faixa, Álbum ou Playlist)")
+        print("  [2] Baixar do YouTube (Vídeo ou Playlist)")
+        print("  [3] Classificar e Transferir MP3 Local Existente")
+        print("  [4] Sair")
+        print("-" * 72)
+
+        opcao = input("Opção [1-4]: ").strip()
+        if opcao == "1":
+            processar_fluxo("spotify")
+        elif opcao == "2":
+            processar_fluxo("youtube")
+        elif opcao == "3":
+            limpar_tela()
+            banner()
+            caminho_str = input("Caminho do arquivo MP3 local: ").strip().strip('"')
+            p = Path(caminho_str)
+            if p.exists() and p.is_file():
+                token = obter_token_autenticado()
+                momentos = carregar_momentos_liturgicos(token)
+                meta = coletar_metadados_liturgicos(p, momentos)
+                transferir_para_harmonia(token, p, meta)
+            else:
+                print("[!] Arquivo não encontrado.")
+            input("\nPressione ENTER para voltar ao menu...")
+        elif opcao in ("4", "sair", "exit", "q"):
+            print("\nAté logo!")
+            break
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nOperação interrompida pelo usuário.")
+        sys.exit(0)

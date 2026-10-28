@@ -4,6 +4,30 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [28 de Outubro de 2026 - Manhã (Downloader Litúrgico Spotify & YouTube com Metadados e Upload Direto)] - Scripts & API
+**Módulo:** `Downloader CLI & Scripts .bat` / `Ingestão de Músicas (Spotify/YouTube)` / `Metadados Litúrgicos e Upload Direto`
+
+### 1. Extensão dos Endpoints de Upload e Conversão do Backend
+- **Suporte a Estilo e Subclassificação:** Os endpoints `POST /api/v1/musicas/upload` e `POST /api/v1/musicas/converter-youtube` agora aceitam explicitamente `estilo` (`UNIVERSAL`, `CLASSICA`, `VIOLAO`, `SOUNDTRACKS`, `POPULAR`) e `subclassificacao` (`GERAL`, `AMBIENTE`), aplicando as funções de normalização (`normalizar_estilo`, `normalizar_subclassificacao`) de `backend.nucleo.constantes`.
+- **Persistência Completa:** `registrar_upload_musica` (`servicos.py`) grava diretamente esses atributos no registro da música no PostgreSQL, permitindo que uploads avulsos ou em lote já entrem no acervo com a taxonomia litúrgica definida.
+
+### 2. Utilitário Python Unificado (`downloader_liturgico.py`)
+- **Fontes Suportadas:** Download em 320 kbps a partir do **Spotify** (faixas, álbuns, playlists via `spotdl`) ou **YouTube** (vídeos e playlists via `yt-dlp` com FFmpeg).
+- **Entrevista Interativa de Metadados:**
+  1. Confirmação/Edição de Título e Artista (com leitura prévia de tags ID3).
+  2. Seleção de Estilo Litúrgico (1 a 5).
+  3. Seleção de Subclassificação Funcional (1 - Geral ou 2 - Ambiente/Surdina).
+  4. Seleção de Momentos Litúrgicos Canônicos obtidos dinamicamente da API do Harmonia.
+- **Transferência Imediata para o Acervo:** Pergunta ao usuário se deseja sincronizar a faixa com o Harmonia; em caso afirmativo, autentica via e-Sigma IdP (armazenando token em cache seguro `~/.harmonia_cli_token.json`) e faz o upload com retorno do UUID criado.
+
+### 3. Atualização dos Arquivos Executáveis `.bat`
+- **Área de Trabalho (`Desktop`):**
+  - `Baixar_Spotify_MP3.bat`: Atualizado para invocar o assistente com fluxo do Spotify.
+  - `Baixar_YouTube_MP3.bat`: Criado no Desktop para download e upload direto a partir do YouTube.
+- **Versionamento no Repositório:** Ambos os arquivos foram espelhados em `scripts/` do repositório para preservação e rastreabilidade.
+
+---
+
 ## [28 de Outubro de 2026 - Manhã (Upload e Conversão de Músicas no Painel de Curadoria Litúrgica)] - Extensão do Admin
 **Módulo:** `Painel Admin SuperAdmin` / `Curadoria Litúrgica de Músicas` / `Upload & Streaming Global`
 

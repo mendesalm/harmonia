@@ -31,6 +31,7 @@ from backend.api.musicas.servicos import (
     listar_arquivos_orfaos
 )
 from backend.api.musicas.extrator_metadados import extrair_metadados_arquivo_audio
+from backend.nucleo.constantes import normalizar_estilo, normalizar_subclassificacao
 from backend.api.musicas.conversor import converter_youtube_para_mp3_async
 from backend.api.musicas.midia import classificar_midia
 
@@ -157,6 +158,8 @@ async def listar_sugeridas(
 async def upload_musica(
     titulo: str = Form(..., description="Título da música"),
     autor_artista: Optional[str] = Form(None, description="Compositor ou intérprete"),
+    estilo: Optional[str] = Form(None, description="Estilo musical litúrgico (UNIVERSAL, CLASSICA, VIOLAO, SOUNDTRACKS, POPULAR)"),
+    subclassificacao: Optional[str] = Form(None, description="Subclassificação funcional: GERAL ou AMBIENTE"),
     upload_por_loja_id: Optional[uuid.UUID] = Form(None, description="UUID da Loja (Null se SuperAdmin)"),
     eventos_sugeridos_ids: str = Form(..., description="Lista JSON de UUIDs de eventos (ex: ['uuid1', 'uuid2'])"),
     arquivo: UploadFile = File(..., description="Arquivo de áudio (MP3, WAV, OGG)"),
@@ -200,9 +203,14 @@ async def upload_musica(
     if duracao_seg:
         metadados_dict["duracao_segundos"] = duracao_seg
 
+    estilo_final = normalizar_estilo(estilo)
+    subclassificacao_final = normalizar_subclassificacao(subclassificacao)
+
     dados_upload = MusicaUpload(
         titulo=titulo_final,
         autor_artista=autor_final,
+        estilo=estilo_final,
+        subclassificacao=subclassificacao_final,
         upload_por_loja_id=upload_por_loja_id,
         eventos_sugeridos_ids=lista_eventos,
         metadados=metadados_dict
@@ -253,9 +261,14 @@ async def converter_youtube(
         "tipo_midia": "ARQUIVO_LOCAL"
     }
 
+    estilo_final = normalizar_estilo(dados.estilo)
+    subclassificacao_final = normalizar_subclassificacao(dados.subclassificacao)
+
     dados_upload = MusicaUpload(
         titulo=titulo_final,
         autor_artista=autor_final,
+        estilo=estilo_final,
+        subclassificacao=subclassificacao_final,
         upload_por_loja_id=dados.organizacao_id,
         eventos_sugeridos_ids=dados.eventos_sugeridos_ids,
         metadados=metadados_dict

@@ -37,6 +37,8 @@ class MusicaDownloadYouTube(BaseModel):
     link_youtube: str = Field(..., description="URL do vídeo do YouTube")
     titulo: Optional[str] = Field(None, description="Título opcional")
     autor_artista: Optional[str] = Field(None, description="Autor/Artista opcional")
+    estilo: Optional[str] = Field("UNIVERSAL", description="Estilo musical litúrgico")
+    subclassificacao: Optional[str] = Field("GERAL", description="Subclassificação funcional")
     organizacao_id: Optional[uuid.UUID] = Field(None, description="UUID da Loja")
     bitrate_kbps: int = Field(320, description="Qualidade de áudio em kbps")
     eventos_sugeridos_ids: List[uuid.UUID] = Field(default_factory=list, description="IDs dos eventos sugeridos")
