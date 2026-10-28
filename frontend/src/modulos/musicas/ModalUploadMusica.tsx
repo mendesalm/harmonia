@@ -34,6 +34,7 @@ export const ModalUploadMusica: React.FC<Props> = ({
     usuario?.permissoes?.includes('super_admin') ||
     usuario?.tipo === 'ADMIN' ||
     usuario?.email?.toLowerCase() === 'mendesalm@gmail.com' ||
+    usuario?.email?.toLowerCase() === 'sistema@e-sigma.app' ||
     usuario?.dados_especificos?.cim === '272875'
   );
   const [associacaoGlobal, setAssociacaoGlobal] = useState(ehSuperAdmin);

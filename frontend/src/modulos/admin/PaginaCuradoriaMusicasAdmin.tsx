@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Loader2,
   Plus,
+  Upload,
   X,
   Volume1,
   Layers,
@@ -23,6 +24,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { feedbackTatil } from '../../compartilhado/utilitarios/dispositivoNativo';
+import { ModalUploadMusica } from '../musicas/ModalUploadMusica';
 
 interface MomentoCanonicoRef {
   id: string;
@@ -72,6 +74,7 @@ export const PaginaCuradoriaMusicasAdmin: React.FC = () => {
   const [carregando, setCarregando] = useState(true);
   const [salvandoId, setSalvandoId] = useState<string | null>(null);
   const [sucessoSalvoId, setSucessoSalvoId] = useState<string | null>(null);
+  const [modalUploadAberto, setModalUploadAberto] = useState(false);
 
   // Filtros
   const [busca, setBusca] = useState('');
@@ -311,9 +314,24 @@ export const PaginaCuradoriaMusicasAdmin: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#091326] border border-macaonico-dourado/30 text-xs font-mono">
-            <span className="text-slate-400">Total no Acervo:</span>
-            <span className="text-macaonico-dourado font-bold">{total}</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                feedbackTatil.clique();
+                setModalUploadAberto(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-macaonico-dourado via-[#F7D070] to-macaonico-dourado text-black font-bold text-xs sm:text-sm hover:brightness-110 active:scale-95 transition-all shadow-md shadow-macaonico-dourado/20 cursor-pointer"
+              title="Fazer upload de nova música ou converter do YouTube para o acervo global"
+            >
+              <Upload className="w-4 h-4 text-black stroke-[2.5]" />
+              <span>Upload de Música</span>
+            </button>
+
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#091326] border border-macaonico-dourado/30 text-xs font-mono">
+              <span className="text-slate-400">Total no Acervo:</span>
+              <span className="text-macaonico-dourado font-bold">{total}</span>
+            </div>
           </div>
         </div>
 
@@ -488,7 +506,18 @@ export const PaginaCuradoriaMusicasAdmin: React.FC = () => {
                   <tr>
                     <td colSpan={7} className="py-12 text-center text-slate-400">
                       <Music className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-500" />
-                      <p>Nenhuma música encontrada com os filtros selecionados.</p>
+                      <p className="mb-3">Nenhuma música encontrada com os filtros selecionados.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          feedbackTatil.clique();
+                          setModalUploadAberto(true);
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-macaonico-dourado text-black font-semibold text-xs hover:bg-yellow-400 transition-colors shadow-sm cursor-pointer"
+                      >
+                        <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>Fazer Upload de Música</span>
+                      </button>
                     </td>
                   </tr>
                 ) : (
@@ -662,6 +691,18 @@ export const PaginaCuradoriaMusicasAdmin: React.FC = () => {
             </table>
           </div>
         </div>
+
+        {/* Modal de Upload de Músicas / Conversão YouTube */}
+        {modalUploadAberto && (
+          <ModalUploadMusica
+            isGlobalAdmin={true}
+            esconderEventos={false}
+            onFechar={() => setModalUploadAberto(false)}
+            onSalvo={(_novaMusicaId) => {
+              carregarCatalogo();
+            }}
+          />
+        )}
 
       </div>
     </div>

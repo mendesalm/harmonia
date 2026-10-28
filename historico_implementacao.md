@@ -4,6 +4,20 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [28 de Outubro de 2026 - Manhã (Upload e Conversão de Músicas no Painel de Curadoria Litúrgica)] - Extensão do Admin
+**Módulo:** `Painel Admin SuperAdmin` / `Curadoria Litúrgica de Músicas` / `Upload & Streaming Global`
+
+### 1. Adição de Controle de Upload na Curadoria Litúrgica
+- **Botão Nobre no Cabeçalho:** Adicionado botão de ação em destaque `[ + Upload de Música ]` no cabeçalho da [`PaginaCuradoriaMusicasAdmin.tsx`](file:///c:/Users/engan/Desktop/Harmonia/frontend/src/modulos/admin/PaginaCuradoriaMusicasAdmin.tsx), com gradiente dourado maçônico e feedback tátil.
+- **Ação em Caso de Acervo Vazio:** Se a listagem não retornar faixas com os filtros aplicados, um botão contextual de upload também é apresentado diretamente no centro da tabela.
+- **Integração com `ModalUploadMusica` (`isGlobalAdmin={true}`):**
+  - Permite tanto o envio de arquivos de áudio locais (MP3, WAV, OGG) quanto a extração e conversão automática de áudio a partir de links do YouTube (320 kbps).
+  - Como o modal é aberto pelo SuperAdmin (`isGlobalAdmin={true}`), a música pode ser adicionada diretamente ao acervo global do ecossistema sem amarras de tenant.
+  - Ao concluir com sucesso, a lista e a contagem total de músicas são automaticamente atualizadas (`carregarCatalogo()`).
+- **Suporte Total ao SuperAdmin `sistema@e-sigma.app`:** O modal reconhece explicitamente `sistema@e-sigma.app` como SuperAdmin no frontend.
+
+---
+
 ## [28 de Outubro de 2026 - Manhã (Reconhecimento Explícito de sistema@e-sigma.app como SuperAdmin)] - Fortalecimento RBAC
 **Módulo:** `Autenticação SSO e-Sigma` / `RBAC Global` / `Suporte a SuperAdmin Central`
 
