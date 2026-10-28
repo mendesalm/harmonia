@@ -1,6 +1,5 @@
 @echo off
-chcp 65001 >nul
-title Harmonia - Downloader Spotify MP3 (320 kbps) e Acervo Litúrgico
+title Harmonia - Downloader Spotify MP3
 color 0B
 
 set "DIR_RAIZ=%~dp0.."
@@ -24,7 +23,7 @@ if not errorlevel 1 (
 )
 
 color 0C
-echo [ERRO] Python não encontrado.
+echo [ERRO] Python nao encontrado.
 pause
 exit /b 1
 
@@ -36,14 +35,14 @@ if not exist "%PASTA_DESTINO%" mkdir "%PASTA_DESTINO%"
 cls
 color 0B
 echo ======================================================================
-echo    🏛️  HARMONIA - DOWNLOADER SPOTIFY (320 KBPS) COM METADADOS LITÚRGICOS  🎵
+echo    HARMONIA - DOWNLOADER SPOTIFY (320 KBPS) - ACERVO LITURGICO
 echo ======================================================================
 echo  Pasta Local: "%PASTA_DESTINO%"
-echo  Integração: Acervo Global Harmonia (Estilo, Surdina e Momento Canônico)
+echo  Integracao: Acervo Global Harmonia (Estilo, Surdina e Momento Canonico)
 echo.
 echo  Exemplos de links suportados:
-echo    - Música:   https://open.spotify.com/track/...
-echo    - Álbum:    https://open.spotify.com/album/...
+echo    - Musica:   https://open.spotify.com/track/...
+echo    - Album:    https://open.spotify.com/album/...
 echo    - Playlist: https://open.spotify.com/playlist/...
 echo ======================================================================
 echo.
@@ -57,15 +56,15 @@ if "%LINK%"=="" goto MENU_LOOP
 
 echo.
 echo ======================================================================
-echo Opções:
-echo   [1] Baixar outra música, álbum ou playlist do Spotify
-echo   [2] Abrir pasta onde as músicas foram salvas localmente
+echo Opcoes:
+echo   [1] Baixar outra musica, album ou playlist do Spotify
+echo   [2] Abrir pasta onde as musicas foram salvas localmente
 echo   [3] Sair
 echo ======================================================================
 echo.
 
 set "OPCAO="
-set /p "OPCAO=Escolha uma opção [1, 2 ou 3]: "
+set /p "OPCAO=Escolha uma opcao [1, 2 ou 3]: "
 
 if "%OPCAO%"=="1" goto MENU_LOOP
 if "%OPCAO%"=="2" (

@@ -1,6 +1,5 @@
 @echo off
-chcp 65001 >nul
-title Harmonia - Downloader YouTube MP3 (320 kbps) e Acervo Litúrgico
+title Harmonia - Downloader YouTube MP3
 color 0E
 
 set "DIR_RAIZ=%~dp0.."
@@ -24,7 +23,7 @@ if not errorlevel 1 (
 )
 
 color 0C
-echo [ERRO] Python não encontrado.
+echo [ERRO] Python nao encontrado.
 pause
 exit /b 1
 
@@ -36,13 +35,13 @@ if not exist "%PASTA_DESTINO%" mkdir "%PASTA_DESTINO%"
 cls
 color 0E
 echo ======================================================================
-echo    🏛️  HARMONIA - DOWNLOADER YOUTUBE (320 KBPS) COM METADADOS LITÚRGICOS  🎵
+echo    HARMONIA - DOWNLOADER YOUTUBE (320 KBPS) - ACERVO LITURGICO
 echo ======================================================================
 echo  Pasta Local: "%PASTA_DESTINO%"
-echo  Integração: Acervo Global Harmonia (Estilo, Surdina e Momento Canônico)
+echo  Integracao: Acervo Global Harmonia (Estilo, Surdina e Momento Canonico)
 echo.
 echo  Exemplos de links suportados:
-echo    - Vídeo:    https://www.youtube.com/watch?v=...
+echo    - Video:    https://www.youtube.com/watch?v=...
 echo    - Short:    https://youtu.be/...
 echo    - Playlist: https://www.youtube.com/playlist?list=...
 echo ======================================================================
@@ -57,15 +56,15 @@ if "%LINK%"=="" goto MENU_LOOP
 
 echo.
 echo ======================================================================
-echo Opções:
-echo   [1] Baixar outro vídeo ou playlist do YouTube
-echo   [2] Abrir pasta onde as músicas foram salvas localmente
+echo Opcoes:
+echo   [1] Baixar outro video ou playlist do YouTube
+echo   [2] Abrir pasta onde as musicas foram salvas localmente
 echo   [3] Sair
 echo ======================================================================
 echo.
 
 set "OPCAO="
-set /p "OPCAO=Escolha uma opção [1, 2 ou 3]: "
+set /p "OPCAO=Escolha uma opcao [1, 2 ou 3]: "
 
 if "%OPCAO%"=="1" goto MENU_LOOP
 if "%OPCAO%"=="2" (
