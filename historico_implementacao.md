@@ -4,6 +4,22 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [28 de Outubro de 2026 - Manhã (Correção de Foreign Key e Erro 500 no Upload de Músicas)] - Estabilidade & Resolução Canônica
+**Módulo:** `Upload de Músicas` / `Resolução de IDs Canônicos e Eventos` / `Downloader Litúrgico`
+
+### 1. Causa Raiz do Erro 500 no Upload
+- **Conflito de Foreign Key:** A tabela relacional `musicas_eventos_sugeridos` exige `evento_id` com restrição estrita de chave estrangeira apontando para `eventos_ritualisticos.id`.
+- Ao selecionar itens vindos do catálogo canônico global (`momentos_canonicos`), o ID enviado pertencia à tabela de canônicos, violando a constraint do PostgreSQL e disparando HTTP 500 (`Internal Server Error`).
+
+### 2. Resolução Inteligente no Backend (`servicos.py`) e no Downloader
+- **Tratamento Híbrido Automático:** Em [`registrar_upload_musica`](file:///c:/Users/engan/Desktop/Harmonia/backend/api/musicas/servicos.py), a lista de IDs recebida agora é inspecionada:
+  - Se for `MomentoCanonico`, busca todos os `Eventos` de rito vinculados àquele canônico e os associa sem violar FK.
+  - Se for `Evento`, associa diretamente e expande para os demais ritos através de `canonico_id`.
+  - Jamais tenta persistir chaves inexistentes na tabela de eventos.
+- **Priorização no Downloader Litúrgico:** [`downloader_liturgico.py`](file:///c:/Users/engan/Desktop/Harmonia/scripts/downloader_liturgico.py) passa a listar diretamente os registros de `GET /api/v1/eventos`, garantindo 100% de compatibilidade retroativa e sucesso imediato no envio ao servidor de produção (retornando HTTP 201 Created).
+
+---
+
 ## [28 de Outubro de 2026 - Manhã (Downloader Litúrgico Spotify & YouTube com Metadados e Upload Direto)] - Scripts & API
 **Módulo:** `Downloader CLI & Scripts .bat` / `Ingestão de Músicas (Spotify/YouTube)` / `Metadados Litúrgicos e Upload Direto`
 

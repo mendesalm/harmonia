@@ -142,23 +142,39 @@ def obter_token_autenticado() -> str:
 
 
 def carregar_momentos_liturgicos(token: str) -> List[Dict[str, Any]]:
-    """Obtem momentos liturgicos do Harmonia (canonicos e eventos ativos)."""
+    """Obtem momentos liturgicos do Harmonia diretamente da tabela de eventos para compatibilidade estrita de FK."""
     headers = {"Authorization": f"Bearer {token}"}
-    try:
-        res = requests.get(f"{API_PADRAO}/admin/canonicos/momentos", headers=headers, timeout=8)
-        if res.status_code == 200:
-            itens = res.json()
-            if isinstance(itens, list) and len(itens) > 0:
-                return [{"id": str(i["id"]), "nome": i["nome"], "ordem": i.get("ordem_sugerida", 99)} for i in itens]
-    except Exception:
-        pass
-
     try:
         res = requests.get(f"{API_PADRAO}/eventos", headers=headers, timeout=8)
         if res.status_code == 200:
             itens = res.json()
+            if isinstance(itens, list) and len(itens) > 0:
+                return [
+                    {
+                        "id": str(i["id"]),
+                        "nome": i.get("nome", "Momento Liturgico"),
+                        "categoria": i.get("categoria_rito") or "Geral",
+                        "ordem": i.get("ordem_sugerida") or 99,
+                    }
+                    for i in itens
+                ]
+    except Exception:
+        pass
+
+    try:
+        res = requests.get(f"{API_PADRAO}/admin/canonicos/momentos", headers=headers, timeout=8)
+        if res.status_code == 200:
+            itens = res.json()
             if isinstance(itens, list):
-                return [{"id": str(i["id"]), "nome": i["nome"], "ordem": i.get("ordem", 99)} for i in itens]
+                return [
+                    {
+                        "id": str(i["id"]),
+                        "nome": i.get("nome", "Momento Canonico"),
+                        "categoria": "Canonico",
+                        "ordem": i.get("ordem_sugerida", 99),
+                    }
+                    for i in itens
+                ]
     except Exception:
         pass
 
@@ -285,8 +301,8 @@ def coletar_metadados_liturgicos(
     if momentos:
         print("\nMomentos Liturgicos Designados:")
         print("   (Digite os numeros separados por virgula, ex: 1, 4 - ou ENTER para Acervo Geral)")
-        for idx, m in enumerate(momentos[:35], 1):
-            print(f"   [{idx:2d}] {m.get('nome')}")
+        for idx, m in enumerate(momentos[:40], 1):
+            print(f"   [{idx:2d}] {m.get('nome')} ({m.get('categoria', 'Geral')})")
 
         op_mom = input("\nNumeros dos momentos correspondentes: ").strip()
         if op_mom:

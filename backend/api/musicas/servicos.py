@@ -9,6 +9,7 @@ from fastapi import HTTPException
 
 from backend.modelos.musica import Musica, MusicaEventoSugerido, MusicaEvento
 from backend.modelos.evento import Evento
+from backend.modelos.canonico import MomentoCanonico
 from backend.api.musicas.schemas import MusicaUpload, MusicaAtualizacao
 
 
@@ -37,13 +38,25 @@ async def registrar_upload_musica(
 
     # Registra o checklist de sugestões, expandindo equivalências canônicas
     # para que ritos e sessões com os mesmos momentos compartilhem a playlist
-    ids_finais_eventos = set(dados.eventos_sugeridos_ids)
+    ids_finais_eventos = set()
     for ev_id in dados.eventos_sugeridos_ids:
+        # 1. Verifica se é um Momento Canônico e expande para todos os eventos vinculados
+        res_mcan = await db.execute(select(MomentoCanonico).where(MomentoCanonico.id == ev_id))
+        mcan = res_mcan.scalar_one_or_none()
+        if mcan:
+            res_evs = await db.execute(select(Evento.id).where(Evento.canonico_id == mcan.id))
+            for eid in res_evs.scalars().all():
+                ids_finais_eventos.add(eid)
+            continue
+
+        # 2. Verifica se é um Evento Ritualístico direto
         ev_db = await db.get(Evento, ev_id)
-        if ev_db and ev_db.canonico_id:
-            res_eq = await db.execute(select(Evento.id).where(Evento.canonico_id == ev_db.canonico_id))
-            for eq_id in res_eq.scalars().all():
-                ids_finais_eventos.add(eq_id)
+        if ev_db:
+            ids_finais_eventos.add(ev_db.id)
+            if ev_db.canonico_id:
+                res_eq = await db.execute(select(Evento.id).where(Evento.canonico_id == ev_db.canonico_id))
+                for eq_id in res_eq.scalars().all():
+                    ids_finais_eventos.add(eq_id)
 
     for ev_id in ids_finais_eventos:
         db.add(MusicaEventoSugerido(

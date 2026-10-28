@@ -215,7 +215,17 @@ async def upload_musica(
         eventos_sugeridos_ids=lista_eventos,
         metadados=metadados_dict
     )
-    return await registrar_upload_musica(db=db, dados=dados_upload, arquivo_url=caminho_salvo)
+    try:
+        return await registrar_upload_musica(db=db, dados=dados_upload, arquivo_url=caminho_salvo)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error(f"Erro ao registrar upload de música ({titulo_final}): {exc}")
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Falha ao registrar música no banco de dados: {str(exc)}"
+        )
 
 
 @roteador_musicas.post(
@@ -273,7 +283,17 @@ async def converter_youtube(
         eventos_sugeridos_ids=dados.eventos_sugeridos_ids,
         metadados=metadados_dict
     )
-    return await registrar_upload_musica(db=db, dados=dados_upload, arquivo_url=caminho_salvo)
+    try:
+        return await registrar_upload_musica(db=db, dados=dados_upload, arquivo_url=caminho_salvo)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error(f"Erro ao registrar upload de música ({titulo_final}): {exc}")
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Falha ao registrar música no banco de dados: {str(exc)}"
+        )
 
 
 @roteador_musicas.post(
