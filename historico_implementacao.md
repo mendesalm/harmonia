@@ -4,6 +4,20 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [28 de Outubro de 2026 - Manhã (Configuração Litúrgica na Capa do Álbum e Play/Stop no Disco)] - Ajuste de Interatividade do Player
+**Módulo:** `Player UX Vitrola H-33` / `Carrossel 3D de Álbuns` / `Disco de Vinil (Prato)` / `Modal de Composição Litúrgica`
+
+### 1. Transferência da Configuração Litúrgica para a Capa do Álbum
+- **Clique na Capa Ativa:** Clicar na capa do álbum centralizado abre o modal de configuração litúrgica (`ModalComporMomento` via `onAbrirUpload()`), permitindo compor e ordenar músicas do acervo ou realizar upload de novos áudios/vídeos.
+- **Clique em Capa Vizinha:** Desloca o carrossel para centralizar e ativar o momento correspondente.
+- **Desbloqueio de Eventos Touch/Pointer:** A captura de ponteiro via `setPointerCapture` foi ajustada para ocorrer apenas em deslocamentos reais (`> 6px`), permitindo que cliques rápidos nas capas ocorram sem interferência do gesto de arrasto.
+
+### 2. Clique no Disco de Vinil Alterna Play/Stop
+- **Controle Direto na Mídia:** O clique sobre o disco de vinil giratório (ou no prato vazio) agora executa a ação direta de alternar reprodução/pausa (`onAlternarPlayPause()`).
+- **Feedback Tátil e Tooltip:** Efeito de escala ativa (`active:scale-[0.98]`), vibração háptica (`feedbackTatil.clique()`) e rótulos contextuais ("Clique no vinil para pausar (Stop)" / "Clique no vinil para tocar (Play)").
+
+---
+
 ## [28 de Outubro de 2026 - Manhã (Abertura do Modal de Composição ao Clicar na Capa do Álbum)] - Correção de Eventos Pointer e Abertura de Modal
 **Módulo:** `Player UX Vitrola H-33` / `Carrossel 3D de Álbuns` / `Modal de Composição Litúrgica`
 

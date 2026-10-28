@@ -657,13 +657,16 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
             <div className="absolute w-[184px] h-[184px] sm:w-[196px] sm:h-[196px] rounded-full bg-black/95 shadow-[inset_0_4px_16px_rgba(0,0,0,0.95)] border border-[#1a2333] ml-[-20px] sm:ml-[-25px]" />
 
             {temAlbumNoMomento ? (
-              /* DISCO DE VINIL STITCH COM RANHURAS HI-FI REALISTAS (1800ms por volta) */
+              /* DISCO DE VINIL STITCH: Clique no disco alterna Play/Stop */
               <div
-                className={`relative w-[178px] h-[178px] sm:w-[188px] sm:h-[188px] rounded-full vinyl-grooves shadow-[0_18px_45px_rgba(0,0,0,0.85),inset_0_1px_2px_rgba(255,255,255,0.1)] flex items-center justify-center cursor-pointer select-none z-20 ml-[-20px] sm:ml-[-25px] ${
+                className={`relative w-[178px] h-[178px] sm:w-[188px] sm:h-[188px] rounded-full vinyl-grooves shadow-[0_18px_45px_rgba(0,0,0,0.85),inset_0_1px_2px_rgba(255,255,255,0.1)] flex items-center justify-center cursor-pointer select-none z-20 active:scale-[0.98] transition-transform ml-[-20px] sm:ml-[-25px] ${
                   tocando ? 'spin-slow' : 'spin-paused'
                 }`}
-                onClick={() => setModalTracklistAberto(true)}
-                title="Toque no vinil para abrir a lista de faixas"
+                onClick={() => {
+                  feedbackTatil.clique();
+                  onAlternarPlayPause();
+                }}
+                title={tocando ? "Clique no vinil para pausar (Stop)" : "Clique no vinil para tocar (Play)"}
               >
                 {/* Anéis concêntricos de brilho da borda chanfrada */}
                 <div className="absolute inset-0 rounded-full border border-neutral-700/60 pointer-events-none" />
@@ -696,13 +699,17 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
             ) : (
               /* PRATO VAZIO SEM VINIL */
               <div
-                onClick={() => setModalTracklistAberto(true)}
+                onClick={() => {
+                  feedbackTatil.clique();
+                  if (onAbrirUpload) onAbrirUpload();
+                  else setModalTracklistAberto(true);
+                }}
                 className="relative w-[178px] h-[178px] sm:w-[188px] sm:h-[188px] rounded-full flex flex-col items-center justify-center z-20 cursor-pointer border border-[#1E325C]/70 shadow-inner group ml-[-20px] sm:ml-[-25px]"
                 style={{
                   background: 'radial-gradient(circle, #081122 0%, #050B17 65%, #02050E 100%)',
                   boxShadow: 'inset 0 0 25px rgba(0,0,0,0.95)',
                 }}
-                title="Momento sem álbum cadastrado. Toque para adicionar trilhas."
+                title="Momento sem álbum cadastrado. Toque para compor trilhas."
               >
                 <div className="w-32 h-32 rounded-full border border-dashed border-[#1E325C]/50 flex items-center justify-center pointer-events-none">
                   <div className="w-20 h-20 rounded-full border border-dashed border-[#1E325C]/35 flex flex-col items-center justify-center p-2 text-center pointer-events-none">
