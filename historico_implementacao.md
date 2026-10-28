@@ -4,6 +4,14 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [28 de Outubro de 2026 - Tarde (Palco Fixo do Deck: Alinhamento Vinil ↔ Braço no Móvel)] - Correção de Layout Responsivo
+**Módulo:** `Player UX Vitrola H-33` / `Deck` / `Tonearm Precision`
+
+- **Causa Raiz:** O vinil era centralizado por flexbox (com margens negativas distintas em `sm:`), enquanto o braço era ancorado em `right/top` da área do deck. Em telas estreitas e baixas a distância relativa pivô↔eixo mudava, desalinhando o braço do vinil.
+- **Correção:** Vinil, poço do prato e braço agora vivem em um **palco fixo de 290×250 px** (eixo do prato em 100,155; pivô a +142/-129 px, a geometria calibrada). O palco é escalonado uniformemente por `transform: scale()` (via `ResizeObserver`, nunca acima de 1), mantendo a mesma geometria em desktop e móvel.
+
+---
+
 ## [28 de Outubro de 2026 - Manhã (Estruturação Hierárquica de Pastas Locais por Metadados Litúrgicos)] - Downloader & Organização Local
 **Módulo:** `Downloader Litúrgico` / `Organização Automática de Pastas` / `Tags ID3 Locais`
 
