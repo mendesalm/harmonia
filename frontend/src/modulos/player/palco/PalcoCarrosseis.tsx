@@ -28,6 +28,45 @@ const NUMEROS_ROMANOS = [
 ];
 const paraRomano = (n: number) => NUMEROS_ROMANOS[n - 1] || String(n);
 
+/**
+ * Geometria do deck (px, no palco fixo de 290x262):
+ * pivô do braço em (250, 30), centro do prato em (120, 140).
+ */
+const PIVO_BRACO = { x: 250, y: 30 };
+const CENTRO_PRATO = { x: 120, y: 140 };
+/** Distância efetiva do pivô até a ponta da agulha (haste + cabeçote) e desvio angular da agulha. */
+const COMPRIMENTO_BRACO = 157.7;
+const DESVIO_AGULHA_GRAUS = 2.9;
+/** Raio do primeiro sulco (próximo à borda do vinil de 116px) e do sulco final (junto ao selo de ~50px). */
+const RAIO_SULCO_EXTERNO = 108;
+const RAIO_SULCO_INTERNO = 54;
+
+/** Estados e durações da animação de troca física do disco de vinil entre momentos (~2s total). */
+type FaseDisco = 'assentado' | 'saindo' | 'entrando';
+const DURACAO_SAIDA_DISCO_MS = 1000;
+const DURACAO_ENTRADA_DISCO_MS = 1000;
+
+/**
+ * Calcula, pela Lei dos Cossenos, o ângulo de rotação do braço para que a agulha
+ * pouse a `raio` px do centro do vinil.
+ */
+function calcularAnguloPorRaio(raio: number): number {
+  const dx = PIVO_BRACO.x - CENTRO_PRATO.x;
+  const dy = CENTRO_PRATO.y - PIVO_BRACO.y;
+  const distancia = Math.hypot(dx, dy);
+  const anguloCentro = (Math.atan2(dx, dy) * 180) / Math.PI;
+  const cosPhi = Math.max(
+    -1,
+    Math.min(
+      1,
+      (distancia * distancia + COMPRIMENTO_BRACO * COMPRIMENTO_BRACO - raio * raio) /
+        (2 * distancia * COMPRIMENTO_BRACO),
+    ),
+  );
+  const phi = (Math.acos(cosPhi) * 180) / Math.PI;
+  return anguloCentro - phi - DESVIO_AGULHA_GRAUS;
+}
+
 const formatarTempo = (segundos?: number) => {
   if (!segundos || isNaN(segundos) || segundos < 0) return '00:00';
   const min = Math.floor(segundos / 60);
@@ -146,6 +185,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   onTrocarFaixa,
   onAlternarPreferencia,
   onAbrirUpload,
+  onAlternarPlayPause,
   onAlterarVolume,
 }) => {
   const [modalTracklistAberto, setModalTracklistAberto] = useState(false);
@@ -163,6 +203,74 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   const idxFaixaAtiva = temAlbumNoMomento
     ? Math.max(0, faixasAtivas.findIndex((f) => f.id === musicaAtiva?.id))
     : -1;
+
+  /**
+   * Troca de vinil entre momentos (simula a vitrola real):
+   * 1) 'saindo': o braço retorna ao descanso, o vinil é levantado e faz flip recolhendo-se para cima (capa);
+   * 2) o momento exibido no deck é trocado;
+   * 3) 'entrando': animação inversa — o vinil desce e assenta no prato, com o braço ainda em repouso.
+   * O deck exibe `indiceDeck` (que fica defasado em relação a `indiceMomento` durante a troca).
+   */
+  const [indiceDeck, setIndiceDeck] = useState(indiceMomento);
+  const [faseDisco, setFaseDisco] = useState<FaseDisco>('assentado');
+  const indiceDeckRef = useRef(indiceMomento);
+  const faseDiscoRef = useRef<FaseDisco>('assentado');
+  const indiceAlvoRef = useRef(indiceMomento);
+  const momentosRef = useRef(momentos);
+  const temporizadorDiscoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  momentosRef.current = momentos;
+
+  const definirFaseDisco = (fase: FaseDisco) => {
+    faseDiscoRef.current = fase;
+    setFaseDisco(fase);
+  };
+
+  useEffect(() => {
+    indiceAlvoRef.current = indiceMomento;
+    // Já está (ou está indo) para este momento sem necessidade de nova troca
+    if (indiceMomento === indiceDeckRef.current && faseDiscoRef.current === 'assentado') return;
+    // Uma saída em andamento já usará o alvo mais recente ao terminar
+    if (faseDiscoRef.current === 'saindo') return;
+
+    if (temporizadorDiscoRef.current) clearTimeout(temporizadorDiscoRef.current);
+
+    const temDisco = (indice: number) => (momentosRef.current[indice]?.candidatas?.length ?? 0) > 0;
+
+    /** Troca o momento exibido no deck e, se houver álbum, executa a entrada do novo vinil. */
+    const trocarEEntrar = () => {
+      const alvo = indiceAlvoRef.current;
+      indiceDeckRef.current = alvo;
+      setIndiceDeck(alvo);
+      if (temDisco(alvo)) {
+        definirFaseDisco('entrando');
+        temporizadorDiscoRef.current = setTimeout(
+          () => definirFaseDisco('assentado'),
+          DURACAO_ENTRADA_DISCO_MS,
+        );
+      } else {
+        definirFaseDisco('assentado');
+      }
+    };
+
+    if (temDisco(indiceDeckRef.current)) {
+      definirFaseDisco('saindo');
+      temporizadorDiscoRef.current = setTimeout(trocarEEntrar, DURACAO_SAIDA_DISCO_MS);
+    } else {
+      trocarEEntrar();
+    }
+  }, [indiceMomento]);
+
+  // Limpa o temporizador da animação ao desmontar o palco
+  useEffect(() => {
+    return () => {
+      if (temporizadorDiscoRef.current) clearTimeout(temporizadorDiscoRef.current);
+    };
+  }, []);
+
+  // Dados do momento exibido no deck (podem diferir do momento ativo durante a troca de vinil)
+  const momentoDeck = momentos[indiceDeck] ?? momentoAtivo;
+  const temAlbumNoDeck = (momentoDeck?.candidatas?.length ?? 0) > 0;
+  const discoEmTroca = faseDisco !== 'assentado';
 
   // Temporizador e contador de cliques no braço da vitrola (1 clique = avançar, 2 cliques = retroceder)
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -183,7 +291,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
    */
   const lidarCliqueBraco = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!temAlbumNoMomento || faixasAtivas.length <= 1) return;
+    if (discoEmTroca || !temAlbumNoMomento || faixasAtivas.length <= 1) return;
 
     clickContadorRef.current += 1;
 
@@ -227,27 +335,29 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
     return () => clearInterval(interval);
   }, [tocando, volumeExecucao, temAlbumNoMomento]);
 
-  // Ângulo dinâmico do braço de precisão audiófilo H-33
-  // Repouso: 0deg (apoiado no suporte de descanso do chassi)
-  // Execução ativa: 16deg (borda externa do vinil) a 35deg (ranhura final próxima ao selo)
-  // Se pausado no meio da faixa, o braço permanece sobre a faixa atual sem recuar abruptamente
+  // Ângulo do braço (graus, sentido horário a partir da vertical) simulando um vinil real:
+  // os sulcos formam uma espiral de passo constante, logo a agulha avança LINEARMENTE em raio
+  // com o tempo decorrido. O trajeto (borda externa → sulco final junto ao selo) é dividido em
+  // partes iguais entre as faixas do momento (1 faixa = 100%, 2 faixas = 50% cada, etc.).
+  // - Parado (sem play e progresso 0) ou em troca física de disco: braço no descanso (0°).
+  // - Pausado no meio da faixa: braço permanece sobre o sulco atual.
   const calcularAnguloExecucao = () => {
-    if (!temAlbumNoMomento || (!tocando && progressoFaixa === 0)) return 0;
+    if (discoEmTroca || !temAlbumNoMomento || (!tocando && progressoFaixa === 0)) return 0;
     const total = Math.max(1, faixasAtivas.length);
-    const indice = Math.max(0, idxFaixaAtiva);
-    const fatia = 19 / total;
-    const baseFaixa = 16 + indice * fatia;
-    const excursaoFaixa = fatia * Math.min(1, Math.max(0, progressoFaixa));
-    return baseFaixa + excursaoFaixa;
+    const indice = Math.max(0, Math.min(total - 1, idxFaixaAtiva));
+    const progressoFaixaLimitado = Math.min(1, Math.max(0, progressoFaixa));
+    // Fração percorrida do disco inteiro (0 = borda externa, 1 = sulco final)
+    const fracaoDisco = (indice + progressoFaixaLimitado) / total;
+    const raioAgulha = RAIO_SULCO_EXTERNO - fracaoDisco * (RAIO_SULCO_EXTERNO - RAIO_SULCO_INTERNO);
+    return calcularAnguloPorRaio(raioAgulha);
   };
-
   const anguloBraco = calcularAnguloExecucao();
 
   // Palco fixo do deck (vinil + braço): dimensões lógicas constantes em px, escalonadas
   // por CSS para caber em qualquer viewport. Assim a geometria relativa vinil↔braço
   // (pivô a +142px/-129px do eixo) é idêntica no desktop e no móvel.
   const DECK_LARGURA = 290;
-  const DECK_ALTURA = 258;
+  const DECK_ALTURA = 262;
   const deckAreaRef = useRef<HTMLDivElement>(null);
   const [escalaDeck, setEscalaDeck] = useState(1);
 
@@ -688,46 +798,58 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
               }}
             >
             {/* Platter Recessed Shadow Well */}
-            <div className="absolute w-[230px] h-[230px] rounded-full bg-black/95 shadow-[inset_0_4px_16px_rgba(0,0,0,0.95)] border border-[#1a2333]" style={{ left: -5, top: 25 }} />
+            <div className="absolute w-[242px] h-[242px] rounded-full bg-black/95 shadow-[inset_0_4px_16px_rgba(0,0,0,0.95)] border border-[#1a2333]" style={{ left: -1, top: 19 }} />
 
-            {temAlbumNoMomento ? (
-              /* DISCO DE VINIL STITCH: Clique no disco alterna Play/Stop */
+            {temAlbumNoDeck ? (
+              /* CONTAINER 3D DE TROCA DO VINIL: Levanta, faz flip e recolhe para a capa superior na saída, e inverso na entrada */
               <div
-                className={`absolute w-[220px] h-[220px] rounded-full vinyl-grooves shadow-[0_18px_45px_rgba(0,0,0,0.85),inset_0_1px_2px_rgba(255,255,255,0.1)] flex items-center justify-center cursor-pointer select-none z-20 active:scale-[0.98] transition-transform ${
-                  tocando ? 'spin-slow' : 'spin-paused'
+                className={`absolute w-[232px] h-[232px] z-20 ${
+                  faseDisco === 'saindo'
+                    ? 'vinil-saindo pointer-events-none'
+                    : faseDisco === 'entrando'
+                    ? 'vinil-entrando pointer-events-none'
+                    : ''
                 }`}
-                style={{ left: 0, top: 30 }}
-                onClick={() => {
-                  feedbackTatil.clique();
-                  onAlternarPlayPause();
-                }}
-                title={tocando ? "Clique no vinil para pausar (Stop)" : "Clique no vinil para tocar (Play)"}
+                style={{ left: 4, top: 24, perspective: '900px', transformStyle: 'preserve-3d' }}
               >
-                {/* Anéis concêntricos de brilho da borda chanfrada */}
-                <div className="absolute inset-0 rounded-full border border-neutral-700/60 pointer-events-none" />
-                <div className="absolute inset-[3px] rounded-full border border-neutral-800/80 pointer-events-none" />
-
-                {/* Selo Central do Vinil */}
+                {/* DISCO DE VINIL STITCH: Clique no disco alterna Play/Stop */}
                 <div
-                  style={{
-                    background: eRitoBrasileiro
-                      ? 'radial-gradient(circle, #38050d 0%, #1e0307 70%, #0d0103 100%)'
-                      : 'radial-gradient(circle, #0c1626 0%, #050a12 70%, #03060a 100%)',
+                  className={`w-full h-full rounded-full vinyl-grooves shadow-[0_18px_45px_rgba(0,0,0,0.85),inset_0_1px_2px_rgba(255,255,255,0.1)] flex items-center justify-center cursor-pointer select-none active:scale-[0.98] transition-transform ${
+                    tocando && !discoEmTroca ? 'spin-slow' : 'spin-paused'
+                  }`}
+                  onClick={() => {
+                    if (discoEmTroca) return;
+                    feedbackTatil.clique();
+                    onAlternarPlayPause();
                   }}
-                  className="w-[87px] h-[87px] sm:w-[94px] sm:h-[94px] rounded-full border-2 border-[#DDB96B]/90 shadow-2xl flex flex-col items-center justify-center text-center p-1 relative z-10"
+                  title={tocando ? "Clique no vinil para pausar (Stop)" : "Clique no vinil para tocar (Play)"}
                 >
-                  <span className="font-cinzel text-[7px] text-[#DDB96B] tracking-widest font-bold">
-                    H • 33
-                  </span>
-                  <span className="font-cinzel text-[6px] sm:text-[6.5px] text-[#FFF2CC] uppercase font-semibold leading-tight mt-0.5 line-clamp-1 max-w-[62px] drop-shadow">
-                    {momentoAtivo.evento_nome}
-                  </span>
-                  <span className="font-serif italic text-[5.5px] text-[#DDB96B]/90 mt-0.5">
-                    ÁLBUM {paraRomano(indiceMomento + 1)} • {eRitoBrasileiro ? 'RITO BR.' : 'RITO REAA'}
-                  </span>
-                  {/* Spindle Center Hole */}
-                  <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-b from-neutral-900 to-black border border-[#FDE68A]/80 mt-0.5 shadow-inner flex items-center justify-center">
-                    <div className="w-1 h-1 rounded-full bg-neutral-300" />
+                  {/* Anéis concêntricos de brilho da borda chanfrada */}
+                  <div className="absolute inset-0 rounded-full border border-neutral-700/60 pointer-events-none" />
+                  <div className="absolute inset-[3px] rounded-full border border-neutral-800/80 pointer-events-none" />
+
+                  {/* Selo Central do Vinil */}
+                  <div
+                    style={{
+                      background: eRitoBrasileiro
+                        ? 'radial-gradient(circle, #38050d 0%, #1e0307 70%, #0d0103 100%)'
+                        : 'radial-gradient(circle, #0c1626 0%, #050a12 70%, #03060a 100%)',
+                    }}
+                    className="w-[91px] h-[91px] sm:w-[99px] sm:h-[99px] rounded-full border-2 border-[#DDB96B]/90 shadow-2xl flex flex-col items-center justify-center text-center p-1 relative z-10"
+                  >
+                    <span className="font-cinzel text-[7px] text-[#DDB96B] tracking-widest font-bold">
+                      H • 33
+                    </span>
+                    <span className="font-cinzel text-[6px] sm:text-[6.5px] text-[#FFF2CC] uppercase font-semibold leading-tight mt-0.5 line-clamp-1 max-w-[62px] drop-shadow">
+                      {momentoDeck.evento_nome}
+                    </span>
+                    <span className="font-serif italic text-[5.5px] text-[#DDB96B]/90 mt-0.5">
+                      ÁLBUM {paraRomano(indiceDeck + 1)} • {eRitoBrasileiro ? 'RITO BR.' : 'RITO REAA'}
+                    </span>
+                    {/* Spindle Center Hole */}
+                    <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-b from-neutral-900 to-black border border-[#FDE68A]/80 mt-0.5 shadow-inner flex items-center justify-center">
+                      <div className="w-1 h-1 rounded-full bg-neutral-300" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -739,10 +861,10 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                   if (onAbrirUpload) onAbrirUpload();
                   else setModalTracklistAberto(true);
                 }}
-                className="absolute w-[220px] h-[220px] rounded-full flex flex-col items-center justify-center z-20 cursor-pointer border border-[#1E325C]/70 shadow-inner group"
+                className="absolute w-[232px] h-[232px] rounded-full flex flex-col items-center justify-center z-20 cursor-pointer border border-[#1E325C]/70 shadow-inner group"
                 style={{
-                  left: 0,
-                  top: 30,
+                  left: 4,
+                  top: 24,
                   background: 'radial-gradient(circle, #081122 0%, #050B17 65%, #02050E 100%)',
                   boxShadow: 'inset 0 0 25px rgba(0,0,0,0.95)',
                 }}
@@ -764,7 +886,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
             {/* BRAÇO MECÂNICO AUDIÓFILO DE LATÃO DOURADO (PRECISION TONEARM ASSEMBLY) */}
             <div
               className="absolute w-24 h-48 pointer-events-none z-30"
-              style={{ left: 182, top: 8 }}
+              style={{ left: 192, top: 8 }}
               data-purpose="precision-tonearm"
             >
               {/* Suporte de Repouso Fixo no Chassi (Tonearm Rest Clip) - Alinhado no eixo da haste reta (X = 58px) */}

@@ -366,6 +366,58 @@
   animation-play-state: paused;
 }
 
+/* Troca Física do Vinil: Levanta do prato, faz flip 3D e recolhe para cima (capa do álbum) */
+@keyframes vinilSairParaCapa {
+  0% {
+    transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg) scale(1);
+    opacity: 1;
+  }
+  28% {
+    /* Recuo do braço + vinil sendo levantado do pino central */
+    transform: translate3d(0, -18px, 36px) rotateX(22deg) rotateY(-8deg) scale(1.04);
+    opacity: 1;
+  }
+  70% {
+    /* Flip 3D (meio giro) + subida em direção à capa */
+    transform: translate3d(0, -110px, 20px) rotateX(68deg) rotateY(180deg) scale(0.84);
+    opacity: 0.85;
+  }
+  100% {
+    /* Recolhimento final para dentro da capa superior */
+    transform: translate3d(0, -195px, -10px) rotateX(82deg) rotateY(180deg) scale(0.55);
+    opacity: 0;
+  }
+}
+
+/* Entrada Inversa do Novo Vinil: Desce da capa fazendo flip 3D até assentar no prato */
+@keyframes vinilEntrarNoPrato {
+  0% {
+    transform: translate3d(0, -195px, -10px) rotateX(82deg) rotateY(-180deg) scale(0.55);
+    opacity: 0;
+  }
+  35% {
+    transform: translate3d(0, -95px, 24px) rotateX(55deg) rotateY(-60deg) scale(0.88);
+    opacity: 0.9;
+  }
+  75% {
+    /* Paira sobre o pino central antes de pousar no prato */
+    transform: translate3d(0, -14px, 32px) rotateX(16deg) rotateY(0deg) scale(1.03);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+.vinil-saindo {
+  animation: vinilSairParaCapa 1000ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.vinil-entrando {
+  animation: vinilEntrarNoPrato 1000ms cubic-bezier(0.22, 0.9, 0.25, 1) forwards;
+}
+
 /* Fader de Volume com Marcador em Ouro Maciço Chanfrado */
 input[type=range].fader-volume-stitch::-webkit-slider-thumb {
   appearance: none;
@@ -387,6 +439,8 @@ input[type=range].fader-volume-stitch::-webkit-slider-thumb {
   .harmonia-aurora,
   .harmonia-estrela-marcada,
   .harmonia-aviso,
+  .vinil-saindo,
+  .vinil-entrando,
   .spin-slow {
     animation: none !important;
   }
