@@ -576,9 +576,9 @@ export const PaginaPlayerHarmonia: React.FC = () => {
         if (!anterior) return anterior;
         const esteira = anterior.esteira_ritualistica.map((m, i) => {
           if (i !== indiceMomento) return m;
-          const novasCandidatas = m.candidatas.map((c) =>
-            c.id === musicaId ? { ...c, preferida: valor } : c
-          );
+          const novasCandidatas = m.candidatas
+            .map((c) => (c.id === musicaId ? { ...c, preferida: valor } : c))
+            .sort((a, b) => Number(Boolean(b.preferida)) - Number(Boolean(a.preferida)));
           const faixaAlvo = novasCandidatas.find((c) => c.id === musicaId) ?? null;
 
           let novaSorteada =
@@ -822,6 +822,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
                 : volumeGeral
             }
             surdinaAtiva={surdinaAtiva}
+            rito={dadosSessao.rito || lojaAtiva?.rito_padrao || 'Rito Brasileiro'}
             onAbrirConfiguracoesSurdina={() => setModalSurdinaCalibragemAberto(true)}
             onMudarMomento={setIndiceAtual}
             onTrocarFaixa={trocarFaixaDoMomento}

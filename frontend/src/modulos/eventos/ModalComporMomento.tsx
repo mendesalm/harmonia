@@ -5,19 +5,16 @@ import {
   Search,
   Music,
   Plus,
-  Check,
   Trash2,
   Play,
   Pause,
   Upload,
-  Disc3,
   Volume1,
-  Sparkles,
   Filter,
   Layers,
-  CheckCircle2,
+  Star,
 } from 'lucide-react';
-import { Musica } from '../../compartilhado/tipos';
+import { Musica, SessaoPlayerExecucao } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { feedbackTatil } from '../../compartilhado/utilitarios/dispositivoNativo';
 import { ModalUploadMusica } from '../musicas/ModalUploadMusica';
@@ -32,8 +29,9 @@ interface ModalComporMomentoProps {
 
 /**
  * Modal para compor e enriquecer momentos litúrgicos com músicas do acervo já salvo.
- * Oferece busca instantânea no acervo existente com pré-escuta de áudio e
- * vinculação direta ao momento (e à esteira da sessão ativa), além de aba para upload/YouTube.
+ * Oferece busca instantânea no acervo existente com pré-escuta de áudio,
+ * vinculação direta ao momento, marcação de músicas PREFERENCIAIS (★) da Loja
+ * e pergunta ao adicionar uma nova música se o Mestre deseja torná-la preferencial.
  */
 export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
   eventoId,
@@ -45,9 +43,16 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
   const [abaAtiva, setAbaAtiva] = useState<'ACERVO' | 'UPLOAD'>('ACERVO');
   const [busca, setBusca] = useState('');
   const [musicasAcervo, setMusicasAcervo] = useState<Musica[]>([]);
+  const [idsPreferidasSessao, setIdsPreferidasSessao] = useState<Set<string>>(new Set());
   const [carregando, setCarregando] = useState(true);
   const [filtroApenasVinculadas, setFiltroApenasVinculadas] = useState(false);
   const [processandoId, setProcessandoId] = useState<string | null>(null);
+
+  // Prompt elegante pós-adição perguntando se deseja tornar a música recém-adicionada PREFERENCIAL
+  const [musicaPerguntaPreferencial, setMusicaPerguntaPreferencial] = useState<{
+    id: string;
+    titulo: string;
+  } | null>(null);
 
   // Pré-escuta de áudio
   const [audioPreviewId, setAudioPreviewId] = useState<string | null>(null);
@@ -56,8 +61,26 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
   const carregarMusicas = async () => {
     try {
       setCarregando(true);
-      const resp = await clienteHttp.get<Musica[]>('/musicas');
-      setMusicasAcervo(resp.data || []);
+      const promessas: Promise<any>[] = [clienteHttp.get<Musica[]>('/musicas')];
+      if (sessaoId) {
+        promessas.push(
+          clienteHttp.get<SessaoPlayerExecucao>(`/player/sessao/${sessaoId}`).catch(() => null)
+        );
+      }
+      const [respMusicas, respSessao] = await Promise.all(promessas);
+      setMusicasAcervo(respMusicas.data || []);
+
+      if (respSessao?.data?.esteira_ritualistica) {
+        const mom = respSessao.data.esteira_ritualistica.find(
+          (m: any) => m.evento_id === eventoId
+        );
+        if (mom && Array.isArray(mom.candidatas)) {
+          const prefs = new Set<string>(
+            mom.candidatas.filter((c: any) => c.preferida).map((c: any) => String(c.id))
+          );
+          setIdsPreferidasSessao(prefs);
+        }
+      }
     } catch (err) {
       console.error('Erro ao listar músicas do acervo:', err);
     } finally {
@@ -73,7 +96,7 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
         previewAudioRef.current.src = '';
       }
     };
-  }, [eventoId]);
+  }, [eventoId, sessaoId]);
 
   // Alterna prévia de áudio
   const alternarPreview = (m: Musica) => {
@@ -103,7 +126,34 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
     return m.eventos.some((ev) => ev.evento_id === eventoId);
   };
 
-  // Vincula música existente ao momento
+  // Alterna o status de Preferencial (★) de uma música vinculada na sessão ativa
+  const alternarPreferencialNoMomento = async (musicaId: string, tornarPreferida: boolean) => {
+    if (!sessaoId) return;
+    try {
+      feedbackTatil.clique();
+      setProcessandoId(musicaId);
+      await clienteHttp.patch(
+        `/player/sessao/${sessaoId}/momento/${eventoId}/musica/${musicaId}/preferencia`,
+        null,
+        { params: { preferida: tornarPreferida } }
+      );
+      setIdsPreferidasSessao((anterior) => {
+        const novo = new Set(anterior);
+        if (tornarPreferida) novo.add(musicaId);
+        else novo.delete(musicaId);
+        return novo;
+      });
+      feedbackTatil.sucesso();
+      if (onSalvo) await onSalvo();
+    } catch (err) {
+      feedbackTatil.erro();
+      console.error('Erro ao alterar preferência da música:', err);
+    } finally {
+      setProcessandoId(null);
+    }
+  };
+
+  // Vincula música existente ao momento e pergunta se deseja torná-la Preferencial
   const vincularMusica = async (m: Musica) => {
     try {
       feedbackTatil.sucesso();
@@ -111,19 +161,6 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
 
       // 1. Associa a música ao evento ritualístico no banco
       await clienteHttp.post(`/eventos/${eventoId}/musicas/${m.id}`);
-
-      // 2. Se estiver no contexto do player com sessão ativa, marca na playlist da sessão
-      if (sessaoId) {
-        try {
-          await clienteHttp.patch(
-            `/player/sessao/${sessaoId}/momento/${eventoId}/musica/${m.id}/preferencia`,
-            null,
-            { params: { preferida: true } }
-          );
-        } catch (err) {
-          console.warn('Aviso: Não foi possível marcar como preferida na sessão:', err);
-        }
-      }
 
       // Atualiza o estado local imediatamente
       setMusicasAcervo((antigas) =>
@@ -141,6 +178,11 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
           return item;
         })
       );
+
+      // 2. Se houver sessão ativa, exibe a pergunta para tornar preferencial neste momento
+      if (sessaoId) {
+        setMusicaPerguntaPreferencial({ id: m.id, titulo: m.titulo });
+      }
 
       if (onSalvo) {
         await onSalvo();
@@ -170,6 +212,11 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
             null,
             { params: { preferida: false } }
           );
+          setIdsPreferidasSessao((ant) => {
+            const n = new Set(ant);
+            n.delete(m.id);
+            return n;
+          });
         } catch (err) {
           console.warn('Aviso: Não foi possível desmarcar preferência na sessão:', err);
         }
@@ -206,17 +253,27 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Filtragem reativa por busca e por status de vínculo
-  const musicasFiltradas = musicasAcervo.filter((m) => {
-    const vinculada = isMusicaVinculada(m);
-    if (filtroApenasVinculadas && !vinculada) return false;
+  // Filtragem reativa por busca e por status de vínculo (agrupando as preferidas e vinculadas no topo)
+  const musicasFiltradas = musicasAcervo
+    .filter((m) => {
+      const vinculada = isMusicaVinculada(m);
+      if (filtroApenasVinculadas && !vinculada) return false;
 
-    if (!busca.trim()) return true;
-    const termo = busca.toLowerCase();
-    const titulo = (m.titulo || '').toLowerCase();
-    const artista = (m.autor_artista || '').toLowerCase();
-    return titulo.includes(termo) || artista.includes(termo);
-  });
+      if (!busca.trim()) return true;
+      const termo = busca.toLowerCase();
+      const titulo = (m.titulo || '').toLowerCase();
+      const artista = (m.autor_artista || '').toLowerCase();
+      return titulo.includes(termo) || artista.includes(termo);
+    })
+    .sort((a, b) => {
+      const prefA = idsPreferidasSessao.has(a.id) ? 1 : 0;
+      const prefB = idsPreferidasSessao.has(b.id) ? 1 : 0;
+      if (prefA !== prefB) return prefB - prefA;
+      const vincA = isMusicaVinculada(a) ? 1 : 0;
+      const vincB = isMusicaVinculada(b) ? 1 : 0;
+      if (vincA !== vincB) return vincB - vincA;
+      return (a.titulo || '').localeCompare(b.titulo || '');
+    });
 
   const totalVinculadas = musicasAcervo.filter(isMusicaVinculada).length;
 
@@ -232,7 +289,7 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
         onError={() => setAudioPreviewId(null)}
       />
 
-      <div className="bg-[#0A1428] border border-macaonico-dourado/40 rounded-2xl sm:rounded-3xl w-full max-w-2xl max-h-[92dvh] flex flex-col shadow-[0_25px_60px_rgba(0,0,0,0.95)] overflow-hidden">
+      <div className="bg-[#0A1428] border border-macaonico-dourado/40 rounded-2xl sm:rounded-3xl w-full max-w-2xl max-h-[92dvh] flex flex-col shadow-[0_25px_60px_rgba(0,0,0,0.95)] overflow-hidden relative">
         {/* Cabeçalho do Modal */}
         <div className="p-3.5 sm:p-4 border-b border-macaonico-dourado/20 bg-[#0E1C36] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5 min-w-0 pr-2">
@@ -241,7 +298,7 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
             </div>
             <div className="min-w-0">
               <h3 className="text-xs font-mono uppercase tracking-wider text-macaonico-dourado font-bold truncate">
-                Compor Momento Ritualístico
+                Compor Momento Ritualístico (Máx. 8 Faixas por Sessão)
               </h3>
               <p className="text-xs sm:text-sm font-semibold text-slate-100 truncate">
                 {nomeMomento || 'Momento Litúrgico'}
@@ -251,7 +308,7 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
 
           <div className="flex items-center gap-2 shrink-0">
             <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-[#071122] text-macaonico-dourado border border-macaonico-dourado/30">
-              {totalVinculadas} {totalVinculadas === 1 ? 'música' : 'músicas'} vinculadas
+              {totalVinculadas} {totalVinculadas === 1 ? 'música' : 'músicas'} no acervo do momento
             </span>
             <button
               type="button"
@@ -266,6 +323,49 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Diálogo de Confirmação Pós-Adição: "Tornar música Preferencial neste momento?" */}
+        {musicaPerguntaPreferencial && sessaoId && (
+          <div className="bg-gradient-to-r from-[#2b1d03] via-[#1c1302] to-[#2b1d03] border-b-2 border-[#DDB96B] px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 animate-in slide-in-from-top duration-200">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-[#DDB96B]/20 border border-[#DDB96B] flex items-center justify-center text-[#FDE68A] shrink-0">
+                <Star className="w-4 h-4 fill-current" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-cinzel font-bold text-[#FFF2CC] truncate">
+                  Deseja tornar “{musicaPerguntaPreferencial.titulo}” Preferencial (★)?
+                </p>
+                <p className="text-[11px] text-[#DDB96B]/90">
+                  Músicas preferenciais ocupam as primeiras faixas do álbum e têm prioridade no sorteio da sessão.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                onClick={() => setMusicaPerguntaPreferencial(null)}
+                className="px-3 py-1.5 rounded-lg bg-black/50 hover:bg-white/10 border border-white/15 text-xs text-slate-300 font-semibold cursor-pointer"
+              >
+                Apenas no Acervo
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const alvo = musicaPerguntaPreferencial;
+                  setMusicaPerguntaPreferencial(null);
+                  if (alvo) {
+                    await alternarPreferencialNoMomento(alvo.id, true);
+                  }
+                }}
+                className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-[#DDB96B] to-[#FDE68A] text-black text-xs font-cinzel font-bold flex items-center gap-1.5 shadow-[0_0_12px_rgba(221,185,107,0.5)] cursor-pointer"
+              >
+                <Star className="w-3.5 h-3.5 fill-current" />
+                <span>Sim, Tornar Preferencial</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Abas Superiores: Buscar no Acervo vs Nova Música */}
         <div className="flex items-center border-b border-slate-800 bg-[#070F1E] shrink-0 px-3 pt-2 gap-2">
@@ -363,15 +463,18 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
               ) : (
                 musicasFiltradas.map((m) => {
                   const vinculada = isMusicaVinculada(m);
+                  const ehPreferida = idsPreferidasSessao.has(m.id);
                   const tocandoPreview = audioPreviewId === m.id;
                   const processando = processandoId === m.id;
 
                   return (
                     <div
                       key={m.id}
-                      className={`flex items-center justify-between gap-3 p-2.5 sm:p-3 rounded-xl border transition-all ${
-                        vinculada
-                          ? 'bg-[#0D1D3A]/70 border-macaonico-dourado/50 shadow-sm'
+                      className={`flex items-center justify-between gap-2.5 p-2.5 sm:p-3 rounded-xl border transition-all ${
+                        ehPreferida
+                          ? 'bg-[#1a1608]/90 border-[#DDB96B] shadow-[0_0_15px_rgba(221,185,107,0.18)]'
+                          : vinculada
+                          ? 'bg-[#0D1D3A]/70 border-macaonico-dourado/45 shadow-sm'
                           : 'bg-[#060E1C] border-slate-800/80 hover:border-slate-700'
                       }`}
                     >
@@ -395,12 +498,17 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
                         </button>
 
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-xs sm:text-sm font-semibold text-slate-100 truncate">
                               {m.titulo}
                             </span>
-                            {vinculada && (
-                              <span className="shrink-0 px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-macaonico-dourado/20 text-macaonico-dourado border border-macaonico-dourado/40">
+                            {ehPreferida && (
+                              <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-[#DDB96B] text-black flex items-center gap-0.5">
+                                <Star className="w-2.5 h-2.5 fill-current" /> Preferencial
+                              </span>
+                            )}
+                            {vinculada && !ehPreferida && (
+                              <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-macaonico-dourado/20 text-macaonico-dourado border border-macaonico-dourado/40">
                                 No Momento
                               </span>
                             )}
@@ -421,8 +529,33 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
                         </div>
                       </div>
 
-                      {/* Botão de Ação: Vincular ou Desvincular */}
-                      <div className="shrink-0">
+                      {/* Ações: Botão de Preferencial (★) + Vincular/Desvincular */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {vinculada && sessaoId && (
+                          <button
+                            type="button"
+                            disabled={processando}
+                            onClick={() => alternarPreferencialNoMomento(m.id, !ehPreferida)}
+                            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer active:scale-95 ${
+                              ehPreferida
+                                ? 'bg-[#DDB96B]/25 border-[#DDB96B] text-[#FDE68A]'
+                                : 'bg-white/5 border-white/15 text-slate-400 hover:text-[#FDE68A] hover:border-[#DDB96B]/50'
+                            }`}
+                            title={
+                              ehPreferida
+                                ? 'Remover das músicas preferenciais deste momento'
+                                : 'Tornar música preferencial deste momento (prioridade nas 8 faixas da sessão)'
+                            }
+                          >
+                            <Star
+                              className={`w-3.5 h-3.5 ${ehPreferida ? 'fill-current text-[#FDE68A]' : ''}`}
+                            />
+                            <span className="hidden sm:inline">
+                              {ehPreferida ? 'Preferida' : 'Preferir'}
+                            </span>
+                          </button>
+                        )}
+
                         {vinculada ? (
                           <button
                             type="button"
@@ -460,9 +593,15 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
               eventoIdPreSelecionado={eventoId}
               esconderEventos={true}
               onFechar={() => setAbaAtiva('ACERVO')}
-              onSalvo={async () => {
+              onSalvo={async (novaMusicaId) => {
                 await carregarMusicas();
                 setAbaAtiva('ACERVO');
+                if (novaMusicaId && sessaoId) {
+                  setMusicaPerguntaPreferencial({
+                    id: novaMusicaId,
+                    titulo: 'Nova Música Enviada',
+                  });
+                }
                 if (onSalvo) await onSalvo();
               }}
             />
@@ -472,7 +611,7 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
         {/* Rodapé do Modal */}
         <div className="p-3 border-t border-slate-800 bg-[#0E1C36] flex items-center justify-between shrink-0">
           <span className="text-[11px] font-mono text-slate-400">
-            {totalVinculadas} {totalVinculadas === 1 ? 'música ativa' : 'músicas ativas'} neste momento
+            {idsPreferidasSessao.size} preferencial(is) • {totalVinculadas} no acervo do momento
           </span>
 
           <button

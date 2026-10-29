@@ -4,6 +4,20 @@ Este documento atua como a **Regra de Ouro** de documentação histórica do pro
 
 ---
 
+## [29 de Outubro de 2026 - Tarde (Encarte 3D Folheável Gatefold LP, Swipe Contínuo & Seleção de Máx. 8 Faixas Preferenciais)] - Imersão e Curadoria Litúrgica
+**Módulo:** `Player UX Encarte 3D` / `Curadoria de Preferenciais` / `Recomendações Canônicas ao Mestre`
+
+### 1. Encarte 3D Folheável com Cinemática FLIP (`EncarteAlbum3D.tsx`)
+- **Voo Físico da Origem (FLIP):** Ao clicar na capa do álbum ativo no Box 1, a própria capa decola das coordenadas exatas do carrossel (`getBoundingClientRect`) até o centro do palco em primeiro plano (Opção B), ocultando a capa original durante o voo para evitar duplicidade visual.
+- **Abertura de Capa Dura & Folheamento por Swipe 3D:** A capa frontal gira `-176°` sobre a lombada dourada esquerda revelando a **Folha I (Recomendações Canônicas ao Mestre de Harmonia)**, alimentada pelas diretrizes cadastradas pelo SuperAdmin (`observacao_mestre_harmonia` / `observacao_padrao_mestre_harmonia` / `MomentoCanonico.orientacao`) e enriquecida com fallback canônico por natureza do momento.
+- **Swipe Contínuo entre Folhas:** Deslizar horizontalmente (ou acionar os controles de página) gira fisicamente a Folha I em `-174°` acompanhando o gesto em tempo real, revelando a **Folha II (Trilhas LP do Momento)** logo abaixo.
+
+### 2. Limite de 8 Músicas por Momento na Sessão e Prioridade às Preferenciais (`MAX_FAIXAS_POR_MOMENTO = 8`)
+- **Seleção de até 8 Faixas (`selecionar_candidatas_para_sessao`):** Na abertura da sessão (`GET /api/v1/player/sessao/{sessao_id}`), cada momento litúrgico seleciona no máximo 8 músicas, garantindo todas as músicas marcadas como **Preferenciais (`★`)** agrupadas nas primeiras posições (Faixas 01, 02...) e sorteando a música ativa inicial sempre entre as preferenciais.
+- **Pergunta de Preferência ao Adicionar (`ModalComporMomento.tsx`):** Ao vincular ou enviar uma nova música para o momento, o sistema pergunta ao Mestre de Harmonia se deseja torná-la **Preferencial (`★`)** imediatamente, além de permitir alternar o selo de preferencial tanto no modal de acervo quanto na Folha II do encarte.
+
+---
+
 ## [28 de Outubro de 2026 - Tarde (Palco Fixo do Deck: Alinhamento Vinil ↔ Braço no Móvel)] - Correção de Layout Responsivo
 **Módulo:** `Player UX Vitrola H-33` / `Deck` / `Tonearm Precision`
 

@@ -9,6 +9,9 @@ import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 
 from backend.main import aplicacao
+from backend.api.player.schemas import MusicaSorteadaInfo
+from backend.api.player.servicos import selecionar_candidatas_para_sessao, sortear_entre_candidatas
+from backend.core.constants import MAX_FAIXAS_POR_MOMENTO
 from backend.nucleo.auth_esigma import limpar_cache_validacao
 from backend.nucleo.banco import motor_assincrono
 from backend.nucleo.configuracoes import configuracoes
@@ -197,3 +200,43 @@ async def test_listagem_eventos_sessoes_e_player_loja_2181(cliente_http: AsyncCl
             )
             assert resp_desv.status_code == 200
             assert resp_desv.json()["status"] == "ok"
+
+
+def test_selecao_max_8_faixas_e_prioridade_preferenciais():
+    """
+    Garante que na abertura da sessão o sistema escolhe no máximo 8 músicas por momento,
+    agrupando as preferenciais nas primeiras faixas e sorteando a música ativa sempre entre as preferenciais.
+    """
+    import uuid
+
+    todas: list[MusicaSorteadaInfo] = []
+    for i in range(30):
+        todas.append(
+            MusicaSorteadaInfo(
+                id=uuid.uuid4(),
+                titulo=f"Faixa {i + 1}",
+                autor_artista="Autor Maçônico",
+                tipo_midia="ARQUIVO_LOCAL",
+                caminho_arquivo=f"/storage/faixa_{i + 1}.mp3",
+                link_externo=None,
+                duracao_segundos=180,
+                preferida=(i in (5, 12, 24)),  # 3 músicas preferidas espalhadas entre 30
+                surdina=False,
+                estilo="UNIVERSAL",
+                subclassificacao="GERAL",
+            )
+        )
+
+    selecionadas = selecionar_candidatas_para_sessao(todas, limite=MAX_FAIXAS_POR_MOMENTO)
+    assert len(selecionadas) == 8, "Deve limitar a exatamente 8 músicas no álbum da sessão"
+
+    # As 3 primeiras faixas (0, 1, 2) devem ser obrigatoriamente as 3 preferidas
+    assert all(m.preferida for m in selecionadas[:3]), "Preferenciais devem vir agrupadas nas primeiras faixas"
+    assert not any(m.preferida for m in selecionadas[3:]), "As demais 5 faixas complementam as 8 vagas"
+
+    # O sorteio aleatório de escolha inicial deve SEMPRE indicar uma das preferidas
+    for _ in range(25):
+        sorteada = sortear_entre_candidatas(selecionadas)
+        assert sorteada is not None
+        assert sorteada.preferida is True, "O sorteio deve sempre escolher entre as preferenciais quando existirem"
+

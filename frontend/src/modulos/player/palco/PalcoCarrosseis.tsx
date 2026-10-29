@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Star, Plus, X, Music, Volume2 } from 'lucide-react';
-import { MomentoExecucao, MusicaSorteada } from '../../../compartilhado/tipos';
+import { Volume2 } from 'lucide-react';
+import { MomentoExecucao } from '../../../compartilhado/tipos';
 import { feedbackTatil } from '../../../compartilhado/utilitarios/dispositivoNativo';
+import { EncarteAlbum3D, OrigemRectCapa } from './EncarteAlbum3D';
 
 interface PalcoCarrosseisProps {
   momentos: MomentoExecucao[];
@@ -189,6 +190,8 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   onAlterarVolume,
 }) => {
   const [modalTracklistAberto, setModalTracklistAberto] = useState(false);
+  const [origemRectCapa, setOrigemRectCapa] = useState<OrigemRectCapa | null>(null);
+  const capaAtivaElRef = useRef<HTMLDivElement | null>(null);
   const [offsetXFracionario, setOffsetXFracionario] = useState(0);
   const [arrastando, setArrastando] = useState(false);
   const [vuAtivos, setVuAtivos] = useState<number[]>([]);
@@ -503,7 +506,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
   /**
    * Ao clicar na capa do álbum:
-   * - Se for o card ativo: abre o modal de configuração do momento litúrgico (acervo + upload)
+   * - Se for o card ativo: captura as coordenadas exatas da capa no Box 1 e abre o Encarte 3D Folheável
    * - Se for um card vizinho: centraliza e foca o momento correspondente
    */
   const lidarCliqueCard = (idx: number) => {
@@ -513,12 +516,16 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
     feedbackTatil.clique();
     if (idx === indiceMomento) {
-      // Abre o modal de configuração do momento litúrgico (compor músicas do acervo ou upload)
-      if (onAbrirUpload) {
-        onAbrirUpload();
-      } else {
-        setModalTracklistAberto(true);
+      if (capaAtivaElRef.current) {
+        const r = capaAtivaElRef.current.getBoundingClientRect();
+        setOrigemRectCapa({
+          left: r.left,
+          top: r.top,
+          width: r.width,
+          height: r.height,
+        });
       }
+      setModalTracklistAberto(true);
     } else {
       onMudarMomento(idx);
     }
@@ -565,6 +572,11 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                 return (
                   <div
                     key={`album-card-${momento.evento_id}-${i}`}
+                    ref={(el) => {
+                      if (i === indiceMomento) {
+                        capaAtivaElRef.current = el;
+                      }
+                    }}
                     onPointerDown={() => {
                       cardIndexClicadoRef.current = i;
                     }}
@@ -574,7 +586,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                     }}
                     title={
                       ativo
-                        ? 'Clique para configurar o momento litúrgico (adicionar músicas do acervo ou upload)'
+                        ? 'Clique para abrir o encarte litúrgico deste álbum (recomendações e músicas)'
                         : `ÁLBUM ${paraRomano(i + 1)} • ${momento.evento_nome}`
                     }
                     style={{
@@ -584,11 +596,11 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                       borderRadius: 0, // Estritamente quadrada com cantos retos nas proporções de 65%!
                       border: '1.5px solid rgba(227, 190, 97, 0.75)',
                       transform: `translate3d(${t.x}px, ${t.y}px, ${t.z}px) rotateY(${t.rotY}deg) scale(${t.escala})`,
-                      opacity: t.opacidade,
+                      opacity: modalTracklistAberto && i === indiceMomento ? 0 : t.opacidade,
                       zIndex: t.zIndex,
                       transition: arrastando
                         ? 'none'
-                        : 'transform 0.45s cubic-bezier(0.22, 0.9, 0.25, 1), opacity 0.4s ease-out',
+                        : 'transform 0.45s cubic-bezier(0.22, 0.9, 0.25, 1), opacity 0.2s ease-out',
                       transformStyle: 'preserve-3d',
                       background: fundoCapa,
                       boxShadow: ativo
@@ -1052,139 +1064,23 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
       </div>
 
       {/* =========================================================================
-          MODAL DINÂMICO DE LISTA DE MÚSICAS DO ÁLBUM LITÚRGICO
-          ========================================================= */}
+          ENCARTE 3D FOLHEÁVEL DO ÁLBUM LITÚRGICO (RECOMENDAÇÕES + TRILHAS LP)
+          ========================================================================= */}
       {modalTracklistAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-sm rounded-3xl bg-gradient-to-b from-[#0E1C36] via-[#0A1428] to-[#070F1E] border-2 border-[#DDB96B]/50 shadow-[0_0_50px_rgba(0,0,0,0.95)] p-4 flex flex-col gap-3">
-            {/* Topo do Modal: Capa Quadrada e Identificação */}
-            <div className="flex items-center justify-between border-b border-[#DDB96B]/30 pb-2.5">
-              <div className="flex items-center gap-3">
-                {/* Capa do Álbum: Estritamente quadrada e sem borda dourada */}
-                <div
-                  style={{ background: fundoCapa }}
-                  className="w-13 h-13 rounded-none flex items-center justify-center flex-shrink-0 shadow-lg"
-                >
-                  <SimboloEsquadroCompasso />
-                </div>
-                <div className="flex flex-col min-w-0 text-left">
-                  <span className="text-[9px] font-mono text-[#FDE68A] font-bold uppercase tracking-wider">
-                    ÁLBUM {paraRomano(indiceMomento + 1)} • {rito.toUpperCase()}
-                  </span>
-                  <h2 className="text-xs font-cinzel font-bold text-white leading-tight truncate">
-                    {momentoAtivo.evento_nome}
-                  </h2>
-                  <span className="text-[9px] text-[#DDB96B]/80 truncate">
-                    {momentoAtivo.evento_descricao || 'Trilhas Litúrgicas Selecionadas'}
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setModalTracklistAberto(false)}
-                className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between text-[9px] text-[#DDB96B]/80 font-mono px-1">
-              <span>Toque na trilha para tocar no vinil:</span>
-              <span className="text-slate-400">{faixasAtivas.length} Trilhas</span>
-            </div>
-
-            {/* Lista de Faixas Dinâmica */}
-            <div className="flex flex-col gap-1.5 max-h-[250px] overflow-y-auto pr-1">
-              {faixasAtivas.map((faixa, i) => {
-                const estaAtiva = i === idxFaixaAtiva;
-                return (
-                  <div
-                    key={`modal-faixa-${faixa.id}-${i}`}
-                    onClick={() => {
-                      feedbackTatil.clique();
-                      onTrocarFaixa(i, true);
-                      setModalTracklistAberto(false);
-                    }}
-                    className={`px-3 py-2 rounded-xl text-left flex items-center justify-between cursor-pointer transition-all border ${
-                      estaAtiva
-                        ? 'bg-[#DDB96B]/20 border-[#DDB96B] text-white shadow-md'
-                        : 'bg-white/5 border-transparent text-slate-300 hover:bg-white/10 hover:border-[#1E325C]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 truncate flex-1 min-w-0 pr-2">
-                      <span className={`font-mono text-xs ${estaAtiva ? 'text-[#FDE68A] font-bold' : 'text-slate-400'}`}>
-                        {i + 1}.
-                      </span>
-                      <div className="flex flex-col truncate min-w-0">
-                        <span className={`text-xs font-cinzel font-semibold truncate ${estaAtiva ? 'text-white' : 'text-slate-200'}`}>
-                          {faixa.titulo}
-                        </span>
-                        <span className="text-[9px] text-[#DDB96B]/80 truncate">
-                          {faixa.autor_artista || 'Autor Maçônico'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      {onAlternarPreferencia && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            feedbackTatil.clique();
-                            onAlternarPreferencia(faixa.id, !faixa.preferida);
-                          }}
-                          className={`p-1 rounded hover:bg-white/10 transition-colors ${
-                            faixa.preferida ? 'text-[#DDB96B]' : 'text-slate-500 hover:text-slate-300'
-                          }`}
-                          title={faixa.preferida ? 'Trilha favorita' : 'Marcar como favorita'}
-                        >
-                          <Star className="w-3.5 h-3.5 fill-current" />
-                        </button>
-                      )}
-                      <span className={`text-[9px] font-mono ${estaAtiva ? 'text-[#FDE68A] font-bold' : 'text-slate-400'}`}>
-                        {formatarTempo(faixa.duracao_segundos)}
-                      </span>
-                      {estaAtiva && <span className="text-emerald-400 text-xs">●</span>}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {faixasAtivas.length === 0 && (
-                <div className="py-6 text-center text-slate-400 text-xs flex flex-col items-center gap-2">
-                  <Music className="w-8 h-8 text-slate-600" />
-                  <span>Nenhuma trilha cadastrada para este momento.</span>
-                </div>
-              )}
-            </div>
-
-            {/* Ações do Modal */}
-            <div className="flex flex-col gap-2 pt-1 border-t border-[#DDB96B]/20">
-              {onAbrirUpload && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModalTracklistAberto(false);
-                    onAbrirUpload();
-                  }}
-                  className="w-full py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-[#1E325C] text-[11px] font-cinzel text-slate-300 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5 text-[#DDB96B]" />
-                  <span>Adicionar / Compor mais músicas</span>
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setModalTracklistAberto(false)}
-                className="w-full py-2 rounded-xl bg-gradient-to-r from-[#DDB96B]/20 via-[#FDE68A]/25 to-[#DDB96B]/20 hover:brightness-125 border border-[#DDB96B]/50 text-xs font-cinzel font-bold text-[#FDE68A] transition-all cursor-pointer"
-              >
-                Fechar Acervo Litúrgico
-              </button>
-            </div>
-          </div>
-        </div>
+        <EncarteAlbum3D
+          momento={momentoAtivo}
+          indiceMomento={indiceMomento}
+          totalMomentos={momentos.length}
+          eRitoBrasileiro={eRitoBrasileiro}
+          ritoNome={eRitoBrasileiro ? 'Rito Brasileiro' : rito}
+          idxFaixaAtiva={idxFaixaAtiva}
+          tocando={tocando}
+          origemRect={origemRectCapa}
+          onFechar={() => setModalTracklistAberto(false)}
+          onTrocarFaixa={onTrocarFaixa}
+          onAlternarPreferencia={onAlternarPreferencia}
+          onAbrirComporMomento={onAbrirUpload}
+        />
       )}
     </div>
   );

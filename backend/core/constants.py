@@ -67,6 +67,9 @@ class TipoMidia(str, Enum):
 # Volume padrão (25%) aplicado automaticamente em momentos classificados como Surdina / Interlúdio
 VOLUME_SURDINA_PADRAO: float = 0.25
 
+# Quantidade máxima de faixas selecionadas por momento litúrgico na abertura da sessão (priorizando preferidas)
+MAX_FAIXAS_POR_MOMENTO: int = 8
+
 # Termos canônicos que classificam um momento ritualístico como Surdina (fundo para fala/circulação)
 TERMOS_MOMENTO_SURDINA: tuple[str, ...] = (
     "surdina",

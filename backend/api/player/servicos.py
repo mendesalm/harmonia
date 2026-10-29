@@ -19,7 +19,7 @@ from backend.api.player.schemas import (
     SessaoPlayerExecucao,
 )
 from backend.api.musicas.midia import classificar_midia
-from backend.core.constants import TERMOS_MOMENTO_SURDINA
+from backend.core.constants import MAX_FAIXAS_POR_MOMENTO, TERMOS_MOMENTO_SURDINA
 from backend.modelos.evento import Evento
 from backend.modelos.musica import Musica, MusicaEvento, MusicaEventoSugerido
 from backend.modelos.sessao import SessaoLoja, SessaoLojaEvento, TipoSessao
@@ -66,6 +66,48 @@ def classificar_momento_surdina(
     return any(termo in texto_unificado for termo in TERMOS_MOMENTO_SURDINA)
 
 
+def selecionar_candidatas_para_sessao(
+    todas_candidatas: List[MusicaSorteadaInfo],
+    limite: int = MAX_FAIXAS_POR_MOMENTO,
+    momento_em_surdina: bool = False,
+) -> List[MusicaSorteadaInfo]:
+    """
+    Seleciona no máximo `limite` (padrão: 8) músicas para o momento litúrgico na abertura da sessão:
+      1. Agrupa todas as músicas marcadas como preferenciais (`preferida=True`) nas primeiras posições (Faixas 01, 02...).
+      2. Se houver mais preferidas que `limite`, sorteia `limite` exclusivamente entre as preferidas.
+      3. Se houver menos preferidas que `limite`, inclui TODAS as preferidas no início e completa as vagas
+         restantes sorteando aleatoriamente entre as demais candidatas (priorizando AMBIENTE se em surdina).
+    """
+    if not todas_candidatas:
+        return []
+
+    preferidas = [m for m in todas_candidatas if m.preferida]
+    nao_preferidas = [m for m in todas_candidatas if not m.preferida]
+
+    if len(preferidas) >= limite:
+        return random.sample(preferidas, limite)
+
+    vagas_restantes = limite - len(preferidas)
+    if len(nao_preferidas) <= vagas_restantes:
+        complementares = list(nao_preferidas)
+        random.shuffle(complementares)
+        return preferidas + complementares
+
+    if momento_em_surdina:
+        ambientes = [m for m in nao_preferidas if m.subclassificacao == "AMBIENTE" or m.surdina]
+        gerais = [m for m in nao_preferidas if not (m.subclassificacao == "AMBIENTE" or m.surdina)]
+        if len(ambientes) >= vagas_restantes:
+            complementares = random.sample(ambientes, vagas_restantes)
+        else:
+            complementares = list(ambientes) + random.sample(
+                gerais, vagas_restantes - len(ambientes)
+            )
+    else:
+        complementares = random.sample(nao_preferidas, vagas_restantes)
+
+    return preferidas + complementares
+
+
 def sortear_entre_candidatas(
     candidatas: List[MusicaSorteadaInfo],
     excluir_id: Optional[uuid.UUID] = None,
@@ -74,7 +116,7 @@ def sortear_entre_candidatas(
     """
     Regra de sorteio de um momento ritualístico (função pura, testável sem banco):
 
-      1. Se existir UMA OU MAIS músicas preferidas, sorteia apenas entre elas.
+      1. Se existir UMA OU MAIS músicas preferidas, sorteia SEMPRE entre elas.
       2. Se não houver preferidas, sorteia entre todas as candidatas.
       3. Se o momento estiver em surdina, prioriza faixas com subclassificação 'AMBIENTE' ou 'surdina=True'.
       4. `excluir_id` evita repetir a música atual no re-sorteio, desde que haja outra opção.
@@ -193,7 +235,9 @@ class ServicoPlayer:
             .where(SessaoLoja.id == sessao_id)
             .options(
                 selectinload(SessaoLoja.tipo_sessao).selectinload(TipoSessao.rito),
-                selectinload(SessaoLoja.eventos_customizados).selectinload(SessaoLojaEvento.evento),
+                selectinload(SessaoLoja.eventos_customizados)
+                .selectinload(SessaoLojaEvento.evento)
+                .selectinload(Evento.canonico),
             )
         )
         res = await db.execute(stmt)
@@ -222,20 +266,37 @@ class ServicoPlayer:
                 estilo=estilo_normalizado,
             )
 
-            observacao_final = item.observacao_mestre_harmonia or evento.observacao_padrao_mestre_harmonia
+            canonico = getattr(evento, "canonico", None)
+            observacao_canonica = getattr(canonico, "orientacao", None) if canonico else None
+            descricao_canonica = getattr(canonico, "descricao", None) if canonico else None
+
+            observacao_final = (
+                item.observacao_mestre_harmonia
+                or evento.observacao_padrao_mestre_harmonia
+                or observacao_canonica
+            )
+            descricao_final = evento.descricao or descricao_canonica
+
             em_surdina_momento = (
                 item.em_surdina
                 if item.em_surdina is not None
                 else classificar_momento_surdina(
                     evento.nome,
-                    evento.descricao,
+                    descricao_final,
                     observacao_final,
                 )
             )
 
-            # Sorteia considerando preferidas, surdina (priorizando faixas AMBIENTE) e estilo
+            # Seleciona no máximo 8 músicas para o álbum da sessão, agrupando as preferidas nas primeiras faixas
+            candidatas_sessao = selecionar_candidatas_para_sessao(
+                todas_candidatas=lista_candidatas_info,
+                limite=MAX_FAIXAS_POR_MOMENTO,
+                momento_em_surdina=em_surdina_momento,
+            )
+
+            # Sorteia considerando preferidas (sempre indicará uma preferida caso exista), surdina e estilo
             musica_escolhida = sortear_entre_candidatas(
-                lista_candidatas_info,
+                candidatas_sessao,
                 momento_em_surdina=em_surdina_momento,
             )
 
@@ -244,13 +305,13 @@ class ServicoPlayer:
                     posicao=item.ordem_execucao,
                     evento_id=evento.id,
                     evento_nome=evento.nome,
-                    evento_descricao=evento.descricao,
+                    evento_descricao=descricao_final,
                     obrigatorio=not item.suprimido,
                     observacao_ritual=observacao_final,
                     em_surdina=em_surdina_momento,
                     musica_sorteada=musica_escolhida,
                     total_musicas_disponiveis=len(lista_candidatas_info),
-                    candidatas=lista_candidatas_info,
+                    candidatas=candidatas_sessao,
                 )
             )
 
