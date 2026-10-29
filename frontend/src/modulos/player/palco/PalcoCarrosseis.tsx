@@ -229,14 +229,14 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
   // Ângulo dinâmico do braço de precisão audiófilo H-33
   // Repouso: 0deg (apoiado no suporte de descanso do chassi)
-  // Execução ativa: 22deg (borda externa do vinil) a 38deg (ranhura final próxima ao selo)
+  // Execução ativa: 17deg (borda externa do vinil) a 36deg (ranhura final próxima ao selo)
   // Se pausado no meio da faixa, o braço permanece sobre a faixa atual sem recuar abruptamente
   const calcularAnguloExecucao = () => {
     if (!temAlbumNoMomento || (!tocando && progressoFaixa === 0)) return 0;
     const total = Math.max(1, faixasAtivas.length);
     const indice = Math.max(0, idxFaixaAtiva);
-    const fatia = 16 / total;
-    const baseFaixa = 22 + indice * fatia;
+    const fatia = 19 / total;
+    const baseFaixa = 17 + indice * fatia;
     const excursaoFaixa = fatia * Math.min(1, Math.max(0, progressoFaixa));
     return baseFaixa + excursaoFaixa;
   };
@@ -247,7 +247,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   // por CSS para caber em qualquer viewport. Assim a geometria relativa vinil↔braço
   // (pivô a +142px/-129px do eixo) é idêntica no desktop e no móvel.
   const DECK_LARGURA = 290;
-  const DECK_ALTURA = 250;
+  const DECK_ALTURA = 262;
   const deckAreaRef = useRef<HTMLDivElement>(null);
   const [escalaDeck, setEscalaDeck] = useState(1);
 
@@ -688,15 +688,15 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
               }}
             >
             {/* Platter Recessed Shadow Well */}
-            <div className="absolute w-[196px] h-[196px] rounded-full bg-black/95 shadow-[inset_0_4px_16px_rgba(0,0,0,0.95)] border border-[#1a2333]" style={{ left: 2, top: 57 }} />
+            <div className="absolute w-[218px] h-[218px] rounded-full bg-black/95 shadow-[inset_0_4px_16px_rgba(0,0,0,0.95)] border border-[#1a2333]" style={{ left: 1, top: 41 }} />
 
             {temAlbumNoMomento ? (
               /* DISCO DE VINIL STITCH: Clique no disco alterna Play/Stop */
               <div
-                className={`absolute w-[188px] h-[188px] rounded-full vinyl-grooves shadow-[0_18px_45px_rgba(0,0,0,0.85),inset_0_1px_2px_rgba(255,255,255,0.1)] flex items-center justify-center cursor-pointer select-none z-20 active:scale-[0.98] transition-transform ${
+                className={`absolute w-[210px] h-[210px] rounded-full vinyl-grooves shadow-[0_18px_45px_rgba(0,0,0,0.85),inset_0_1px_2px_rgba(255,255,255,0.1)] flex items-center justify-center cursor-pointer select-none z-20 active:scale-[0.98] transition-transform ${
                   tocando ? 'spin-slow' : 'spin-paused'
                 }`}
-                style={{ left: 6, top: 61 }}
+                style={{ left: 5, top: 45 }}
                 onClick={() => {
                   feedbackTatil.clique();
                   onAlternarPlayPause();
@@ -714,7 +714,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                       ? 'radial-gradient(circle, #38050d 0%, #1e0307 70%, #0d0103 100%)'
                       : 'radial-gradient(circle, #0c1626 0%, #050a12 70%, #03060a 100%)',
                   }}
-                  className="w-[74px] h-[74px] sm:w-[80px] sm:h-[80px] rounded-full border-2 border-[#DDB96B]/90 shadow-2xl flex flex-col items-center justify-center text-center p-1 relative z-10"
+                  className="w-[83px] h-[83px] sm:w-[90px] sm:h-[90px] rounded-full border-2 border-[#DDB96B]/90 shadow-2xl flex flex-col items-center justify-center text-center p-1 relative z-10"
                 >
                   <span className="font-cinzel text-[7px] text-[#DDB96B] tracking-widest font-bold">
                     H • 33
@@ -739,10 +739,10 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                   if (onAbrirUpload) onAbrirUpload();
                   else setModalTracklistAberto(true);
                 }}
-                className="absolute w-[188px] h-[188px] rounded-full flex flex-col items-center justify-center z-20 cursor-pointer border border-[#1E325C]/70 shadow-inner group"
+                className="absolute w-[210px] h-[210px] rounded-full flex flex-col items-center justify-center z-20 cursor-pointer border border-[#1E325C]/70 shadow-inner group"
                 style={{
-                  left: 6,
-                  top: 61,
+                  left: 5,
+                  top: 45,
                   background: 'radial-gradient(circle, #081122 0%, #050B17 65%, #02050E 100%)',
                   boxShadow: 'inset 0 0 25px rgba(0,0,0,0.95)',
                 }}
@@ -764,7 +764,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
             {/* BRAÇO MECÂNICO AUDIÓFILO DE LATÃO DOURADO (PRECISION TONEARM ASSEMBLY) */}
             <div
               className="absolute w-24 h-48 pointer-events-none z-30"
-              style={{ left: 184, top: 4 }}
+              style={{ left: 182, top: 18 }}
               data-purpose="precision-tonearm"
             >
               {/* Suporte de Repouso Fixo no Chassi (Tonearm Rest Clip) - Alinhado no eixo da haste reta (X = 58px) */}
