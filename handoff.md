@@ -1,7 +1,7 @@
 # Harmonia - Guia de Handoff e Inicialização
 
-**Última Atualização:** 27 de Outubro de 2026 (Arrasto do Braço para Troca de Faixas & Vinil a 1800ms)  
-**Status da Sessão:** 🟢 **Concluído, Validado e Sincronizado (Build Frontend OK + 32 testes Pytest passando 100%)** — Gestos Audiófilos Táteis e Rotação Hi-Fi Realista:
+**Última Atualização:** 29 de Outubro de 2026 (Calibração Geométrica da Vitrola H-33, Curso Radial por Lei dos Cossenos & Animação 3D de Flip e Recolhimento do Vinil)  
+**Status da Sessão:** 🟢 **Concluído, Validado em Produção e Sincronizado (Build Frontend OK + 32 testes Pytest passando 100%)** — Mecânica Realista de Vinil e Transição 3D entre Momentos:
 - Box 1 (Acervo Litúrgico): Capas dos álbuns com formato rigorosamente quadrado (cantos retos vivos, `borderRadius: 0` e `rounded-none`), moldura ornamental dupla dourada contínua e tracejada (`border-[#DDB96B]/40` e `border-dashed border-[#DDB96B]/25` ambos `rounded-none`), medalhão circular com Esquadro facetado e Compasso em ouro (`#FDF3D7`), tipografia cerimonial com Cinzel e Cormorant Garamond itálico, dimensionadas dinamicamente a 65% da largura do box container (`Math.round(larguraBox * 0.65)`).
 - Regra de Cores Litúrgicas do Rito: Bordô nobre Stitch (`#460811` via `#2d060c` a `#120306`) exclusivo para o Rito Brasileiro; Obsidian/Midnight (`#0e1624` via `#0b111a` a `#070a10`) para os demais ritos.
 - Box 2 (Vitrola H-33 Deck):
@@ -165,6 +165,26 @@ Harmonia/
    - **Supressão Total dos Botões Redundantes:** Removidos a seekbar inferior duplicada e a linha de botões extras (`Orientação`, `Surdina`, `Próximo?`, `100%`) em `MasonicControls.tsx`.
    - **Barra Central:** Indicador de álbuns contido em `max-w-[280px]` auto-centralizado no vão entre os dois boxes.
    - **Correção da Customização Antigravity:** Corrigida codificação ANSI/Windows-1252 em `.agent/rules/GEMINI.md` para UTF-8 válido.
+
+---
+
+## 🎯 Resumo do que foi Concluído nesta Sessão (29/10/2026)
+
+1. **Ampliação e Calibração Geométrica do Conjunto Vinil + Braço (`PalcoCarrosseis.tsx`)**:
+   - **Vinil e Prato Maiores (+23% acumulado):** O disco de vinil passou de `188px` para `232px`, o poço do prato (`Platter Recessed Shadow Well`) foi para `242px` e o selo central para `91px` (`99px` em telas maiores), preenchendo o palco de `290x262px` de forma equilibrada.
+   - **Aproximação e Elevação do Conjunto:** O centro do prato foi elevado e reposicionado em `(120, 140)` e o pivô do braço fonocaptor em `(250, 30)`, reduzindo o vão em repouso entre o braço e a borda do disco.
+   - **Correção de Bug de Play/Pause no Disco:** Extraída a prop `onAlternarPlayPause` na desestruturação de `PalcoCarrosseis`, eliminando o `ReferenceError` ao clicar diretamente sobre o vinil.
+
+2. **Simulação Realista dos Sulcos do Vinil (Lei dos Cossenos)**:
+   - Substituída a interpolação linear de ângulos por cálculo trigonométrico exato em raio (`calcularAnguloPorRaio`), fazendo a agulha pousar na borda externa na primeira faixa (`RAIO_SULCO_EXTERNO = 108px`, `~8.7°`) e avançar linearmente em raio até o sulco final junto ao selo (`RAIO_SULCO_INTERNO = 54px`, `~28.4°`).
+   - O curso radial total é dividido igualmente entre o número de faixas do momento ritualístico (1 faixa = 100% da superfície; 2 faixas = 50% cada; etc.).
+   - Em pausa a agulha permanece sobre o sulco atual; em parada ou troca de momento retorna ao suporte de descanso (`0°`). Na troca de faixa dentro do mesmo momento, apenas o braço se desloca.
+
+3. **Animação 3D de Flip e Recolhimento do Vinil nas Trocas de Momento (`PalcoCarrosseis.tsx` e `index.css`)**:
+   - Máquina de estados (`FaseDisco`: `'assentado' | 'saindo' | 'entrando'`) sincronizada com `indiceDeck` para simular a troca física do LP (~2s totais):
+     - **Saída (`vinil-saindo`, `1000ms`):** O braço retorna ao descanso (`0°`), a rotação pausa e o vinil se eleva do pino central, faz um *flip* 3D (`rotateY(180deg)`) e recolhe-se para cima em direção à capa (`translateY(-195px)`).
+     - **Entrada (`vinil-entrando`, `1000ms`):** Após atualizar o momento no deck, o novo vinil desce da capa executando o *flip* 3D inverso até assentar no prato, mantendo o braço em repouso até o acionamento do Play.
+   - Cliques no vinil e no braço ficam bloqueados durante a transição (`discoEmTroca`), e as classes respeitam `@media (prefers-reduced-motion: reduce)`.
 
 ---
 
