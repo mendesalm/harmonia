@@ -109,6 +109,8 @@ export const ModalSelecaoSessao: React.FC<Props> = ({ onFechar }) => {
               <div className="grid gap-2.5">
                 {sessoes.map((s) => {
                   const ativos = (s.eventos_customizados || []).filter((e) => !e.suprimido);
+                  const total = (s.eventos_customizados || []).length;
+                  const suprimidosQtd = total - ativos.length;
                   return (
                     <button
                       key={s.id}
@@ -122,6 +124,11 @@ export const ModalSelecaoSessao: React.FC<Props> = ({ onFechar }) => {
                         </span>
                         <span className="block text-xs text-slate-400 mt-0.5">
                           {ativos.length} {ativos.length === 1 ? 'momento ativo' : 'momentos ativos'}
+                          {suprimidosQtd > 0 && (
+                            <span className="text-zinc-400 font-mono text-[11px] ml-1">
+                              ({suprimidosQtd} desativados)
+                            </span>
+                          )}
                         </span>
                       </div>
                       <PlayCircle className="w-6 h-6 text-macaonico-dourado shrink-0 group-hover:scale-110 transition-transform" />

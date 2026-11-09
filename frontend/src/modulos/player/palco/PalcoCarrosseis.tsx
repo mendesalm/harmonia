@@ -94,10 +94,17 @@ function calcularMomento3D(distancia: number, tamanho: number = 180) {
   return { x, y, z, rotY, escala, opacidade, zIndex };
 }
 
-/** Símbolo Sagrado Maçônico Refinado Stitch: Esquadro facetado e Compasso com 'G' central em Ouro */
-const SimboloEsquadroCompasso: React.FC<{ className?: string }> = ({ className = 'w-12 h-12' }) => (
+/** Símbolo Sagrado Maçônico Refinado Stitch: Esquadro facetado e Compasso com 'G' central (Ouro ou Prata/Cinza se desativado) */
+const SimboloEsquadroCompasso: React.FC<{ className?: string; desativado?: boolean }> = ({
+  className = 'w-12 h-12',
+  desativado = false,
+}) => (
   <svg
-    className={`${className} text-[#DDB96B] drop-shadow-[0_0_8px_rgba(227,190,97,0.7)]`}
+    className={`${className} ${
+      desativado
+        ? 'text-zinc-400 drop-shadow-[0_0_6px_rgba(161,161,170,0.35)]'
+        : 'text-[#DDB96B] drop-shadow-[0_0_8px_rgba(227,190,97,0.7)]'
+    }`}
     fill="none"
     stroke="currentColor"
     strokeLinecap="round"
@@ -108,14 +115,14 @@ const SimboloEsquadroCompasso: React.FC<{ className?: string }> = ({ className =
     {/* Compass Arms */}
     <line stroke="currentColor" x1="50" x2="16" y1="12" y2="82" />
     <line stroke="currentColor" x1="50" x2="84" y1="12" y2="82" />
-    <circle cx="50" cy="12" fill="#FDF3D7" r="3.5" />
+    <circle cx="50" cy="12" fill={desativado ? '#e4e4e7' : '#FDF3D7'} r="3.5" />
     {/* Square (Esquadro facetado com profundidade metálica) */}
-    <polyline points="28,38 50,78 72,38" stroke="#EED184" strokeWidth="3" />
-    <polyline points="21,34 50,86 79,34" stroke="#AB7F28" strokeWidth="1.8" />
+    <polyline points="28,38 50,78 72,38" stroke={desativado ? '#a1a1aa' : '#EED184'} strokeWidth="3" />
+    <polyline points="21,34 50,86 79,34" stroke={desativado ? '#71717a' : '#AB7F28'} strokeWidth="1.8" />
     {/* Letter 'G' in Center */}
     <text
       dominantBaseline="middle"
-      fill="#FDF3D7"
+      fill={desativado ? '#f4f4f5' : '#FDF3D7'}
       fontFamily="'Cinzel', serif"
       fontSize="16"
       fontWeight="bold"
@@ -498,7 +505,8 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!arrastando) return;
     const dx = e.clientX - inicioXRef.current;
-    if (!arrastouMaisQueCliqueRef.current && Math.abs(dx) > 6) {
+    const limiar = holdIntervalRef.current ? 25 : 6;
+    if (!arrastouMaisQueCliqueRef.current && Math.abs(dx) > limiar) {
       arrastouMaisQueCliqueRef.current = true;
       cardIndexClicadoRef.current = null;
       cancelarHold();
@@ -532,6 +540,10 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   const finalizarGesto = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!arrastando) return;
     setArrastando(false);
+    if (holdTriggeredRef.current) {
+      cancelarHold();
+      return;
+    }
     const duracao = performance.now() - pointerDownTimeRef.current;
 
     if (capturouPointerRef.current && pointerIdRef.current !== null) {
@@ -683,7 +695,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                       height: tamanhoCapa,
                       borderRadius: 0, // Estritamente quadrada com cantos retos nas proporções de 65%!
                       border: momento.suprimido
-                        ? '1.5px solid rgba(148, 163, 184, 0.45)'
+                        ? '2px solid #71717a'
                         : '1.5px solid rgba(227, 190, 97, 0.75)',
                       transform: `translate3d(${t.x}px, ${t.y}px, ${t.z}px) rotateY(${t.rotY}deg) scale(${t.escala})`,
                       opacity: modalTracklistAberto && i === indiceMomento ? 0 : t.opacidade,
@@ -693,33 +705,30 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                         : 'transform 0.45s cubic-bezier(0.22, 0.9, 0.25, 1), opacity 0.2s ease-out',
                       transformStyle: 'preserve-3d',
                       background: momento.suprimido
-                        ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 60%, #020617 100%)'
+                        ? 'linear-gradient(145deg, #3f3f46 0%, #27272a 45%, #18181b 100%)'
                         : fundoCapa,
                       boxShadow: ativo
                         ? momento.suprimido
-                          ? '0 0 25px rgba(148, 163, 184, 0.25), 0 16px 36px rgba(0,0,0,0.95)'
+                          ? '0 0 25px rgba(161, 161, 170, 0.45), 0 16px 36px rgba(0,0,0,0.95)'
                           : '0 0 25px rgba(227, 190, 97, 0.28), 0 16px 36px rgba(0,0,0,0.95)'
                         : '0 12px 30px rgba(0,0,0,0.85)',
-                      filter: momento.suprimido
-                        ? 'grayscale(0.9) brightness(0.75)'
-                        : ativo
-                        ? 'none'
-                        : 'brightness(0.72)',
                       cursor: 'pointer',
                     }}
-                    className="p-3 sm:p-3.5 flex flex-col justify-between cursor-pointer select-none relative overflow-hidden rounded-none"
+                    className={`p-3 sm:p-3.5 flex flex-col justify-between cursor-pointer select-none relative overflow-hidden rounded-none ${
+                      momento.suprimido ? 'grayscale contrast-95' : ''
+                    }`}
                   >
-                    {/* Moldura dupla ornamental refinada do Stitch */}
-                    <div className={`absolute inset-[3px] border ${momento.suprimido ? 'border-slate-500/40' : 'border-[#DDB96B]/40'} rounded-none pointer-events-none`} />
-                    <div className={`absolute inset-[6px] border border-dashed ${momento.suprimido ? 'border-slate-500/25' : 'border-[#DDB96B]/25'} rounded-none pointer-events-none`} />
+                    {/* Moldura dupla ornamental refinada: Cinza para desativado, Ouro para ativo */}
+                    <div className={`absolute inset-[3px] border ${momento.suprimido ? 'border-zinc-500/60' : 'border-[#DDB96B]/40'} rounded-none pointer-events-none`} />
+                    <div className={`absolute inset-[6px] border border-dashed ${momento.suprimido ? 'border-zinc-600/50' : 'border-[#DDB96B]/25'} rounded-none pointer-events-none`} />
 
                     {/* Top bar da capa: Identificador e Dinâmica */}
-                    <div className={`w-full flex items-center justify-between text-[8px] sm:text-[9px] uppercase tracking-wider relative z-10 border-b ${momento.suprimido ? 'border-slate-500/20' : 'border-[#DDB96B]/20'} pb-1 pointer-events-none`}>
-                      <span className={`font-cinzel font-bold ${momento.suprimido ? 'text-slate-300' : 'text-[#FDE68A]'} tracking-widest`}>
+                    <div className={`w-full flex items-center justify-between text-[8px] sm:text-[9px] uppercase tracking-wider relative z-10 border-b ${momento.suprimido ? 'border-zinc-600/40' : 'border-[#DDB96B]/20'} pb-1 pointer-events-none`}>
+                      <span className={`font-cinzel font-bold ${momento.suprimido ? 'text-zinc-300' : 'text-[#FDE68A]'} tracking-widest`}>
                         ÁLBUM {paraRomano(i + 1)}
                       </span>
                       {momento.suprimido ? (
-                        <span className="font-mono text-[7px] sm:text-[7.5px] px-1.5 py-0.5 rounded bg-slate-800/90 border border-slate-500/60 text-slate-300 font-bold tracking-wider">
+                        <span className="font-mono text-[7px] sm:text-[7.5px] px-1.5 py-0.5 rounded bg-zinc-700/90 border border-zinc-500 text-zinc-200 font-bold tracking-wider">
                           DESATIVADO
                         </span>
                       ) : (
@@ -729,34 +738,34 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                       )}
                     </div>
 
-                    {/* Centro da capa: Medalhão circular com Esquadro e Compasso com 'G' */}
+                    {/* Centro da capa: Medalhão circular com Esquadro e Compasso com 'G' (Prata/Cinza para desativado) */}
                     <div className="my-auto flex flex-col items-center justify-center relative z-10 py-0.5 pointer-events-none">
-                      <div className={`w-14 h-14 sm:w-16 sm:h-16 p-1.5 rounded-full ${momento.suprimido ? 'bg-slate-900/80 border-slate-500/50' : 'bg-black/50 border-[#DDB96B]/50'} border shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)] flex items-center justify-center relative`}>
-                        <SimboloEsquadroCompasso className={`w-10 h-10 sm:w-11 sm:h-11 ${momento.suprimido ? 'text-slate-400' : ''}`} />
+                      <div className={`w-14 h-14 sm:w-16 sm:h-16 p-1.5 rounded-full ${momento.suprimido ? 'bg-zinc-800/90 border-zinc-500 shadow-[inset_0_2px_8px_rgba(0,0,0,0.9)]' : 'bg-black/50 border-[#DDB96B]/50 shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)]'} border flex items-center justify-center relative`}>
+                        <SimboloEsquadroCompasso desativado={Boolean(momento.suprimido)} className="w-10 h-10 sm:w-11 sm:h-11" />
                       </div>
                     </div>
 
                     {/* Base da capa: Título em serifa sem corte + contagem de trilhas solenes */}
-                    <div className={`text-center relative z-10 border-t ${momento.suprimido ? 'border-slate-500/20' : 'border-[#DDB96B]/20'} pt-1 px-1 pointer-events-none`}>
-                      <p className={`font-cinzel text-[9.5px] sm:text-[11px] font-bold ${momento.suprimido ? 'text-slate-300' : 'text-[#FFF2CC]'} tracking-wide leading-tight drop-shadow-sm uppercase break-words`}>
+                    <div className={`text-center relative z-10 border-t ${momento.suprimido ? 'border-zinc-600/40' : 'border-[#DDB96B]/20'} pt-1 px-1 pointer-events-none`}>
+                      <p className={`font-cinzel text-[9.5px] sm:text-[11px] font-bold ${momento.suprimido ? 'text-zinc-200' : 'text-[#FFF2CC]'} tracking-wide leading-tight drop-shadow-sm uppercase break-words`}>
                         {momento.evento_nome}
                       </p>
-                      <p className={`font-serif italic text-[8.5px] sm:text-[9.5px] ${momento.suprimido ? 'text-slate-400' : 'text-[#DDB96B]'} tracking-widest mt-0.5 font-normal`}>
+                      <p className={`font-serif italic text-[8.5px] sm:text-[9.5px] ${momento.suprimido ? 'text-zinc-400 font-semibold' : 'text-[#DDB96B]'} tracking-widest mt-0.5 font-normal`}>
                         {momento.suprimido ? 'Momento Desativado' : (totalFaixas > 0 ? `${totalFaixas} Trilhas LP Solenes` : 'Sem Trilhas LP')}
                       </p>
                     </div>
 
                     {/* NOTA DE AVISO E INSTRUÇÃO RITUALÍSTICA DE REATIVAÇÃO */}
                     {momento.suprimido && (
-                      <div className="absolute inset-x-2 top-7 z-20 bg-slate-950/92 border border-amber-500/60 rounded p-1.5 text-center shadow-2xl backdrop-blur-sm pointer-events-none">
-                        <div className="flex items-center justify-center gap-1 text-[8px] sm:text-[8.5px] font-bold text-amber-300 uppercase tracking-wider">
-                          <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
-                          <span>Aviso: Momento Desativado</span>
+                      <div className="absolute inset-x-2 top-7 z-20 bg-zinc-950/95 border border-zinc-500 rounded p-1.5 text-center shadow-2xl backdrop-blur-sm pointer-events-none">
+                        <div className="flex items-center justify-center gap-1 text-[8px] sm:text-[8.5px] font-bold text-zinc-200 uppercase tracking-wider">
+                          <AlertTriangle className="w-3 h-3 text-zinc-300 shrink-0" />
+                          <span>Momento Desativado</span>
                         </div>
-                        <p className="text-[7px] sm:text-[7.5px] text-slate-300 font-sans leading-tight mt-0.5 break-words">
+                        <p className="text-[7px] sm:text-[7.5px] text-zinc-300 font-sans leading-tight mt-0.5 break-words">
                           {momento.evento_descricao || "Momento litúrgico desativado por padrão na configuração."}
                         </p>
-                        <div className="mt-1 pt-1 border-t border-amber-500/30 text-[7px] sm:text-[7.5px] font-mono font-bold text-[#FDE68A] uppercase tracking-wide">
+                        <div className="mt-1 pt-1 border-t border-zinc-700 text-[7px] sm:text-[7.5px] font-mono font-bold text-zinc-200 uppercase tracking-wide">
                           Segure a capa por 3 segundos para reativar nessa sessão
                         </div>
                       </div>
@@ -764,18 +773,18 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
                     {/* MEDIDOR VISUAL DE PROGRESSO AO SEGURAR POR 3 SEGUNDOS */}
                     {holdingMomentId === momento.evento_id && (
-                      <div className="absolute inset-0 z-40 bg-black/85 backdrop-blur-[2px] flex flex-col items-center justify-center p-2 text-center pointer-events-none">
+                      <div className="absolute inset-0 z-40 bg-zinc-950/90 backdrop-blur-[2px] flex flex-col items-center justify-center p-2 text-center pointer-events-none">
                         <div className="relative w-16 h-16 sm:w-18 sm:h-18 flex items-center justify-center">
                           <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                             <path
-                              className="text-slate-800"
+                              className="text-zinc-700"
                               strokeWidth="3.2"
                               stroke="currentColor"
                               fill="none"
                               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                             />
                             <path
-                              className="text-[#FDE68A] transition-all duration-75"
+                              className="text-zinc-100 transition-all duration-75"
                               strokeDasharray={`${holdProgress}, 100`}
                               strokeWidth="3.5"
                               strokeLinecap="round"
@@ -785,16 +794,16 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                             />
                           </svg>
                           <div className="absolute flex flex-col items-center justify-center">
-                            <span className="font-mono text-xs sm:text-sm font-bold text-amber-300">
+                            <span className="font-mono text-xs sm:text-sm font-bold text-white">
                               {Math.max(1, Math.ceil((3000 - (holdProgress * 30)) / 1000))}s
                             </span>
-                            <span className="text-[6.5px] font-mono text-slate-300">{holdProgress}%</span>
+                            <span className="text-[6.5px] font-mono text-zinc-300">{holdProgress}%</span>
                           </div>
                         </div>
-                        <p className="font-cinzel text-[9.5px] sm:text-[10px] font-bold text-[#FFF2CC] uppercase tracking-wider mt-1">
+                        <p className="font-cinzel text-[9.5px] sm:text-[10px] font-bold text-zinc-100 uppercase tracking-wider mt-1">
                           {holdProgress >= 100 ? 'Reativando Momento!' : 'Segure Firme...'}
                         </p>
-                        <p className="text-[7px] text-amber-300/80 font-mono mt-0.5">
+                        <p className="text-[7px] text-zinc-300 font-mono mt-0.5">
                           Solte para cancelar
                         </p>
                       </div>
@@ -822,10 +831,10 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                 className={`transition-all duration-300 cursor-pointer ${
                   i === indiceMomento
                     ? momentos[i]?.suprimido
-                      ? 'w-7 h-1.5 rounded-full bg-gradient-to-r from-slate-500 to-slate-400 shadow-[0_0_8px_rgba(148,163,184,0.6)]'
+                      ? 'w-7 h-1.5 rounded-full bg-gradient-to-r from-zinc-500 to-zinc-400 shadow-[0_0_8px_rgba(161,161,170,0.6)]'
                       : 'w-7 h-1.5 rounded-full bg-gradient-to-r from-[#DDB96B] to-[#FDE68A] shadow-[0_0_8px_rgba(221,185,107,0.8)]'
                     : momentos[i]?.suprimido
-                    ? 'w-1.5 h-1.5 rounded-full bg-slate-700 hover:bg-slate-500'
+                    ? 'w-1.5 h-1.5 rounded-full bg-zinc-600 hover:bg-zinc-400'
                     : 'w-1.5 h-1.5 rounded-full bg-[#1E325C] hover:bg-[#64748b]'
                 }`}
                 title={`Álbum ${i + 1}${momentos[i]?.suprimido ? ' (Desativado)' : ''}`}
@@ -855,7 +864,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
               <div
                 className={`h-1 rounded-full transition-all duration-200 ${
                   momentos[indiceMomento]?.suprimido
-                    ? 'bg-gradient-to-r from-slate-600 via-slate-400 to-slate-300 shadow-[0_0_8px_rgba(148,163,184,0.7)]'
+                    ? 'bg-gradient-to-r from-zinc-600 via-zinc-400 to-zinc-300 shadow-[0_0_8px_rgba(161,161,170,0.7)]'
                     : 'bg-gradient-to-r from-[#B8862D] via-[#DDB96B] to-[#FDE68A] shadow-[0_0_8px_rgba(221,185,107,0.7)]'
                 }`}
                 style={{
@@ -865,7 +874,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
               <div
                 className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-2 rounded-full border border-[#050B17] transition-all duration-200 pointer-events-none group-hover:scale-110 ${
                   momentos[indiceMomento]?.suprimido
-                    ? 'bg-gradient-to-r from-slate-400 to-slate-200 shadow-[0_0_8px_rgba(148,163,184,0.9)]'
+                    ? 'bg-gradient-to-r from-zinc-400 to-zinc-200 shadow-[0_0_8px_rgba(161,161,170,0.9)]'
                     : 'bg-gradient-to-r from-[#DDB96B] to-[#FDE68A] shadow-[0_0_8px_rgba(221,185,107,0.9)]'
                 }`}
                 style={{
@@ -949,10 +958,10 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
               {/* Linha 2: Trilha ativa e Artista */}
               <div className="w-full pt-1 border-t border-[#1E325C]/70 flex items-center gap-1.5 overflow-hidden">
-                <span className={`text-[8px] sm:text-[9px] font-mono font-bold flex-shrink-0 uppercase ${momentoDeck.suprimido ? 'text-slate-400' : 'text-[#00E5FF]'}`}>
+                <span className={`text-[8px] sm:text-[9px] font-mono font-bold flex-shrink-0 uppercase ${momentoDeck.suprimido ? 'text-zinc-400' : 'text-[#00E5FF]'}`}>
                   {momentoDeck.suprimido ? 'AVISO:' : (temAlbumNoMomento ? `TRK ${String(idxFaixaAtiva + 1).padStart(2, '0')}:` : 'TRK --:')}
                 </span>
-                <span className={`text-[9.5px] sm:text-[11px] font-mono font-bold truncate tracking-wide leading-tight ${momentoDeck.suprimido ? 'text-amber-300/90' : 'text-[#FDE68A]'}`}>
+                <span className={`text-[9.5px] sm:text-[11px] font-mono font-bold truncate tracking-wide leading-tight ${momentoDeck.suprimido ? 'text-zinc-200' : 'text-[#FDE68A]'}`}>
                   {momentoDeck.suprimido
                     ? 'Momento desativado click para reativar nessa sessão'
                     : temAlbumNoMomento
@@ -987,27 +996,27 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
             {momentoDeck.suprimido ? (
               /* ESTADO DE MOMENTO DESATIVADO NO PRATO DA VITROLA */
               <div
-                className="absolute w-[232px] h-[232px] rounded-full flex flex-col items-center justify-center z-20 border-2 border-slate-600/70 p-3 text-center"
+                className="absolute w-[232px] h-[232px] rounded-full flex flex-col items-center justify-center z-20 border-2 border-zinc-500 p-3 text-center"
                 style={{
                   left: 4,
                   top: 24,
-                  background: 'radial-gradient(circle, #1e293b 0%, #0f172a 70%, #020617 100%)',
+                  background: 'radial-gradient(circle, #3f3f46 0%, #27272a 60%, #18181b 100%)',
                   boxShadow: 'inset 0 0 30px rgba(0,0,0,0.95), 0 10px 25px rgba(0,0,0,0.8)',
                 }}
               >
-                <span className="font-mono text-[7px] sm:text-[7.5px] uppercase font-bold text-slate-400 bg-slate-800/90 border border-slate-600/60 px-2 py-0.5 rounded-full tracking-wider mb-1">
+                <span className="font-mono text-[7px] sm:text-[7.5px] uppercase font-bold text-zinc-300 bg-zinc-800/95 border border-zinc-500 px-2.5 py-0.5 rounded-full tracking-wider mb-1">
                   MOMENTO DESATIVADO
                 </span>
 
-                <span className="font-cinzel text-[10px] sm:text-[11px] font-bold text-slate-200 line-clamp-1 uppercase tracking-wider">
+                <span className="font-cinzel text-[10px] sm:text-[11.5px] font-bold text-zinc-100 uppercase tracking-wider break-words px-2 text-center leading-tight">
                   {momentoDeck.evento_nome}
                 </span>
 
-                <p className="text-[7.5px] sm:text-[8px] text-slate-400 font-sans line-clamp-2 my-1 max-w-[185px]">
+                <p className="text-[7.5px] sm:text-[8px] text-zinc-300 font-sans break-words my-1 max-w-[185px] leading-tight text-center">
                   {momentoDeck.evento_descricao || "Momento litúrgico desativado por padrão na configuração."}
                 </p>
 
-                <div className="text-[7.5px] sm:text-[8px] font-semibold text-amber-300/95 tracking-wide mb-1.5 px-1 text-center">
+                <div className="text-[7.5px] sm:text-[8px] font-semibold text-zinc-200 tracking-wide mb-1.5 px-1 text-center">
                   Momento desativado click para reativar nessa sessão
                 </div>
 
@@ -1018,13 +1027,13 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                     feedbackTatil.confirmacao();
                     onReativarMomento?.(momentoDeck.evento_id);
                   }}
-                  className="px-2.5 py-1 rounded-lg bg-amber-500/25 hover:bg-amber-500/40 border border-amber-400 text-amber-200 font-cinzel text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider shadow-lg active:scale-95 transition-all cursor-pointer"
+                  className="px-3 py-1 rounded-lg bg-zinc-700/90 hover:bg-zinc-600 border border-zinc-400 text-white font-cinzel text-[8.5px] sm:text-[9.5px] font-bold uppercase tracking-wider shadow-lg active:scale-95 transition-all cursor-pointer"
                 >
                   ⚡ Reativar nessa Sessão
                 </button>
 
                 {segundosRestantesSuprimido !== null && segundosRestantesSuprimido !== undefined && (
-                  <div className="flex items-center gap-1.5 mt-1.5 text-[7px] sm:text-[7.5px] text-slate-400 font-mono">
+                  <div className="flex items-center gap-1.5 mt-1.5 text-[7px] sm:text-[7.5px] text-zinc-400 font-mono">
                     <span>Avançando em {segundosRestantesSuprimido}s</span>
                     <button
                       type="button"
@@ -1032,7 +1041,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                         e.stopPropagation();
                         onAvancarProximo?.();
                       }}
-                      className="text-amber-400 hover:text-amber-300 underline font-sans ml-1 cursor-pointer"
+                      className="text-zinc-300 hover:text-white underline font-sans ml-1 cursor-pointer"
                     >
                       Avançar agora &rarr;
                     </button>

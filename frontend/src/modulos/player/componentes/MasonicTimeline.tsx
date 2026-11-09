@@ -246,13 +246,13 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({
           {momentoAtivo.suprimido && (
             <div className="mt-1 flex flex-col items-center justify-center gap-1">
               <p
-                className="text-[11px] sm:text-xs text-amber-300 font-semibold cursor-pointer hover:underline"
+                className="text-[11px] sm:text-xs text-zinc-300 font-semibold cursor-pointer hover:underline"
                 onClick={() => onReativarMomento?.(momentoAtivo.evento_id)}
               >
                 Momento desativado click para reativar nessa sessão
               </p>
               {momentoAtivo.evento_descricao && (
-                <p className="text-[10px] text-slate-400 max-w-sm truncate">
+                <p className="text-[10px] text-zinc-400 max-w-sm break-words text-center">
                   {momentoAtivo.evento_descricao}
                 </p>
               )}
@@ -260,7 +260,7 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({
                 <button
                   type="button"
                   onClick={() => onReativarMomento(momentoAtivo.evento_id)}
-                  className="px-2.5 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400 text-amber-200 text-[10px] font-cinzel font-bold uppercase transition-all"
+                  className="px-2.5 py-0.5 rounded bg-zinc-700 hover:bg-zinc-600 border border-zinc-400 text-white text-[10px] font-cinzel font-bold uppercase transition-all cursor-pointer"
                 >
                   ⚡ Reativar nessa Sessão
                 </button>

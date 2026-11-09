@@ -121,18 +121,18 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
   return (
     <div className="w-full bg-[#050811] py-1 px-2 sm:px-4 flex flex-col items-center relative z-20 shrink-0 select-none">
       <div className="w-full max-w-[360px] sm:max-w-[380px] mx-auto flex flex-col items-center">
-        {/* Banner de Momento Desativado nos Controles */}
+        {/* Banner de Momento Desativado nos Controles em Tons de Cinza */}
         {momentoAtual?.suprimido && (
-          <div className="w-full mb-1 px-2.5 py-1 rounded-xl bg-slate-900/95 border border-amber-500/50 flex items-center justify-between text-xs text-amber-200 shadow-md">
+          <div className="w-full mb-1 px-2.5 py-1 rounded-xl bg-zinc-900 border border-zinc-500 flex items-center justify-between text-xs text-zinc-200 shadow-md">
             <div className="flex items-center gap-1.5 truncate">
-              <span className="font-mono text-[7.5px] uppercase font-bold text-slate-300 bg-slate-800 border border-slate-600 px-1.5 py-0.5 rounded">
+              <span className="font-mono text-[7.5px] uppercase font-bold text-zinc-300 bg-zinc-800 border border-zinc-500 px-1.5 py-0.5 rounded">
                 DESATIVADO
               </span>
-              <span className="truncate text-[9.5px] sm:text-[10px] font-semibold text-amber-300">
+              <span className="truncate text-[9.5px] sm:text-[10px] font-semibold text-zinc-200">
                 Momento desativado click para reativar nessa sessão
               </span>
               {segundosRestantesSuprimido !== null && segundosRestantesSuprimido !== undefined && (
-                <span className="text-[9px] text-slate-400 font-mono">({segundosRestantesSuprimido}s)</span>
+                <span className="text-[9px] text-zinc-400 font-mono">({segundosRestantesSuprimido}s)</span>
               )}
             </div>
             {onReativarMomento && (
@@ -142,7 +142,7 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
                   feedbackTatil.confirmacao();
                   onReativarMomento(momentoAtual.evento_id);
                 }}
-                className="px-2 py-0.5 rounded bg-amber-500/25 hover:bg-amber-500/40 border border-amber-400 text-amber-200 text-[9px] font-bold font-cinzel uppercase shrink-0 active:scale-95 transition-all"
+                className="px-2.5 py-0.5 rounded bg-zinc-700 hover:bg-zinc-600 border border-zinc-400 text-white text-[9px] font-bold font-cinzel uppercase shrink-0 active:scale-95 transition-all cursor-pointer"
               >
                 Reativar
               </button>

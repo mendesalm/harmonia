@@ -177,6 +177,8 @@ export const PaginaPrepararSessao: React.FC = () => {
                     const nomeSessao = s.nome_personalizado || s.tipo_sessao?.nome || 'Sessão Ritualística';
                     const ritoNome = s.tipo_sessao?.rito?.nome || 'Rito Brasileiro';
                     const momentosQtd = s.eventos_customizados?.filter(e => !e.suprimido).length || 0;
+                    const totalLista = s.eventos_customizados?.length || 0;
+                    const suprimidosQtd = totalLista - momentosQtd;
 
                     return (
                       <div
@@ -214,8 +216,15 @@ export const PaginaPrepararSessao: React.FC = () => {
                         </div>
 
                         <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-2 border-t border-white/5">
-                          <span>{momentosQtd} momentos litúrgicos</span>
-                          <span className="text-slate-500">Ordem padrão</span>
+                          <span>
+                            {momentosQtd} momentos ativos
+                            {suprimidosQtd > 0 && (
+                              <span className="text-zinc-400 font-mono text-[10px] ml-1">
+                                ({suprimidosQtd} desativados)
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-slate-500">Ordem ritualística</span>
                         </div>
                       </div>
                     );
