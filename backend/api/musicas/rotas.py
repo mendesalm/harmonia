@@ -109,12 +109,14 @@ async def listar_musicas(
                 }
 
         midia = classificar_midia(m.arquivo_url, m.metadados)
+        eh_surdina = bool((m.metadados or {}).get("surdina", False)) or (getattr(m, "subclassificacao", "GERAL") == "AMBIENTE")
         m_dict = {
             "id": m.id,
             "titulo": m.titulo,
             "autor_artista": m.autor_artista,
             "estilo": getattr(m, "estilo", "UNIVERSAL") or "UNIVERSAL",
             "subclassificacao": getattr(m, "subclassificacao", "GERAL") or "GERAL",
+            "surdina": eh_surdina,
             "upload_por_loja_id": m.upload_por_loja_id,
             "arquivo_url": m.arquivo_url,
             "caminho_arquivo": midia["caminho_arquivo"],
@@ -355,6 +357,19 @@ async def atualizar_musica(
         musica.titulo = dados.titulo
     if dados.autor_artista is not None:
         musica.autor_artista = dados.autor_artista
+    if dados.estilo is not None:
+        musica.estilo = normalizar_estilo(dados.estilo)
+    if dados.subclassificacao is not None:
+        sub_norm = normalizar_subclassificacao(dados.subclassificacao)
+        musica.subclassificacao = sub_norm
+        meta = dict(musica.metadados or {})
+        meta["surdina"] = (sub_norm == "AMBIENTE")
+        musica.metadados = meta
+    if dados.surdina is not None:
+        meta = dict(musica.metadados or {})
+        meta["surdina"] = dados.surdina
+        musica.metadados = meta
+        musica.subclassificacao = "AMBIENTE" if dados.surdina else "GERAL"
 
     # Atualiza vínculos com momentos litúrgicos caso informado
     if dados.eventos_sugeridos_ids is not None:
@@ -465,15 +480,17 @@ async def configurar_musica_surdina(
     meta = dict(musica.metadados or {})
     meta["surdina"] = surdina
     musica.metadados = meta
+    musica.subclassificacao = "AMBIENTE" if surdina else "GERAL"
     await db.commit()
     await db.refresh(musica)
     logger.info(
-        f"Música {musica.id} ({musica.titulo}) configurada com surdina={surdina} por {usuario.email}"
+        f"Música {musica.id} ({musica.titulo}) configurada com surdina={surdina} (subclassificacao={musica.subclassificacao}) por {usuario.email}"
     )
     return {
         "status": "ok",
         "musica_id": str(musica.id),
         "surdina": surdina,
+        "subclassificacao": musica.subclassificacao,
         "titulo": musica.titulo,
     }
 

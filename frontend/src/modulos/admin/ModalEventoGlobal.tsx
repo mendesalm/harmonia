@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Plus, Trash2, Loader2, Music, UploadCloud, Edit2 } from 'lucide-react';
+import { X, Save, Plus, Trash2, Loader2, Music, UploadCloud, Edit2, Volume1 } from 'lucide-react';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { ModalUploadMusica } from '../musicas/ModalUploadMusica';
 
@@ -14,6 +14,9 @@ interface Musica {
   titulo: string;
   autor_artista?: string;
   arquivo_url?: string;
+  surdina?: boolean;
+  subclassificacao?: string;
+  metadados?: Record<string, any>;
 }
 
 interface VariacaoRito {
@@ -113,6 +116,28 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({
       setMusicasAcervo(resp.data);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const alternarSurdinaMusica = async (musicaId: string, novaSurdina: boolean) => {
+    try {
+      await clienteHttp.patch(`/musicas/${musicaId}/surdina`, null, {
+        params: { surdina: novaSurdina },
+      });
+      setMusicasAcervo((antigas) =>
+        antigas.map((m) =>
+          m.id === musicaId
+            ? {
+                ...m,
+                surdina: novaSurdina,
+                subclassificacao: novaSurdina ? 'AMBIENTE' : 'GERAL',
+                metadados: { ...(m.metadados || {}), surdina: novaSurdina },
+              }
+            : m
+        )
+      );
+    } catch (err) {
+      console.error('Erro ao alternar surdina da música:', err);
     }
   };
 
@@ -485,9 +510,16 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({
                                 <div className="flex items-center gap-2.5 min-w-0">
                                   <Music className="w-4 h-4 text-macaonico-dourado shrink-0" />
                                   <div className="min-w-0">
-                                    <span className="block text-xs sm:text-sm font-bold text-white truncate">
-                                      {musica.titulo}
-                                    </span>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="text-xs sm:text-sm font-bold text-white truncate">
+                                        {musica.titulo}
+                                      </span>
+                                      {(musica.surdina || musica.metadados?.surdina || musica.subclassificacao === 'AMBIENTE') && (
+                                        <span className="inline-flex items-center gap-0.5 text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-400/40 shrink-0">
+                                          <Volume1 className="w-2.5 h-2.5" /> Surdina
+                                        </span>
+                                      )}
+                                    </div>
                                     {musica.autor_artista && (
                                       <span className="block text-[11px] text-gray-400 truncate">
                                         {musica.autor_artista}
@@ -495,7 +527,32 @@ export const ModalEventoGlobal: React.FC<ModalEventoGlobalProps> = ({
                                     )}
                                   </div>
                                 </div>
-                                <div className="flex items-center justify-end gap-2">
+                                <div className="flex items-center justify-end gap-2 shrink-0">
+                                  {/* Botão de Alternar Surdina */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const atualSurdina = Boolean(
+                                        musica.surdina ||
+                                        musica.metadados?.surdina ||
+                                        musica.subclassificacao === 'AMBIENTE'
+                                      );
+                                      alternarSurdinaMusica(musica.id, !atualSurdina);
+                                    }}
+                                    className={`px-2 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                                      (musica.surdina || musica.metadados?.surdina || musica.subclassificacao === 'AMBIENTE')
+                                        ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.25)]'
+                                        : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:border-white/20'
+                                    }`}
+                                    title="Alternar característica de Surdina"
+                                  >
+                                    <Volume1 className="w-3.5 h-3.5" />
+                                    <span className="text-[11px]">
+                                      {(musica.surdina || musica.metadados?.surdina || musica.subclassificacao === 'AMBIENTE')
+                                        ? 'Surdina'
+                                        : 'Normal'}
+                                    </span>
+                                  </button>
                                   {musica.arquivo_url && (
                                     <audio
                                       controls

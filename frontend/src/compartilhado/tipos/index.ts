@@ -75,6 +75,8 @@ export interface Musica {
   ativo: boolean;
   preferida?: boolean;
   surdina?: boolean;
+  estilo?: string;
+  subclassificacao?: string;
   upload_por_loja_id?: string;
   eventos: EventoAssociadoInfo[];
   criado_em: string;

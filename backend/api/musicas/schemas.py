@@ -60,6 +60,7 @@ class MusicaAtualizacao(BaseModel):
     autor_artista: Optional[str] = None
     estilo: Optional[str] = Field(None, description="Estilo musical litúrgico")
     subclassificacao: Optional[str] = Field(None, description="Subclassificação funcional: GERAL ou AMBIENTE")
+    surdina: Optional[bool] = Field(None, description="Indica se é executada em surdina (volume atenuado / ambiente)")
     metadados: Optional[Dict[str, Any]] = None
     eventos_sugeridos_ids: Optional[List[uuid.UUID]] = Field(None, description="Nova lista de eventos sugeridos")
     sinalizada_erro: Optional[bool] = None

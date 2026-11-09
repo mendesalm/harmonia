@@ -828,6 +828,7 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             onTrocarFaixa={trocarFaixaDoMomento}
             onAlternarPlayPause={alternarPlayPause}
             onAlternarPreferencia={alternarPreferencia}
+            onAlternarSurdina={alternarMusicaSurdinaPermanente}
             onAbrirUpload={() => setModalUploadAberto(true)}
             onAlterarVolume={alterarVolumeGeral}
           />

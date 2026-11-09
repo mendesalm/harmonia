@@ -10,6 +10,7 @@ import {
   Pause,
   Upload,
   Volume1,
+  Volume2,
   Filter,
   Layers,
   Star,
@@ -30,8 +31,9 @@ interface ModalComporMomentoProps {
 /**
  * Modal para compor e enriquecer momentos litúrgicos com músicas do acervo já salvo.
  * Oferece busca instantânea no acervo existente com pré-escuta de áudio,
- * vinculação direta ao momento, marcação de músicas PREFERENCIAIS (★) da Loja
- * e pergunta ao adicionar uma nova música se o Mestre deseja torná-la preferencial.
+ * vinculação direta ao momento, marcação de músicas PREFERENCIAIS (★) da Loja,
+ * alternância de características litúrgicas como SURDINA (PP / Volume Atenuado)
+ * e configuração do perfil de surdina do momento ritualístico.
  */
 export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
   eventoId,
@@ -46,6 +48,8 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
   const [idsPreferidasSessao, setIdsPreferidasSessao] = useState<Set<string>>(new Set());
   const [carregando, setCarregando] = useState(true);
   const [filtroApenasVinculadas, setFiltroApenasVinculadas] = useState(false);
+  const [filtroApenasSurdina, setFiltroApenasSurdina] = useState(false);
+  const [momentoEmSurdina, setMomentoEmSurdina] = useState<boolean | null>(null);
   const [processandoId, setProcessandoId] = useState<string | null>(null);
 
   // Prompt elegante pós-adição perguntando se deseja tornar a música recém-adicionada PREFERENCIAL
@@ -74,11 +78,14 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
         const mom = respSessao.data.esteira_ritualistica.find(
           (m: any) => m.evento_id === eventoId
         );
-        if (mom && Array.isArray(mom.candidatas)) {
-          const prefs = new Set<string>(
-            mom.candidatas.filter((c: any) => c.preferida).map((c: any) => String(c.id))
-          );
-          setIdsPreferidasSessao(prefs);
+        if (mom) {
+          setMomentoEmSurdina(Boolean(mom.em_surdina));
+          if (Array.isArray(mom.candidatas)) {
+            const prefs = new Set<string>(
+              mom.candidatas.filter((c: any) => c.preferida).map((c: any) => String(c.id))
+            );
+            setIdsPreferidasSessao(prefs);
+          }
         }
       }
     } catch (err) {
@@ -124,6 +131,62 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
   const isMusicaVinculada = (m: Musica): boolean => {
     if (!m.eventos || !Array.isArray(m.eventos)) return false;
     return m.eventos.some((ev) => ev.evento_id === eventoId);
+  };
+
+  // Verifica se a música é classificada como Surdina
+  const isMusicaSurdina = (m: Musica): boolean => {
+    return Boolean(m.surdina || m.metadados?.surdina || m.subclassificacao === 'AMBIENTE');
+  };
+
+  // Alterna a característica de Surdina (ou Normal) de uma música
+  const alternarSurdinaMusica = async (musicaId: string, novaSurdina: boolean) => {
+    try {
+      feedbackTatil.clique();
+      setProcessandoId(musicaId);
+      await clienteHttp.patch(`/musicas/${musicaId}/surdina`, null, {
+        params: { surdina: novaSurdina },
+      });
+      setMusicasAcervo((antigas) =>
+        antigas.map((item) => {
+          if (item.id === musicaId) {
+            const meta = { ...(item.metadados || {}), surdina: novaSurdina };
+            return {
+              ...item,
+              surdina: novaSurdina,
+              subclassificacao: novaSurdina ? 'AMBIENTE' : 'GERAL',
+              metadados: meta,
+            };
+          }
+          return item;
+        })
+      );
+      feedbackTatil.sucesso();
+      if (onSalvo) await onSalvo();
+    } catch (err) {
+      feedbackTatil.erro();
+      console.error('Erro ao alternar surdina da música:', err);
+    } finally {
+      setProcessandoId(null);
+    }
+  };
+
+  // Alterna o perfil de Surdina do Momento Litúrgico na sessão ativa
+  const alternarSurdinaMomento = async (novoStatus: boolean) => {
+    if (!sessaoId) return;
+    try {
+      feedbackTatil.clique();
+      await clienteHttp.patch(
+        `/player/sessao/${sessaoId}/momento/${eventoId}/surdina`,
+        null,
+        { params: { em_surdina: novoStatus } }
+      );
+      setMomentoEmSurdina(novoStatus);
+      feedbackTatil.sucesso();
+      if (onSalvo) await onSalvo();
+    } catch (err) {
+      feedbackTatil.erro();
+      console.error('Erro ao alternar surdina do momento:', err);
+    }
   };
 
   // Alterna o status de Preferencial (★) de uma música vinculada na sessão ativa
@@ -253,11 +316,12 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Filtragem reativa por busca e por status de vínculo (agrupando as preferidas e vinculadas no topo)
+  // Filtragem reativa por busca e por status de vínculo e surdina (agrupando as preferidas e vinculadas no topo)
   const musicasFiltradas = musicasAcervo
     .filter((m) => {
       const vinculada = isMusicaVinculada(m);
       if (filtroApenasVinculadas && !vinculada) return false;
+      if (filtroApenasSurdina && !isMusicaSurdina(m)) return false;
 
       if (!busca.trim()) return true;
       const termo = busca.toLowerCase();
@@ -276,6 +340,7 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
     });
 
   const totalVinculadas = musicasAcervo.filter(isMusicaVinculada).length;
+  const totalSurdinas = musicasAcervo.filter(isMusicaSurdina).length;
 
   return createPortal(
     <div
@@ -307,8 +372,29 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {/* Perfil de Surdina do Momento na Sessão Ativa */}
+            {sessaoId && momentoEmSurdina !== null && (
+              <button
+                type="button"
+                onClick={() => alternarSurdinaMomento(!momentoEmSurdina)}
+                className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-bold border transition-all cursor-pointer ${
+                  momentoEmSurdina
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.3)]'
+                    : 'bg-[#071122] text-slate-400 border-white/15 hover:text-slate-200'
+                }`}
+                title={
+                  momentoEmSurdina
+                    ? 'Momento em modo Surdina (prioriza faixas Ambiente). Toque para desativar.'
+                    : 'Ativar modo Surdina para este momento litúrgico.'
+                }
+              >
+                <Volume1 className={`w-3.5 h-3.5 ${momentoEmSurdina ? 'text-amber-300' : 'text-slate-500'}`} />
+                <span>Momento: {momentoEmSurdina ? 'Surdina (PP)' : 'Normal (MF)'}</span>
+              </button>
+            )}
+
             <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-[#071122] text-macaonico-dourado border border-macaonico-dourado/30">
-              {totalVinculadas} {totalVinculadas === 1 ? 'música' : 'músicas'} no acervo do momento
+              {totalVinculadas} {totalVinculadas === 1 ? 'música' : 'músicas'} no momento
             </span>
             <button
               type="button"
@@ -323,6 +409,27 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Banner do Perfil de Surdina do Momento em Mobile */}
+        {sessaoId && momentoEmSurdina !== null && (
+          <div className="md:hidden px-3.5 py-2 bg-[#061020] border-b border-white/5 flex items-center justify-between gap-2 shrink-0">
+            <span className="text-[11px] text-slate-300 flex items-center gap-1.5">
+              <Volume1 className={`w-3.5 h-3.5 ${momentoEmSurdina ? 'text-amber-300' : 'text-slate-500'}`} />
+              <span>Execução deste momento:</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => alternarSurdinaMomento(!momentoEmSurdina)}
+              className={`px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold border transition-all ${
+                momentoEmSurdina
+                  ? 'bg-amber-500/25 text-amber-300 border-amber-400'
+                  : 'bg-white/5 text-slate-400 border-white/15'
+              }`}
+            >
+              {momentoEmSurdina ? 'SURDINA ATIVA (PP)' : 'NORMAL (MF)'}
+            </button>
+          </div>
+        )}
 
         {/* Diálogo de Confirmação Pós-Adição: "Tornar música Preferencial neste momento?" */}
         {musicaPerguntaPreferencial && sessaoId && (
@@ -421,19 +528,35 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
                 )}
               </div>
 
-              {/* Botão Toggle: Apenas Vinculadas */}
-              <button
-                type="button"
-                onClick={() => setFiltroApenasVinculadas((v) => !v)}
-                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all shrink-0 ${
-                  filtroApenasVinculadas
-                    ? 'bg-macaonico-dourado/20 border-macaonico-dourado/60 text-macaonico-dourado font-semibold'
-                    : 'bg-[#050B17] border-slate-700/80 text-slate-300 hover:bg-white/5'
-                }`}
-              >
-                <Filter className="w-3.5 h-3.5" />
-                <span>Vinculadas ({totalVinculadas})</span>
-              </button>
+              {/* Botões Toggles: Filtro Vinculadas e Filtro Surdina */}
+              <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto">
+                <button
+                  type="button"
+                  onClick={() => setFiltroApenasVinculadas((v) => !v)}
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all shrink-0 ${
+                    filtroApenasVinculadas
+                      ? 'bg-macaonico-dourado/20 border-macaonico-dourado/60 text-macaonico-dourado font-semibold'
+                      : 'bg-[#050B17] border-slate-700/80 text-slate-300 hover:bg-white/5'
+                  }`}
+                >
+                  <Filter className="w-3.5 h-3.5" />
+                  <span>Vinculadas ({totalVinculadas})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFiltroApenasSurdina((s) => !s)}
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border transition-all shrink-0 ${
+                    filtroApenasSurdina
+                      ? 'bg-amber-500/20 border-amber-400/80 text-amber-300 font-semibold shadow-[0_0_10px_rgba(251,191,36,0.2)]'
+                      : 'bg-[#050B17] border-slate-700/80 text-slate-300 hover:bg-white/5'
+                  }`}
+                  title="Filtrar faixas com característica de Surdina"
+                >
+                  <Volume1 className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Surdinas ({totalSurdinas})</span>
+                </button>
+              </div>
             </div>
 
             {/* Lista Rolável de Músicas */}
@@ -448,6 +571,8 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
                   <p className="text-xs sm:text-sm">
                     {busca
                       ? 'Nenhuma música encontrada com este termo.'
+                      : filtroApenasSurdina
+                      ? 'Nenhuma música com perfil Surdina encontrada.'
                       : filtroApenasVinculadas
                       ? 'Nenhuma música vinculada a este momento ainda.'
                       : 'Nenhuma música cadastrada no acervo.'}
@@ -466,6 +591,7 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
                   const ehPreferida = idsPreferidasSessao.has(m.id);
                   const tocandoPreview = audioPreviewId === m.id;
                   const processando = processandoId === m.id;
+                  const emSurdina = isMusicaSurdina(m);
 
                   return (
                     <div
@@ -513,24 +639,48 @@ export const ModalComporMomento: React.FC<ModalComporMomentoProps> = ({
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-slate-400 truncate flex items-center gap-1.5">
+                          <p className="text-[11px] text-slate-400 truncate flex items-center gap-1.5 mt-0.5">
                             <span>{m.autor_artista || 'Acervo Harmonia'}</span>
                             <span>•</span>
                             <span className="font-mono">{formatarDuracao(m.duracao_segundos)}</span>
-                            {m.metadados?.surdina && (
-                              <>
-                                <span>•</span>
-                                <span className="text-amber-400 flex items-center gap-0.5">
-                                  <Volume1 className="w-3 h-3" /> Surdina
-                                </span>
-                              </>
+                            <span>•</span>
+                            {emSurdina ? (
+                              <span className="text-amber-300 font-semibold flex items-center gap-0.5">
+                                <Volume1 className="w-3 h-3 text-amber-300" /> Surdina (PP)
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 flex items-center gap-0.5">
+                                <Volume2 className="w-3 h-3 text-slate-500" /> Geral (MF)
+                              </span>
                             )}
                           </p>
                         </div>
                       </div>
 
-                      {/* Ações: Botão de Preferencial (★) + Vincular/Desvincular */}
+                      {/* Ações: Característica Surdina + Botão de Preferencial (★) + Vincular/Desvincular */}
                       <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Botão de Editar Característica: Surdina ou Normal */}
+                        <button
+                          type="button"
+                          disabled={processando}
+                          onClick={() => alternarSurdinaMusica(m.id, !emSurdina)}
+                          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer active:scale-95 ${
+                            emSurdina
+                              ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_10px_rgba(251,191,36,0.25)] hover:bg-amber-500/30'
+                              : 'bg-white/5 border-white/15 text-slate-400 hover:text-amber-200 hover:border-amber-400/50'
+                          }`}
+                          title={
+                            emSurdina
+                              ? 'Música configurada em Surdina (volume atenuado/PP). Toque para desativar.'
+                              : 'Configurar música como Surdina (volume atenuado/PP, ideal para interlúdios).'
+                          }
+                        >
+                          <Volume1 className={`w-3.5 h-3.5 ${emSurdina ? 'text-amber-300' : 'text-slate-400'}`} />
+                          <span className="hidden sm:inline">
+                            {emSurdina ? 'Surdina' : 'Normal'}
+                          </span>
+                        </button>
+
                         {vinculada && sessaoId && (
                           <button
                             type="button"

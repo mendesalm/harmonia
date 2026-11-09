@@ -37,6 +37,7 @@ interface EncarteAlbum3DProps {
   onFechar: () => void;
   onTrocarFaixa: (indiceFaixa: number, tocar: boolean) => void;
   onAlternarPreferencia?: (musicaId: string, preferida: boolean) => void;
+  onAlternarSurdina?: (musicaId: string, surdina: boolean) => void;
   onAbrirComporMomento?: () => void;
 }
 
@@ -229,6 +230,7 @@ export const EncarteAlbum3D: React.FC<EncarteAlbum3DProps> = ({
   onFechar,
   onTrocarFaixa,
   onAlternarPreferencia,
+  onAlternarSurdina,
   onAbrirComporMomento,
 }) => {
   const [fase, setFase] = useState<FaseCinematica>('na-origem');
@@ -651,6 +653,11 @@ export const EncarteAlbum3D: React.FC<EncarteAlbum3DProps> = ({
                             ★ Pref
                           </span>
                         )}
+                        {faixa.surdina && (
+                          <span className="shrink-0 px-1 py-0.2 bg-amber-500/25 border border-amber-400/60 text-[7.5px] font-mono text-amber-300 uppercase font-bold flex items-center gap-0.5">
+                            <Volume1 className="w-2.5 h-2.5" /> Surdina
+                          </span>
+                        )}
                       </div>
                       <p className="font-serif italic text-[9px] text-[#DDB96B]/85 truncate">
                         {faixa.autor_artista || 'Acervo Litúrgico Maçônico'}
@@ -659,6 +666,29 @@ export const EncarteAlbum3D: React.FC<EncarteAlbum3DProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
+                    {onAlternarSurdina && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          feedbackTatil.clique();
+                          onAlternarSurdina(faixa.id, !faixa.surdina);
+                        }}
+                        className={`p-1 transition-all cursor-pointer border ${
+                          faixa.surdina
+                            ? 'text-amber-300 border-amber-400/80 bg-amber-500/25 shadow-[0_0_8px_rgba(251,191,36,0.3)]'
+                            : 'text-slate-500 border-transparent hover:text-amber-200 hover:border-amber-400/40'
+                        }`}
+                        title={
+                          faixa.surdina
+                            ? 'Música em Surdina (PP) — Execução em volume atenuado. Toque para desativar.'
+                            : 'Definir como Surdina (PP) — Volume suave ideal para oratória/interlúdio.'
+                        }
+                      >
+                        <Volume1 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
                     {onAlternarPreferencia && (
                       <button
                         type="button"

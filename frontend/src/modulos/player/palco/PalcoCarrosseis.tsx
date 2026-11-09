@@ -19,6 +19,7 @@ interface PalcoCarrosseisProps {
   onTrocarFaixa: (indiceFaixa: number, tocar: boolean) => void;
   onAlternarPlayPause: () => void;
   onAlternarPreferencia?: (musicaId: string, preferida: boolean) => void;
+  onAlternarSurdina?: (musicaId: string, surdina: boolean) => void;
   onAbrirUpload?: () => void;
   onAlterarVolume?: (novoVolume: number) => void;
 }
@@ -185,6 +186,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   onMudarMomento,
   onTrocarFaixa,
   onAlternarPreferencia,
+  onAlternarSurdina,
   onAbrirUpload,
   onAlternarPlayPause,
   onAlterarVolume,
@@ -1079,6 +1081,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
           onFechar={() => setModalTracklistAberto(false)}
           onTrocarFaixa={onTrocarFaixa}
           onAlternarPreferencia={onAlternarPreferencia}
+          onAlternarSurdina={onAlternarSurdina}
           onAbrirComporMomento={onAbrirUpload}
         />
       )}

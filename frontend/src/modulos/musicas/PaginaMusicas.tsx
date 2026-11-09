@@ -13,6 +13,7 @@ import {
   X,
   Edit2,
   Globe,
+  Volume1,
 } from 'lucide-react';
 import { Musica, Evento } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
@@ -125,12 +126,14 @@ export const PaginaMusicas: React.FC = () => {
   const [musicaEmEdicao, setMusicaEmEdicao] = useState<Musica | null>(null);
   const [tituloEdit, setTituloEdit] = useState('');
   const [autorEdit, setAutorEdit] = useState('');
+  const [surdinaEdit, setSurdinaEdit] = useState(false);
   const [eventosEditIds, setEventosEditIds] = useState<string[]>([]);
 
   const abrirModalEditar = (musica: Musica) => {
     setMusicaEmEdicao(musica);
     setTituloEdit(musica.titulo);
     setAutorEdit(musica.autor_artista || '');
+    setSurdinaEdit(Boolean(musica.surdina || musica.metadados?.surdina || musica.subclassificacao === 'AMBIENTE'));
     setEventosEditIds((musica.eventos || []).map((e) => e.evento_id));
   };
 
@@ -149,6 +152,8 @@ export const PaginaMusicas: React.FC = () => {
         titulo: tituloEdit,
         autor_artista: autorEdit || null,
         eventos_sugeridos_ids: eventosEditIds,
+        surdina: surdinaEdit,
+        subclassificacao: surdinaEdit ? 'AMBIENTE' : 'GERAL',
       });
       setMusicaEmEdicao(null);
       carregarDados();
@@ -271,7 +276,14 @@ export const PaginaMusicas: React.FC = () => {
                       </button>
 
                       <div className="min-w-0 flex-1">
-                        <p className="font-bold text-white text-sm truncate">{m.titulo}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-bold text-white text-sm truncate">{m.titulo}</p>
+                          {(m.surdina || m.metadados?.surdina || m.subclassificacao === 'AMBIENTE') && (
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-400/40 shrink-0">
+                              <Volume1 className="w-2.5 h-2.5" /> Surdina
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-400 truncate">
                           {m.autor_artista || 'Compositor não informado'}
                         </p>
@@ -362,9 +374,16 @@ export const PaginaMusicas: React.FC = () => {
                       </td>
 
                       <td className="py-3.5 px-4">
-                        <p className="font-bold text-white group-hover:text-macaonico-dourado transition-colors">
-                          {m.titulo}
-                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-bold text-white group-hover:text-macaonico-dourado transition-colors">
+                            {m.titulo}
+                          </p>
+                          {(m.surdina || m.metadados?.surdina || m.subclassificacao === 'AMBIENTE') && (
+                            <span className="inline-flex items-center gap-0.5 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/40 shrink-0">
+                              <Volume1 className="w-2.5 h-2.5" /> Surdina
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-400">
                           {m.autor_artista || 'Compositor não informado'}
                         </p>
@@ -562,6 +581,42 @@ export const PaginaMusicas: React.FC = () => {
                     onChange={(e) => setAutorEdit(e.target.value)}
                     className="w-full bg-sigma-bg border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-macaonico-dourado"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                    Característica Litúrgica da Música
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setSurdinaEdit(!surdinaEdit)}
+                    className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all text-xs font-semibold cursor-pointer ${
+                      surdinaEdit
+                        ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.25)]'
+                        : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Volume1 className={`w-4 h-4 ${surdinaEdit ? 'text-amber-300' : 'text-slate-400'}`} />
+                      <div className="text-left">
+                        <span className="block font-bold">
+                          {surdinaEdit ? 'Música em Surdina (PP - Volume Atenuado)' : 'Música Normal (MF - Execução Geral)'}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-normal">
+                          {surdinaEdit
+                            ? 'Priorizada para interlúdios litúrgicos, orações e passagens solenes'
+                            : 'Execução plena na esteira da sessão'}
+                        </span>
+                      </div>
+                    </div>
+                    <span
+                      className={`px-2 py-1 rounded-md text-[10px] font-mono font-bold ${
+                        surdinaEdit ? 'bg-amber-400 text-black' : 'bg-white/10 text-slate-400'
+                      }`}
+                    >
+                      {surdinaEdit ? 'SURDINA ATIVA' : 'NORMAL'}
+                    </span>
+                  </button>
                 </div>
 
                 <div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Upload, Music, Youtube, DownloadCloud, Sparkles, CheckCircle2, Wand2, Globe } from 'lucide-react';
+import { X, Upload, Music, Youtube, DownloadCloud, Sparkles, CheckCircle2, Wand2, Globe, Volume1 } from 'lucide-react';
 import { Evento } from '../../compartilhado/tipos';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
@@ -46,6 +46,7 @@ export const ModalUploadMusica: React.FC<Props> = ({
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [linkStreaming, setLinkStreaming] = useState('');
   const [converterParaMp3, setConverterParaMp3] = useState(false);
+  const [emSurdina, setEmSurdina] = useState(false);
   const [eventosSelecionados, setEventosSelecionados] = useState<string[]>(
     eventoIdPreSelecionado ? [eventoIdPreSelecionado] : []
   );
@@ -114,6 +115,7 @@ export const ModalUploadMusica: React.FC<Props> = ({
         formData.append('arquivo', arquivo);
         formData.append('titulo', titulo.trim() || arquivo.name);
         if (autor.trim()) formData.append('autor_artista', autor.trim());
+        formData.append('subclassificacao', emSurdina ? 'AMBIENTE' : 'GERAL');
         formData.append('eventos_sugeridos_ids', JSON.stringify(eventosSelecionados));
 
         const resp = await clienteHttp.post('/musicas/upload', formData, {
@@ -135,6 +137,7 @@ export const ModalUploadMusica: React.FC<Props> = ({
             link_youtube: linkStreaming.trim(),
             titulo: titulo.trim() || undefined,
             autor_artista: autor.trim() || undefined,
+            subclassificacao: emSurdina ? 'AMBIENTE' : 'GERAL',
             bitrate_kbps: 320,
             eventos_sugeridos_ids: eventosSelecionados,
           });
@@ -344,6 +347,27 @@ export const ModalUploadMusica: React.FC<Props> = ({
                 className="w-full bg-primaria-800 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-macaonico-dourado outline-none"
               />
             </div>
+          </div>
+
+          {/* Toggle de Surdina (PP) */}
+          <div className="p-3 rounded-2xl bg-primaria-800/80 border border-white/10">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={emSurdina}
+                onChange={(e) => setEmSurdina(e.target.checked)}
+                className="mt-0.5 rounded accent-amber-400 w-4 h-4 cursor-pointer shrink-0"
+              />
+              <div>
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Volume1 className={`w-3.5 h-3.5 ${emSurdina ? 'text-amber-400' : 'text-slate-400'}`} />
+                  <span>Cadastrar como Música de Surdina (Volume Atenuado / PP)</span>
+                </span>
+                <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                  Ideal para interlúdios litúrgicos, orações e passagens cerimoniais com voz sobreposta.
+                </p>
+              </div>
+            </label>
           </div>
 
           {!esconderEventos && (
