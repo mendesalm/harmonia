@@ -101,6 +101,7 @@ export interface MomentoExecucao {
   evento_nome: string;
   evento_descricao?: string;
   obrigatorio: boolean;
+  suprimido?: boolean;
   observacao_ritual?: string;
   em_surdina?: boolean;
   musica_sorteada?: MusicaSorteada | null;

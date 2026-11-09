@@ -247,7 +247,7 @@ class ServicoPlayer:
 
         esteira: List[MomentoRitualisticoExecucao] = []
         eventos_ordenados = sorted(
-            [ev for ev in sessao.eventos_customizados if not ev.suprimido],
+            sessao.eventos_customizados,
             key=lambda x: x.ordem_execucao,
         )
 
@@ -307,6 +307,7 @@ class ServicoPlayer:
                     evento_nome=evento.nome,
                     evento_descricao=descricao_final,
                     obrigatorio=not item.suprimido,
+                    suprimido=bool(item.suprimido),
                     observacao_ritual=observacao_final,
                     em_surdina=em_surdina_momento,
                     musica_sorteada=musica_escolhida,
@@ -503,5 +504,43 @@ class ServicoPlayer:
             f"Momento {evento_id} na sessão {sessao_id} definido como em_surdina={em_surdina} (harmoniadb.sessoes_loja_eventos)"
         )
         return {"status": "ok", "sessao_id": str(sessao_id), "evento_id": str(evento_id), "em_surdina": em_surdina}
+
+    @staticmethod
+    async def definir_suprimido_momento(
+        db: AsyncSession,
+        sessao_id: uuid.UUID,
+        evento_id: uuid.UUID,
+        suprimido: bool,
+        organizacao_id: uuid.UUID,
+        is_super_admin: bool = False,
+    ) -> dict:
+        """
+        Altera o estado suprimido de um momento ritualístico na sessão da Loja (ex: reativar na sessão).
+        """
+        stmt_sessao = select(SessaoLoja).where(SessaoLoja.id == sessao_id)
+        if not is_super_admin:
+            stmt_sessao = stmt_sessao.where(SessaoLoja.loja_id == organizacao_id)
+        res_sessao = await db.execute(stmt_sessao)
+        sessao = res_sessao.scalar_one_or_none()
+        if not sessao:
+            raise HTTPException(status_code=404, detail="Sessão não encontrada para esta Loja.")
+
+        res_item = await db.execute(
+            select(SessaoLojaEvento).where(
+                SessaoLojaEvento.sessao_loja_id == sessao_id,
+                SessaoLojaEvento.evento_id == evento_id,
+            )
+        )
+        item = res_item.scalar_one_or_none()
+        if not item:
+            raise HTTPException(status_code=404, detail="Momento ritualístico não encontrado nesta sessão.")
+
+        item.suprimido = suprimido
+        await db.commit()
+        logger.info(
+            f"Momento {evento_id} na sessão {sessao_id} definido como suprimido={suprimido} (harmoniadb.sessoes_loja_eventos)"
+        )
+        return {"status": "ok", "sessao_id": str(sessao_id), "evento_id": str(evento_id), "suprimido": suprimido}
+
 
 

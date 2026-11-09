@@ -145,3 +145,35 @@ async def alternar_momento_surdina(
         is_super_admin=usuario.is_super_admin,
     )
 
+
+@roteador_player.patch(
+    "/sessao/{sessao_id}/momento/{evento_id}/suprimido",
+    summary="Reativar ou Ocultar Momento Ritualístico na Sessão",
+    description=(
+        "Permite ao Mestre de Harmonia reativar contingencialmente um momento desativado por padrão "
+        "(ex: vinda de um Grão-Mestre) para a sessão em andamento."
+    ),
+    responses={
+        401: {"description": "Token Bearer ausente ou inválido."},
+        403: {"description": "A sessão pertence a outra Loja."},
+        404: {"description": "Sessão ou momento não encontrados."},
+    },
+)
+async def alternar_momento_suprimido(
+    sessao_id: uuid.UUID,
+    evento_id: uuid.UUID,
+    suprimido: bool = Query(..., description="True para desativar/suprimir, False para reativar"),
+    usuario: UsuarioEsigma = Depends(obter_usuario_esigma),
+    db: AsyncSession = Depends(obter_banco_de_dados),
+):
+    loja_id = uuid.UUID(str(usuario.organizacao_id)) if usuario.organizacao_id else uuid.UUID(int=0)
+    return await ServicoPlayer.definir_suprimido_momento(
+        db=db,
+        sessao_id=sessao_id,
+        evento_id=evento_id,
+        suprimido=suprimido,
+        organizacao_id=loja_id,
+        is_super_admin=usuario.is_super_admin,
+    )
+
+

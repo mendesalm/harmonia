@@ -31,6 +31,7 @@ class MomentoRitualisticoExecucao(BaseModel):
     evento_nome: str
     evento_descricao: Optional[str]
     obrigatorio: bool
+    suprimido: bool = Field(False, description="Indica se o momento está desativado/suprimido por configuração na sessão.")
     observacao_ritual: Optional[str]
     em_surdina: bool = Field(
         False,

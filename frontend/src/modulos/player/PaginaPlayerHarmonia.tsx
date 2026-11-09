@@ -244,10 +244,54 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     }
   }, [surdinaAtiva, percentualSurdina, volumeGeral]);
 
+  // Contagem regressiva de 10s para momentos desativados/suprimidos
+  const [segundosContagemSuprimido, setSegundosContagemSuprimido] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (momentoAtual?.suprimido && !modoInterludioAtivo) {
+      setSegundosContagemSuprimido(10);
+    } else {
+      setSegundosContagemSuprimido(null);
+    }
+  }, [indiceAtual, momentoAtual?.suprimido, modoInterludioAtivo]);
+
+  // Passagem automática após 10 segundos ou comando manual do Mestre de Harmonia
+  useEffect(() => {
+    if (segundosContagemSuprimido === null) return;
+
+    if (segundosContagemSuprimido <= 0) {
+      if (dadosSessao && indiceAtual < dadosSessao.esteira_ritualistica.length - 1) {
+        avancarProximo();
+      }
+      return;
+    }
+
+    const t = setTimeout(() => {
+      setSegundosContagemSuprimido((prev) => (prev !== null ? prev - 1 : null));
+    }, 1000);
+
+    return () => clearTimeout(t);
+  }, [segundosContagemSuprimido, indiceAtual, dadosSessao]);
+
   // Sincroniza a fonte de áudio ao trocar a música ativa
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+
+    // Se o momento atual estiver desativado/suprimido por configuração, não reproduz áudio
+    if (momentoAtual?.suprimido && !modoInterludioAtivo) {
+      audio.pause();
+      audio.src = '';
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.pauseVideo === 'function') {
+        try {
+          ytPlayerRef.current.pauseVideo();
+        } catch {}
+      }
+      setTocando(false);
+      setTempoAtual(0);
+      setDuracaoTotal(0);
+      return;
+    }
 
     // Consome a intenção de "tocar ao carregar" definida pela ação do usuário (toque no card, botões de faixa)
     const tocarAgora = tocarAoCarregarRef.current;
@@ -699,6 +743,37 @@ export const PaginaPlayerHarmonia: React.FC = () => {
     }
   };
 
+  /**
+   * Reativa de forma contingencial um momento ritualístico que havia sido suprimido na sessão.
+   * Cancela imediatamente o temporizador de 10s e libera o momento para condução musical.
+   */
+  const reativarMomentoAtual = async (eventoId?: string) => {
+    const idAlvo = eventoId || momentoAtual?.evento_id;
+    if (!sessaoSelecionadaId || !idAlvo) return;
+    feedbackTatil.confirmacao();
+
+    setDadosSessao((antiga) => {
+      if (!antiga) return antiga;
+      const esteira = antiga.esteira_ritualistica.map((m) =>
+        m.evento_id === idAlvo ? { ...m, suprimido: false } : m
+      );
+      return { ...antiga, esteira_ritualistica: esteira };
+    });
+    setSegundosContagemSuprimido(null);
+
+    try {
+      await clienteHttp.patch(
+        `/player/sessao/${sessaoSelecionadaId}/momento/${idAlvo}/suprimido`,
+        null,
+        { params: { suprimido: false } }
+      );
+    } catch (e) {
+      console.error('Erro ao reativar momento na sessão:', e);
+      setAvisoErro(extrairMensagemErro(e, 'Não foi possível reativar o momento nesta sessão.'));
+      await carregarEsteira(sessaoSelecionadaId, true);
+    }
+  };
+
   const onSeek = (novoTempo: number) => {
     if (musicaAtual?.tipo_midia === 'ARQUIVO_LOCAL' && audioRef.current) {
       audioRef.current.currentTime = novoTempo;
@@ -831,6 +906,9 @@ export const PaginaPlayerHarmonia: React.FC = () => {
             onAlternarSurdina={alternarMusicaSurdinaPermanente}
             onAbrirUpload={() => setModalUploadAberto(true)}
             onAlterarVolume={alterarVolumeGeral}
+            onReativarMomento={reativarMomentoAtual}
+            segundosRestantesSuprimido={segundosContagemSuprimido}
+            onAvancarProximo={avancarProximo}
           />
         </div>
       ) : (
@@ -879,6 +957,8 @@ export const PaginaPlayerHarmonia: React.FC = () => {
           onAlterarVolumeGeral={alterarVolumeGeral}
           modalSurdinaAbertoControlado={modalSurdinaCalibragemAberto}
           onAlternarModalSurdinaControlado={setModalSurdinaCalibragemAberto}
+          onReativarMomento={reativarMomentoAtual}
+          segundosRestantesSuprimido={segundosContagemSuprimido}
         />
       </div>
 

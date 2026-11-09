@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2 } from 'lucide-react';
+import { Volume2, AlertTriangle, Sparkles } from 'lucide-react';
 import { MomentoExecucao } from '../../../compartilhado/tipos';
 import { feedbackTatil } from '../../../compartilhado/utilitarios/dispositivoNativo';
 import { EncarteAlbum3D, OrigemRectCapa } from './EncarteAlbum3D';
@@ -22,6 +22,9 @@ interface PalcoCarrosseisProps {
   onAlternarSurdina?: (musicaId: string, surdina: boolean) => void;
   onAbrirUpload?: () => void;
   onAlterarVolume?: (novoVolume: number) => void;
+  onReativarMomento?: (eventoId: string) => void;
+  segundosRestantesSuprimido?: number | null;
+  onAvancarProximo?: () => void;
 }
 
 const NUMEROS_ROMANOS = [
@@ -190,6 +193,9 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   onAbrirUpload,
   onAlternarPlayPause,
   onAlterarVolume,
+  onReativarMomento,
+  segundosRestantesSuprimido,
+  onAvancarProximo,
 }) => {
   const [modalTracklistAberto, setModalTracklistAberto] = useState(false);
   const [origemRectCapa, setOrigemRectCapa] = useState<OrigemRectCapa | null>(null);
@@ -197,6 +203,68 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
   const [offsetXFracionario, setOffsetXFracionario] = useState(0);
   const [arrastando, setArrastando] = useState(false);
   const [vuAtivos, setVuAtivos] = useState<number[]>([]);
+
+  // Estados para segurar a capa do disco por 3 segundos para reativar
+  const [holdingMomentId, setHoldingMomentId] = useState<string | null>(null);
+  const [holdProgress, setHoldProgress] = useState<number>(0);
+  const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const holdStartTimeRef = useRef<number>(0);
+  const holdTriggeredRef = useRef<boolean>(false);
+
+  const cancelarHold = () => {
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
+    setHoldingMomentId(null);
+    setHoldProgress(0);
+  };
+
+  const iniciarHold = (momentoId: string) => {
+    cancelarHold();
+    holdTriggeredRef.current = false;
+    setHoldingMomentId(momentoId);
+    setHoldProgress(0);
+    holdStartTimeRef.current = performance.now();
+    feedbackTatil.clique();
+
+    const DURACAO_HOLD_MS = 3000;
+    const INTERVALO_MS = 40;
+    let ultimoTick = 0;
+
+    holdIntervalRef.current = setInterval(() => {
+      const decorrido = performance.now() - holdStartTimeRef.current;
+      const prog = Math.min(100, Math.round((decorrido / DURACAO_HOLD_MS) * 100));
+      setHoldProgress(prog);
+
+      // Ticks táteis a cada 1 segundo (1s e 2s)
+      const segundosPassados = Math.floor(decorrido / 1000);
+      if (segundosPassados > ultimoTick && segundosPassados < 3) {
+        ultimoTick = segundosPassados;
+        feedbackTatil.clique();
+      }
+
+      if (decorrido >= DURACAO_HOLD_MS) {
+        if (holdIntervalRef.current) {
+          clearInterval(holdIntervalRef.current);
+          holdIntervalRef.current = null;
+        }
+        holdTriggeredRef.current = true;
+        setHoldProgress(100);
+        feedbackTatil.confirmacao();
+        onReativarMomento?.(momentoId);
+        setTimeout(() => {
+          cancelarHold();
+        }, 400);
+      }
+    }, INTERVALO_MS);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
+    };
+  }, []);
 
   // Regra de cores litúrgicas: Bordô nobre para Rito Brasileiro, Deep Blue para os demais
   const eRitoBrasileiro = (rito || '').toUpperCase().includes('BRASILEIRO');
@@ -433,6 +501,7 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
     if (!arrastouMaisQueCliqueRef.current && Math.abs(dx) > 6) {
       arrastouMaisQueCliqueRef.current = true;
       cardIndexClicadoRef.current = null;
+      cancelarHold();
       if (!capturouPointerRef.current) {
         try {
           e.currentTarget.setPointerCapture(e.pointerId);
@@ -512,12 +581,21 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
    * - Se for um card vizinho: centraliza e foca o momento correspondente
    */
   const lidarCliqueCard = (idx: number) => {
+    if (holdTriggeredRef.current) {
+      holdTriggeredRef.current = false;
+      return;
+    }
+
     const agora = performance.now();
     if (agora - ultimoCliqueTempoRef.current < 250) return;
     ultimoCliqueTempoRef.current = agora;
 
     feedbackTatil.clique();
     if (idx === indiceMomento) {
+      if (momentos[idx]?.suprimido) {
+        // Momento desativado: não abre o encarte, apenas foca na instrução de reativação
+        return;
+      }
       if (capaAtivaElRef.current) {
         const r = capaAtivaElRef.current.getBoundingClientRect();
         setOrigemRectCapa({
@@ -579,16 +657,24 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                         capaAtivaElRef.current = el;
                       }
                     }}
-                    onPointerDown={() => {
+                    onPointerDown={(e) => {
+                      if (momento.suprimido) {
+                        iniciarHold(momento.evento_id);
+                      }
                       cardIndexClicadoRef.current = i;
                     }}
+                    onPointerUp={cancelarHold}
+                    onPointerCancel={cancelarHold}
+                    onPointerLeave={cancelarHold}
                     onClick={(e) => {
                       e.stopPropagation();
                       lidarCliqueCard(i);
                     }}
                     title={
                       ativo
-                        ? 'Clique para abrir o encarte litúrgico deste álbum (recomendações e músicas)'
+                        ? momento.suprimido
+                          ? 'Aviso: Momento Desativado. Segure a capa por 3 segundos para reativar.'
+                          : 'Clique para abrir o encarte litúrgico deste álbum (recomendações e músicas)'
                         : `ÁLBUM ${paraRomano(i + 1)} • ${momento.evento_nome}`
                     }
                     style={{
@@ -596,7 +682,9 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                       width: tamanhoCapa,
                       height: tamanhoCapa,
                       borderRadius: 0, // Estritamente quadrada com cantos retos nas proporções de 65%!
-                      border: '1.5px solid rgba(227, 190, 97, 0.75)',
+                      border: momento.suprimido
+                        ? '1.5px solid rgba(148, 163, 184, 0.45)'
+                        : '1.5px solid rgba(227, 190, 97, 0.75)',
                       transform: `translate3d(${t.x}px, ${t.y}px, ${t.z}px) rotateY(${t.rotY}deg) scale(${t.escala})`,
                       opacity: modalTracklistAberto && i === indiceMomento ? 0 : t.opacidade,
                       zIndex: t.zIndex,
@@ -604,45 +692,113 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                         ? 'none'
                         : 'transform 0.45s cubic-bezier(0.22, 0.9, 0.25, 1), opacity 0.2s ease-out',
                       transformStyle: 'preserve-3d',
-                      background: fundoCapa,
+                      background: momento.suprimido
+                        ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 60%, #020617 100%)'
+                        : fundoCapa,
                       boxShadow: ativo
-                        ? '0 0 25px rgba(227, 190, 97, 0.28), 0 16px 36px rgba(0,0,0,0.95)'
+                        ? momento.suprimido
+                          ? '0 0 25px rgba(148, 163, 184, 0.25), 0 16px 36px rgba(0,0,0,0.95)'
+                          : '0 0 25px rgba(227, 190, 97, 0.28), 0 16px 36px rgba(0,0,0,0.95)'
                         : '0 12px 30px rgba(0,0,0,0.85)',
-                      filter: ativo ? 'none' : 'brightness(0.72)',
+                      filter: momento.suprimido
+                        ? 'grayscale(0.9) brightness(0.75)'
+                        : ativo
+                        ? 'none'
+                        : 'brightness(0.72)',
                       cursor: 'pointer',
                     }}
                     className="p-3 sm:p-3.5 flex flex-col justify-between cursor-pointer select-none relative overflow-hidden rounded-none"
                   >
-                    {/* Moldura dupla dourada ornamental refinada do Stitch (estritamente quadrada) */}
-                    <div className="absolute inset-[3px] border border-[#DDB96B]/40 rounded-none pointer-events-none" />
-                    <div className="absolute inset-[6px] border border-dashed border-[#DDB96B]/25 rounded-none pointer-events-none" />
+                    {/* Moldura dupla ornamental refinada do Stitch */}
+                    <div className={`absolute inset-[3px] border ${momento.suprimido ? 'border-slate-500/40' : 'border-[#DDB96B]/40'} rounded-none pointer-events-none`} />
+                    <div className={`absolute inset-[6px] border border-dashed ${momento.suprimido ? 'border-slate-500/25' : 'border-[#DDB96B]/25'} rounded-none pointer-events-none`} />
 
                     {/* Top bar da capa: Identificador e Dinâmica */}
-                    <div className="w-full flex items-center justify-between text-[8px] sm:text-[9px] uppercase tracking-wider relative z-10 border-b border-[#DDB96B]/20 pb-1 pointer-events-none">
-                      <span className="font-cinzel font-bold text-[#FDE68A] tracking-widest">
+                    <div className={`w-full flex items-center justify-between text-[8px] sm:text-[9px] uppercase tracking-wider relative z-10 border-b ${momento.suprimido ? 'border-slate-500/20' : 'border-[#DDB96B]/20'} pb-1 pointer-events-none`}>
+                      <span className={`font-cinzel font-bold ${momento.suprimido ? 'text-slate-300' : 'text-[#FDE68A]'} tracking-widest`}>
                         ÁLBUM {paraRomano(i + 1)}
                       </span>
-                      <span className="font-mono text-[7.5px] px-1.5 py-0.5 rounded bg-black/60 border border-[#DDB96B]/50 text-[#FDE68A] shadow-inner font-bold">
-                        {momento.em_surdina ? 'PP • SURDINA' : 'MF • FORTE'}
-                      </span>
+                      {momento.suprimido ? (
+                        <span className="font-mono text-[7px] sm:text-[7.5px] px-1.5 py-0.5 rounded bg-slate-800/90 border border-slate-500/60 text-slate-300 font-bold tracking-wider">
+                          DESATIVADO
+                        </span>
+                      ) : (
+                        <span className="font-mono text-[7.5px] px-1.5 py-0.5 rounded bg-black/60 border border-[#DDB96B]/50 text-[#FDE68A] shadow-inner font-bold">
+                          {momento.em_surdina ? 'PP • SURDINA' : 'MF • FORTE'}
+                        </span>
+                      )}
                     </div>
 
-                    {/* Centro da capa: Medalhão circular com Esquadro e Compasso com 'G' em Ouro */}
-                    <div className="my-auto flex flex-col items-center justify-center relative z-10 py-1 pointer-events-none">
-                      <div className="w-16 h-16 sm:w-18 sm:h-18 p-1.5 rounded-full bg-black/50 border border-[#DDB96B]/50 shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)] flex items-center justify-center relative">
-                        <SimboloEsquadroCompasso className="w-11 h-11 sm:w-12 sm:h-12" />
+                    {/* Centro da capa: Medalhão circular com Esquadro e Compasso com 'G' */}
+                    <div className="my-auto flex flex-col items-center justify-center relative z-10 py-0.5 pointer-events-none">
+                      <div className={`w-14 h-14 sm:w-16 sm:h-16 p-1.5 rounded-full ${momento.suprimido ? 'bg-slate-900/80 border-slate-500/50' : 'bg-black/50 border-[#DDB96B]/50'} border shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)] flex items-center justify-center relative`}>
+                        <SimboloEsquadroCompasso className={`w-10 h-10 sm:w-11 sm:h-11 ${momento.suprimido ? 'text-slate-400' : ''}`} />
                       </div>
                     </div>
 
-                    {/* Base da capa: Título em serifa dourada + contagem de trilhas solenes */}
-                    <div className="text-center relative z-10 border-t border-[#DDB96B]/20 pt-1 pointer-events-none">
-                      <p className="font-cinzel text-[11px] sm:text-xs font-bold text-[#FFF2CC] tracking-wider line-clamp-1 drop-shadow-sm uppercase">
+                    {/* Base da capa: Título em serifa sem corte + contagem de trilhas solenes */}
+                    <div className={`text-center relative z-10 border-t ${momento.suprimido ? 'border-slate-500/20' : 'border-[#DDB96B]/20'} pt-1 px-1 pointer-events-none`}>
+                      <p className={`font-cinzel text-[9.5px] sm:text-[11px] font-bold ${momento.suprimido ? 'text-slate-300' : 'text-[#FFF2CC]'} tracking-wide leading-tight drop-shadow-sm uppercase break-words`}>
                         {momento.evento_nome}
                       </p>
-                      <p className="font-serif italic text-[9.5px] sm:text-[10px] text-[#DDB96B] tracking-widest mt-0.5 font-normal">
-                        {totalFaixas > 0 ? `${totalFaixas} Trilhas LP Solenes` : 'Sem Trilhas LP'}
+                      <p className={`font-serif italic text-[8.5px] sm:text-[9.5px] ${momento.suprimido ? 'text-slate-400' : 'text-[#DDB96B]'} tracking-widest mt-0.5 font-normal`}>
+                        {momento.suprimido ? 'Momento Desativado' : (totalFaixas > 0 ? `${totalFaixas} Trilhas LP Solenes` : 'Sem Trilhas LP')}
                       </p>
                     </div>
+
+                    {/* NOTA DE AVISO E INSTRUÇÃO RITUALÍSTICA DE REATIVAÇÃO */}
+                    {momento.suprimido && (
+                      <div className="absolute inset-x-2 top-7 z-20 bg-slate-950/92 border border-amber-500/60 rounded p-1.5 text-center shadow-2xl backdrop-blur-sm pointer-events-none">
+                        <div className="flex items-center justify-center gap-1 text-[8px] sm:text-[8.5px] font-bold text-amber-300 uppercase tracking-wider">
+                          <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+                          <span>Aviso: Momento Desativado</span>
+                        </div>
+                        <p className="text-[7px] sm:text-[7.5px] text-slate-300 font-sans leading-tight mt-0.5 break-words">
+                          {momento.evento_descricao || "Momento litúrgico desativado por padrão na configuração."}
+                        </p>
+                        <div className="mt-1 pt-1 border-t border-amber-500/30 text-[7px] sm:text-[7.5px] font-mono font-bold text-[#FDE68A] uppercase tracking-wide">
+                          Segure a capa por 3 segundos para reativar nessa sessão
+                        </div>
+                      </div>
+                    )}
+
+                    {/* MEDIDOR VISUAL DE PROGRESSO AO SEGURAR POR 3 SEGUNDOS */}
+                    {holdingMomentId === momento.evento_id && (
+                      <div className="absolute inset-0 z-40 bg-black/85 backdrop-blur-[2px] flex flex-col items-center justify-center p-2 text-center pointer-events-none">
+                        <div className="relative w-16 h-16 sm:w-18 sm:h-18 flex items-center justify-center">
+                          <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                            <path
+                              className="text-slate-800"
+                              strokeWidth="3.2"
+                              stroke="currentColor"
+                              fill="none"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            <path
+                              className="text-[#FDE68A] transition-all duration-75"
+                              strokeDasharray={`${holdProgress}, 100`}
+                              strokeWidth="3.5"
+                              strokeLinecap="round"
+                              stroke="currentColor"
+                              fill="none"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                          </svg>
+                          <div className="absolute flex flex-col items-center justify-center">
+                            <span className="font-mono text-xs sm:text-sm font-bold text-amber-300">
+                              {Math.max(1, Math.ceil((3000 - (holdProgress * 30)) / 1000))}s
+                            </span>
+                            <span className="text-[6.5px] font-mono text-slate-300">{holdProgress}%</span>
+                          </div>
+                        </div>
+                        <p className="font-cinzel text-[9.5px] sm:text-[10px] font-bold text-[#FFF2CC] uppercase tracking-wider mt-1">
+                          {holdProgress >= 100 ? 'Reativando Momento!' : 'Segure Firme...'}
+                        </p>
+                        <p className="text-[7px] text-amber-300/80 font-mono mt-0.5">
+                          Solte para cancelar
+                        </p>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -665,10 +821,14 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                 }}
                 className={`transition-all duration-300 cursor-pointer ${
                   i === indiceMomento
-                    ? 'w-7 h-1.5 rounded-full bg-gradient-to-r from-[#DDB96B] to-[#FDE68A] shadow-[0_0_8px_rgba(221,185,107,0.8)]'
+                    ? momentos[i]?.suprimido
+                      ? 'w-7 h-1.5 rounded-full bg-gradient-to-r from-slate-500 to-slate-400 shadow-[0_0_8px_rgba(148,163,184,0.6)]'
+                      : 'w-7 h-1.5 rounded-full bg-gradient-to-r from-[#DDB96B] to-[#FDE68A] shadow-[0_0_8px_rgba(221,185,107,0.8)]'
+                    : momentos[i]?.suprimido
+                    ? 'w-1.5 h-1.5 rounded-full bg-slate-700 hover:bg-slate-500'
                     : 'w-1.5 h-1.5 rounded-full bg-[#1E325C] hover:bg-[#64748b]'
                 }`}
-                title={`Álbum ${i + 1}`}
+                title={`Álbum ${i + 1}${momentos[i]?.suprimido ? ' (Desativado)' : ''}`}
               />
             ))}
           </div>
@@ -693,13 +853,21 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
               title="Clique para navegar entre os álbuns da esteira"
             >
               <div
-                className="h-1 rounded-full bg-gradient-to-r from-[#B8862D] via-[#DDB96B] to-[#FDE68A] shadow-[0_0_8px_rgba(221,185,107,0.7)] transition-all duration-200"
+                className={`h-1 rounded-full transition-all duration-200 ${
+                  momentos[indiceMomento]?.suprimido
+                    ? 'bg-gradient-to-r from-slate-600 via-slate-400 to-slate-300 shadow-[0_0_8px_rgba(148,163,184,0.7)]'
+                    : 'bg-gradient-to-r from-[#B8862D] via-[#DDB96B] to-[#FDE68A] shadow-[0_0_8px_rgba(221,185,107,0.7)]'
+                }`}
                 style={{
                   width: `${Math.max(4, ((indiceMomento + 1) / momentos.length) * 100)}%`,
                 }}
               />
               <div
-                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-2 rounded-full bg-gradient-to-r from-[#DDB96B] to-[#FDE68A] border border-[#050B17] shadow-[0_0_8px_rgba(221,185,107,0.9)] transition-all duration-200 pointer-events-none group-hover:scale-110"
+                className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-2 rounded-full border border-[#050B17] transition-all duration-200 pointer-events-none group-hover:scale-110 ${
+                  momentos[indiceMomento]?.suprimido
+                    ? 'bg-gradient-to-r from-slate-400 to-slate-200 shadow-[0_0_8px_rgba(148,163,184,0.9)]'
+                    : 'bg-gradient-to-r from-[#DDB96B] to-[#FDE68A] shadow-[0_0_8px_rgba(221,185,107,0.9)]'
+                }`}
                 style={{
                   left: `${Math.max(3, Math.min(97, ((indiceMomento + 0.5) / momentos.length) * 100))}%`,
                 }}
@@ -745,11 +913,11 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
               {/* Linha 1: Tempo + Bargraph VU Level */}
               <div className="w-full flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-[8px] sm:text-[9px] text-[#00E5FF] font-mono uppercase tracking-wider font-semibold">
-                    TEMPO
+                  <span className={`text-[8px] sm:text-[9px] font-mono uppercase tracking-wider font-semibold ${momentoDeck.suprimido ? 'text-slate-400' : 'text-[#00E5FF]'}`}>
+                    {momentoDeck.suprimido ? 'STATUS' : 'TEMPO'}
                   </span>
-                  <span className="text-xs sm:text-[13px] font-mono font-bold text-[#00E5FF] tracking-wider leading-none">
-                    {temAlbumNoMomento ? formatarTempo(tempoAtual) : '--:--'}
+                  <span className={`text-xs sm:text-[13px] font-mono font-bold tracking-wider leading-none ${momentoDeck.suprimido ? 'text-slate-400' : 'text-[#00E5FF]'}`}>
+                    {momentoDeck.suprimido ? 'DESATIVADO' : (temAlbumNoMomento ? formatarTempo(tempoAtual) : '--:--')}
                   </span>
                 </div>
 
@@ -781,11 +949,13 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
 
               {/* Linha 2: Trilha ativa e Artista */}
               <div className="w-full pt-1 border-t border-[#1E325C]/70 flex items-center gap-1.5 overflow-hidden">
-                <span className="text-[8px] sm:text-[9px] font-mono font-bold text-[#00E5FF] flex-shrink-0 uppercase">
-                  {temAlbumNoMomento ? `TRK ${String(idxFaixaAtiva + 1).padStart(2, '0')}:` : 'TRK --:'}
+                <span className={`text-[8px] sm:text-[9px] font-mono font-bold flex-shrink-0 uppercase ${momentoDeck.suprimido ? 'text-slate-400' : 'text-[#00E5FF]'}`}>
+                  {momentoDeck.suprimido ? 'AVISO:' : (temAlbumNoMomento ? `TRK ${String(idxFaixaAtiva + 1).padStart(2, '0')}:` : 'TRK --:')}
                 </span>
-                <span className="text-[9.5px] sm:text-[11px] font-mono font-bold text-[#FDE68A] truncate tracking-wide leading-tight">
-                  {temAlbumNoMomento
+                <span className={`text-[9.5px] sm:text-[11px] font-mono font-bold truncate tracking-wide leading-tight ${momentoDeck.suprimido ? 'text-amber-300/90' : 'text-[#FDE68A]'}`}>
+                  {momentoDeck.suprimido
+                    ? 'Momento desativado click para reativar nessa sessão'
+                    : temAlbumNoMomento
                     ? `${musicaAtiva?.titulo || 'Trilha selecionada'}${
                         musicaAtiva?.autor_artista ? ` • ${musicaAtiva.autor_artista}` : ''
                       }`
@@ -814,7 +984,62 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
             {/* Platter Recessed Shadow Well */}
             <div className="absolute w-[242px] h-[242px] rounded-full bg-black/95 shadow-[inset_0_4px_16px_rgba(0,0,0,0.95)] border border-[#1a2333]" style={{ left: -1, top: 19 }} />
 
-            {temAlbumNoDeck ? (
+            {momentoDeck.suprimido ? (
+              /* ESTADO DE MOMENTO DESATIVADO NO PRATO DA VITROLA */
+              <div
+                className="absolute w-[232px] h-[232px] rounded-full flex flex-col items-center justify-center z-20 border-2 border-slate-600/70 p-3 text-center"
+                style={{
+                  left: 4,
+                  top: 24,
+                  background: 'radial-gradient(circle, #1e293b 0%, #0f172a 70%, #020617 100%)',
+                  boxShadow: 'inset 0 0 30px rgba(0,0,0,0.95), 0 10px 25px rgba(0,0,0,0.8)',
+                }}
+              >
+                <span className="font-mono text-[7px] sm:text-[7.5px] uppercase font-bold text-slate-400 bg-slate-800/90 border border-slate-600/60 px-2 py-0.5 rounded-full tracking-wider mb-1">
+                  MOMENTO DESATIVADO
+                </span>
+
+                <span className="font-cinzel text-[10px] sm:text-[11px] font-bold text-slate-200 line-clamp-1 uppercase tracking-wider">
+                  {momentoDeck.evento_nome}
+                </span>
+
+                <p className="text-[7.5px] sm:text-[8px] text-slate-400 font-sans line-clamp-2 my-1 max-w-[185px]">
+                  {momentoDeck.evento_descricao || "Momento litúrgico desativado por padrão na configuração."}
+                </p>
+
+                <div className="text-[7.5px] sm:text-[8px] font-semibold text-amber-300/95 tracking-wide mb-1.5 px-1 text-center">
+                  Momento desativado click para reativar nessa sessão
+                </div>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    feedbackTatil.confirmacao();
+                    onReativarMomento?.(momentoDeck.evento_id);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-amber-500/25 hover:bg-amber-500/40 border border-amber-400 text-amber-200 font-cinzel text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider shadow-lg active:scale-95 transition-all cursor-pointer"
+                >
+                  ⚡ Reativar nessa Sessão
+                </button>
+
+                {segundosRestantesSuprimido !== null && segundosRestantesSuprimido !== undefined && (
+                  <div className="flex items-center gap-1.5 mt-1.5 text-[7px] sm:text-[7.5px] text-slate-400 font-mono">
+                    <span>Avançando em {segundosRestantesSuprimido}s</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAvancarProximo?.();
+                      }}
+                      className="text-amber-400 hover:text-amber-300 underline font-sans ml-1 cursor-pointer"
+                    >
+                      Avançar agora &rarr;
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : temAlbumNoDeck ? (
               /* CONTAINER 3D DE TROCA DO VINIL: Levanta, faz flip e recolhe para a capa superior na saída, e inverso na entrada */
               <div
                 className={`absolute w-[232px] h-[232px] z-20 ${

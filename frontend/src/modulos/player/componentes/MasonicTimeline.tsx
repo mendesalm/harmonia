@@ -8,6 +8,7 @@ interface MasonicTimelineProps {
   indiceAtual: number;
   tocando: boolean;
   onMudarMomento: (idx: number) => void;
+  onReativarMomento?: (eventoId: string) => void;
 }
 
 /**
@@ -19,6 +20,7 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({
   indiceAtual,
   tocando,
   onMudarMomento,
+  onReativarMomento,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -165,7 +167,11 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({
                     className={`
                       flex items-center justify-center transition-all duration-300 relative rounded-xl
                       ${
-                        isAtivo
+                        momento.suprimido
+                          ? isAtivo
+                            ? 'w-11 h-11 border-2 border-slate-400 bg-slate-800/90 shadow-[0_0_20px_rgba(148,163,184,0.45)] scale-105 z-20 grayscale'
+                            : 'w-9 h-9 border border-slate-700 bg-slate-900/60 opacity-50 grayscale hover:opacity-90 z-10'
+                          : isAtivo
                           ? 'w-11 h-11 border-2 border-macaonico-dourado bg-macaonico-dourado/20 shadow-[0_0_20px_rgba(212,175,55,0.65)] scale-105 z-20'
                           : 'w-9 h-9 border border-macaonico-inactive/60 bg-sigma-surface opacity-60 hover:opacity-100 z-10'
                       }
@@ -173,7 +179,11 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({
                   >
                     <div
                       className={`relative z-10 ${
-                        isAtivo ? 'text-macaonico-dourado' : 'text-macaonico-inactive'
+                        momento.suprimido
+                          ? 'text-slate-400'
+                          : isAtivo
+                          ? 'text-macaonico-dourado'
+                          : 'text-macaonico-inactive'
                       }`}
                     >
                       {getMasonicIcon(momento.evento_nome, {
@@ -213,10 +223,14 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({
       {momentoAtivo && (
         <div className="px-3 sm:px-4 pt-1 text-center">
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            <span className="font-cinzel text-xs sm:text-sm text-macaonico-dourado font-bold tracking-wider">
+            <span className={`font-cinzel text-xs sm:text-sm font-bold tracking-wider ${momentoAtivo.suprimido ? 'text-slate-300' : 'text-macaonico-dourado'}`}>
               {momentoAtivo.evento_nome}
             </span>
-            {momentoAtivo.observacao_ritual && (
+            {momentoAtivo.suprimido ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 border border-slate-500 uppercase tracking-wider">
+                Desativado
+              </span>
+            ) : momentoAtivo.observacao_ritual && (
               momentoAtivo.observacao_ritual.toLowerCase().includes('surdina') ||
               momentoAtivo.evento_nome.toLowerCase().includes('interlúdio') ||
               momentoAtivo.evento_nome.toLowerCase().includes('interludio')
@@ -228,8 +242,34 @@ export const MasonicTimeline: React.FC<MasonicTimelineProps> = ({
             )}
           </div>
 
-          {/* Instrução ao Mestre de Harmonia */}
-          {momentoAtivo.observacao_ritual && (
+          {/* Dizeres de momento desativado na timeline */}
+          {momentoAtivo.suprimido && (
+            <div className="mt-1 flex flex-col items-center justify-center gap-1">
+              <p
+                className="text-[11px] sm:text-xs text-amber-300 font-semibold cursor-pointer hover:underline"
+                onClick={() => onReativarMomento?.(momentoAtivo.evento_id)}
+              >
+                Momento desativado click para reativar nessa sessão
+              </p>
+              {momentoAtivo.evento_descricao && (
+                <p className="text-[10px] text-slate-400 max-w-sm truncate">
+                  {momentoAtivo.evento_descricao}
+                </p>
+              )}
+              {onReativarMomento && (
+                <button
+                  type="button"
+                  onClick={() => onReativarMomento(momentoAtivo.evento_id)}
+                  className="px-2.5 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400 text-amber-200 text-[10px] font-cinzel font-bold uppercase transition-all"
+                >
+                  ⚡ Reativar nessa Sessão
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Instrução ao Mestre de Harmonia (quando ativo e não suprimido) */}
+          {!momentoAtivo.suprimido && momentoAtivo.observacao_ritual && (
             <div className="mt-1 inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-lg bg-primaria-800/90 border border-macaonico-dourado/25 text-[11px] sm:text-xs text-amber-200/90 max-w-full">
               <Info className="w-3.5 h-3.5 text-macaonico-dourado shrink-0" />
               <span className="truncate">{momentoAtivo.observacao_ritual}</span>

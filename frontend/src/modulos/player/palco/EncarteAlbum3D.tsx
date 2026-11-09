@@ -988,8 +988,8 @@ export const EncarteAlbum3D: React.FC<EncarteAlbum3DProps> = ({
             </div>
 
             {/* Base da capa: Título + contagem de trilhas */}
-            <div className="text-center relative z-10 border-t border-[#DDB96B]/20 pt-1">
-              <p className="font-cinzel text-xs sm:text-sm font-bold text-[#FFF2CC] tracking-wider line-clamp-1 drop-shadow-sm uppercase">
+            <div className="text-center relative z-10 border-t border-[#DDB96B]/20 pt-1 px-1">
+              <p className="font-cinzel text-xs sm:text-sm font-bold text-[#FFF2CC] tracking-wide leading-tight drop-shadow-sm uppercase break-words">
                 {momento.evento_nome}
               </p>
               <p className="font-serif italic text-[10px] sm:text-[11px] text-[#DDB96B] tracking-widest mt-0.5 font-normal">
