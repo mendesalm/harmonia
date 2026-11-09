@@ -15,11 +15,14 @@ import {
   Loader2,
   Sparkles,
   Edit3,
+  GripVertical,
 } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useNavigate } from 'react-router-dom';
 import clienteHttp from '../../compartilhado/api/cliente_http';
 import { useTenant } from '../../compartilhado/contextos/ContextoTenant';
 import { Evento } from '../../compartilhado/tipos';
+import { feedbackTatil } from '../../compartilhado/utilitarios/dispositivoNativo';
 
 interface SessaoLojaEventoItem {
   id?: string;
@@ -77,6 +80,9 @@ export const PaginaSessoes: React.FC = () => {
   const [nomeSessao, setNomeSessao] = useState('');
   const [itensEsteira, setItensEsteira] = useState<SessaoLojaEventoItem[]>([]);
   const [eventoParaAdicionarId, setEventoParaAdicionarId] = useState('');
+  const [posicaoInsercao, setPosicaoInsercao] = useState<'FINAL' | 'INICIO' | 'APOS'>('FINAL');
+  const [posicaoAposIndice, setPosicaoAposIndice] = useState<number>(0);
+  const [itemRecemAdicionadoId, setItemRecemAdicionadoId] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
   const carregarDados = async () => {
@@ -162,6 +168,21 @@ export const PaginaSessoes: React.FC = () => {
     }
   };
 
+  const onDragEnd = (result: DropResult) => {
+    const { source, destination } = result;
+    if (!destination) return;
+    if (source.index === destination.index) return;
+
+    const copia = Array.from(itensEsteira);
+    const [movido] = copia.splice(source.index, 1);
+    copia.splice(destination.index, 0, movido);
+    copia.forEach((ev, i) => {
+      ev.ordem_execucao = i + 1;
+    });
+    setItensEsteira(copia);
+    feedbackTatil.clique();
+  };
+
   const moverItem = (idx: number, direcao: -1 | 1) => {
     const destino = idx + direcao;
     if (destino < 0 || destino >= itensEsteira.length) return;
@@ -173,12 +194,14 @@ export const PaginaSessoes: React.FC = () => {
       ev.ordem_execucao = i + 1;
     });
     setItensEsteira(copia);
+    feedbackTatil.clique();
   };
 
   const alternarSuprimido = (idx: number) => {
     const copia = [...itensEsteira];
     copia[idx] = { ...copia[idx], suprimido: !copia[idx].suprimido };
     setItensEsteira(copia);
+    feedbackTatil.clique();
   };
 
   const removerItemDaEsteira = (idx: number) => {
@@ -187,6 +210,7 @@ export const PaginaSessoes: React.FC = () => {
       ev.ordem_execucao = i + 1;
     });
     setItensEsteira(copia);
+    feedbackTatil.clique();
   };
 
   const adicionarMomentoNaEsteira = () => {
@@ -196,26 +220,43 @@ export const PaginaSessoes: React.FC = () => {
 
     const jaExisteIdx = itensEsteira.findIndex((item) => item.evento_id === ev.id);
     if (jaExisteIdx >= 0) {
-      // Se já estava oculto na lista, reativa-o
+      // Se já estava na lista, reativa-o caso suprimido e destaca-o
       const copia = [...itensEsteira];
       copia[jaExisteIdx] = { ...copia[jaExisteIdx], suprimido: false };
       setItensEsteira(copia);
       setEventoParaAdicionarId('');
+      setItemRecemAdicionadoId(ev.id);
+      feedbackTatil.sucesso();
+      setTimeout(() => setItemRecemAdicionadoId(null), 3500);
       return;
     }
 
-    const novaLista: SessaoLojaEventoItem[] = [
-      ...itensEsteira,
-      {
-        evento_id: ev.id,
-        evento_nome: ev.nome,
-        ordem_execucao: itensEsteira.length + 1,
-        suprimido: false,
-        observacao_mestre_harmonia: null,
-      },
-    ];
+    const novoItem: SessaoLojaEventoItem = {
+      evento_id: ev.id,
+      evento_nome: ev.nome,
+      ordem_execucao: 0,
+      suprimido: false,
+      observacao_mestre_harmonia: null,
+    };
+
+    let novaLista = [...itensEsteira];
+    if (posicaoInsercao === 'INICIO') {
+      novaLista.unshift(novoItem);
+    } else if (posicaoInsercao === 'APOS' && posicaoAposIndice >= 0 && posicaoAposIndice < novaLista.length) {
+      novaLista.splice(posicaoAposIndice + 1, 0, novoItem);
+    } else {
+      novaLista.push(novoItem);
+    }
+
+    novaLista.forEach((item, idx) => {
+      item.ordem_execucao = idx + 1;
+    });
+
     setItensEsteira(novaLista);
     setEventoParaAdicionarId('');
+    setItemRecemAdicionadoId(ev.id);
+    feedbackTatil.sucesso();
+    setTimeout(() => setItemRecemAdicionadoId(null), 3500);
   };
 
   const handleSalvarSessao = async (e: React.FormEvent) => {
@@ -482,127 +523,235 @@ export const PaginaSessoes: React.FC = () => {
                 </div>
 
                 {/* Passo 3: Adicionar Momento do Rito na Esteira */}
-                <div className="bg-[#070e1c]/80 border border-macaonico-dourado/25 rounded-2xl p-3.5 sm:p-4 space-y-2.5">
+                <div className="bg-[#070e1c]/80 border border-macaonico-dourado/25 rounded-2xl p-3.5 sm:p-4 space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <label className="text-xs font-semibold text-white flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-macaonico-dourado" />
-                      <span>Adicionar Momento Litúrgico do Rito à Sessão</span>
+                      <span>Adicionar Momento Litúrgico à Esteira</span>
                     </label>
                     <span className="text-[11px] text-macaonico-dourado font-semibold">
-                      {totalMomentosAtivosNoModal} ativos
+                      {totalMomentosAtivosNoModal} momentos ativos
                     </span>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <select
-                      value={eventoParaAdicionarId}
-                      onChange={(e) => setEventoParaAdicionarId(e.target.value)}
-                      className="flex-1 bg-[#0e1c36] border border-white/15 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:border-macaonico-dourado outline-none"
-                    >
-                      <option value="">
-                        {eventosDisponiveisParaAdicao.length > 0
-                          ? `Selecione um momento do ${lojaAtiva?.rito_padrao || 'Rito'} para incluir...`
-                          : 'Todos os momentos cadastrados do Rito já estão na lista abaixo'}
-                      </option>
-                      {eventosDisponiveisParaAdicao.map((ev) => (
-                        <option key={ev.id} value={ev.id}>
-                          {ev.nome}
+                  <div className="flex flex-col gap-2.5">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <select
+                        value={eventoParaAdicionarId}
+                        onChange={(e) => setEventoParaAdicionarId(e.target.value)}
+                        className="flex-1 bg-[#0e1c36] border border-white/15 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:border-macaonico-dourado outline-none"
+                      >
+                        <option value="">
+                          {eventosDisponiveisParaAdicao.length > 0
+                            ? `Selecione um momento do ${lojaAtiva?.rito_padrao || 'Rito'} para incluir...`
+                            : 'Todos os momentos cadastrados do Rito já estão na lista abaixo'}
                         </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={adicionarMomentoNaEsteira}
-                      disabled={!eventoParaAdicionarId}
-                      className="flex items-center justify-center gap-1.5 bg-macaonico-dourado/20 hover:bg-macaonico-dourado text-macaonico-dourado hover:text-black border border-macaonico-dourado/40 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm transition-all disabled:opacity-40 shrink-0"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Incluir Momento</span>
-                    </button>
+                        {eventosDisponiveisParaAdicao.map((ev) => (
+                          <option key={ev.id} value={ev.id}>
+                            {ev.nome}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={adicionarMomentoNaEsteira}
+                        disabled={!eventoParaAdicionarId}
+                        className="flex items-center justify-center gap-1.5 bg-macaonico-dourado hover:bg-yellow-400 text-black font-bold px-4 py-2 rounded-xl text-xs sm:text-sm transition-all disabled:opacity-40 shrink-0 cursor-pointer shadow-md shadow-macaonico-dourado/20"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Incluir Momento</span>
+                      </button>
+                    </div>
+
+                    {/* Opções de Posicionamento Inicial */}
+                    <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-400">
+                      <span className="font-medium text-slate-300">Posicionar em:</span>
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="posicaoInsercao"
+                          value="FINAL"
+                          checked={posicaoInsercao === 'FINAL'}
+                          onChange={() => setPosicaoInsercao('FINAL')}
+                          className="accent-macaonico-dourado w-3 h-3 cursor-pointer"
+                        />
+                        <span className={posicaoInsercao === 'FINAL' ? 'text-amber-300 font-semibold' : ''}>
+                          No final da sequência
+                        </span>
+                      </label>
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="posicaoInsercao"
+                          value="INICIO"
+                          checked={posicaoInsercao === 'INICIO'}
+                          onChange={() => setPosicaoInsercao('INICIO')}
+                          className="accent-macaonico-dourado w-3 h-3 cursor-pointer"
+                        />
+                        <span className={posicaoInsercao === 'INICIO' ? 'text-amber-300 font-semibold' : ''}>
+                          No início (topo)
+                        </span>
+                      </label>
+                      {itensEsteira.length > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <label className="flex items-center gap-1.5 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="posicaoInsercao"
+                              value="APOS"
+                              checked={posicaoInsercao === 'APOS'}
+                              onChange={() => setPosicaoInsercao('APOS')}
+                              className="accent-macaonico-dourado w-3 h-3 cursor-pointer"
+                            />
+                            <span className={posicaoInsercao === 'APOS' ? 'text-amber-300 font-semibold' : ''}>
+                              Após:
+                            </span>
+                          </label>
+                          {posicaoInsercao === 'APOS' && (
+                            <select
+                              value={posicaoAposIndice}
+                              onChange={(e) => setPosicaoAposIndice(Number(e.target.value))}
+                              className="bg-[#0e1c36] border border-white/15 rounded-lg px-2 py-0.5 text-[11px] text-white focus:border-macaonico-dourado outline-none max-w-[200px] truncate"
+                            >
+                              {itensEsteira.map((item, idx) => (
+                                <option key={idx} value={idx}>
+                                  {idx + 1}. {item.evento_nome}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Lista Ordenada de Momentos da Sessão */}
+                {/* Lista Ordenada de Momentos da Sessão com DRAG AND DROP */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-200 uppercase tracking-wider">
-                      3. Sequência de Momentos da Sessão ({itensEsteira.length})
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                      <ListOrdered className="w-4 h-4 text-macaonico-dourado" />
+                      <span>3. Sequência de Momentos da Sessão ({itensEsteira.length})</span>
                     </h3>
-                    <span className="text-[11px] text-slate-400">
-                      Reordene com as setas ou oculte momentos não utilizados
+                    <span className="text-[11px] text-macaonico-dourado/90 flex items-center gap-1">
+                      <GripVertical className="w-3.5 h-3.5 inline text-slate-400" />
+                      <span>Arraste os cards para reordenar livremente</span>
                     </span>
                   </div>
 
-                  <div className="space-y-1.5">
-                    {itensEsteira.map((item, idx) => (
-                      <div
-                        key={`${item.evento_id}-${idx}`}
-                        className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 border transition-all ${
-                          item.suprimido
-                            ? 'bg-[#070e1c]/40 border-white/5 opacity-50'
-                            : 'bg-[#0e1c36]/90 border-white/10'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <span className="w-6 h-6 rounded-md bg-macaonico-dourado/15 border border-macaonico-dourado/30 text-macaonico-dourado font-bold text-xs flex items-center justify-center shrink-0">
-                            {idx + 1}
-                          </span>
-                          <span
-                            className={`text-xs sm:text-sm font-medium truncate ${
-                              item.suprimido ? 'line-through text-slate-500' : 'text-white'
-                            }`}
-                          >
-                            {item.evento_nome || 'Momento Ritualístico'}
-                          </span>
-                        </div>
+                  <DragDropContext onDragEnd={onDragEnd}>
+                    <Droppable droppableId="droppable-esteira-sessoes">
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className="space-y-1.5"
+                        >
+                          {itensEsteira.map((item, idx) => {
+                            const recemAdicionado = itemRecemAdicionadoId === item.evento_id;
+                            return (
+                              <Draggable
+                                key={`item-${item.evento_id}-${idx}`}
+                                draggableId={`item-${item.evento_id}-${idx}`}
+                                index={idx}
+                              >
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 border transition-all ${
+                                      snapshot.isDragging
+                                        ? 'ring-2 ring-macaonico-dourado bg-[#132647] shadow-[0_16px_36px_rgba(0,0,0,0.9)] z-50 scale-[1.01]'
+                                        : recemAdicionado
+                                        ? 'bg-amber-500/20 border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.35)]'
+                                        : item.suprimido
+                                        ? 'bg-[#070e1c]/40 border-white/5 opacity-50'
+                                        : 'bg-[#0e1c36]/90 border-white/10 hover:border-white/20'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                      {/* Alça de Arraste (Drag Handle) */}
+                                      <div
+                                        {...provided.dragHandleProps}
+                                        className="p-1 text-slate-400 hover:text-macaonico-dourado cursor-grab active:cursor-grabbing rounded transition-colors shrink-0"
+                                        title="Segure e arraste para reordenar o momento"
+                                      >
+                                        <GripVertical className="w-4 h-4" />
+                                      </div>
 
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => moverItem(idx, -1)}
-                            disabled={idx === 0}
-                            className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 disabled:opacity-20"
-                            title="Subir na sequência"
-                          >
-                            <ArrowUp className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => moverItem(idx, 1)}
-                            disabled={idx === itensEsteira.length - 1}
-                            className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 disabled:opacity-20"
-                            title="Descer na sequência"
-                          >
-                            <ArrowDown className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => alternarSuprimido(idx)}
-                            className={`p-1.5 rounded-lg transition-colors ${
-                              item.suprimido
-                                ? 'text-amber-400 bg-amber-500/10'
-                                : 'text-slate-300 hover:text-white hover:bg-white/10'
-                            }`}
-                            title={item.suprimido ? 'Reativar momento' : 'Ocultar momento'}
-                          >
-                            {item.suprimido ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removerItemDaEsteira(idx)}
-                            className="p-1.5 rounded-lg text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-colors"
-                            title="Remover momento desta sessão"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                                      <span className="w-6 h-6 rounded-md bg-macaonico-dourado/15 border border-macaonico-dourado/30 text-macaonico-dourado font-bold text-xs flex items-center justify-center shrink-0">
+                                        {idx + 1}
+                                      </span>
+
+                                      <span
+                                        className={`text-xs sm:text-sm font-medium truncate ${
+                                          item.suprimido ? 'line-through text-slate-500' : 'text-white'
+                                        }`}
+                                      >
+                                        {item.evento_nome || 'Momento Ritualístico'}
+                                      </span>
+
+                                      {recemAdicionado && (
+                                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-400 text-black shrink-0 animate-pulse">
+                                          Adicionado
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => moverItem(idx, -1)}
+                                        disabled={idx === 0}
+                                        className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 disabled:opacity-20 cursor-pointer"
+                                        title="Subir na sequência"
+                                      >
+                                        <ArrowUp className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => moverItem(idx, 1)}
+                                        disabled={idx === itensEsteira.length - 1}
+                                        className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 disabled:opacity-20 cursor-pointer"
+                                        title="Descer na sequência"
+                                      >
+                                        <ArrowDown className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => alternarSuprimido(idx)}
+                                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                          item.suprimido
+                                            ? 'text-amber-400 bg-amber-500/10'
+                                            : 'text-slate-300 hover:text-white hover:bg-white/10'
+                                        }`}
+                                        title={item.suprimido ? 'Reativar momento' : 'Ocultar momento'}
+                                      >
+                                        {item.suprimido ? (
+                                          <EyeOff className="w-4 h-4" />
+                                        ) : (
+                                          <Eye className="w-4 h-4" />
+                                        )}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => removerItemDaEsteira(idx)}
+                                        className="p-1.5 rounded-lg text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-colors cursor-pointer"
+                                        title="Remover momento desta sessão"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </Draggable>
+                            );
+                          })}
+                          {provided.placeholder}
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
                 </div>
               </div>
 
