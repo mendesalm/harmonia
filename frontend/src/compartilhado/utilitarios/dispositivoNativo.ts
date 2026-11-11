@@ -61,42 +61,84 @@ export function configurarBotaoVoltarNativo(onVoltar?: () => boolean | void) {
 export const feedbackTatil = {
   // Toque suave em botões ou abas
   clique: async () => {
-    if (!isDispositivoNativo) return;
+    if (!isDispositivoNativo) {
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try { navigator.vibrate(15); } catch (_) {}
+      }
+      return;
+    }
     try {
       await Haptics.impact({ style: ImpactStyle.Light });
     } catch (_) {}
   },
   // Toque médio em botões primários / play
   acaoMedia: async () => {
-    if (!isDispositivoNativo) return;
+    if (!isDispositivoNativo) {
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try { navigator.vibrate(30); } catch (_) {}
+      }
+      return;
+    }
     try {
       await Haptics.impact({ style: ImpactStyle.Medium });
     } catch (_) {}
   },
   // Toque forte em ações de destaque / confirmações de impacto
   acaoForte: async () => {
-    if (!isDispositivoNativo) return;
+    if (!isDispositivoNativo) {
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try { navigator.vibrate(50); } catch (_) {}
+      }
+      return;
+    }
     try {
       await Haptics.impact({ style: ImpactStyle.Heavy });
     } catch (_) {}
   },
+  // Confirmação tátil de impacto duplo / reativação de momento litúrgico
+  confirmacao: async () => {
+    if (!isDispositivoNativo) {
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try { navigator.vibrate([40, 60, 40]); } catch (_) {}
+      }
+      return;
+    }
+    try {
+      await Haptics.notification({ type: NotificationType.Success });
+    } catch (_) {}
+  },
   // Confirmação de sucesso
   sucesso: async () => {
-    if (!isDispositivoNativo) return;
+    if (!isDispositivoNativo) {
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try { navigator.vibrate([30, 50, 30]); } catch (_) {}
+      }
+      return;
+    }
     try {
       await Haptics.notification({ type: NotificationType.Success });
     } catch (_) {}
   },
   // Alerta de aviso
   aviso: async () => {
-    if (!isDispositivoNativo) return;
+    if (!isDispositivoNativo) {
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try { navigator.vibrate([60, 100]); } catch (_) {}
+      }
+      return;
+    }
     try {
       await Haptics.notification({ type: NotificationType.Warning });
     } catch (_) {}
   },
   // Erro em validação ou operação cancelada
   erro: async () => {
-    if (!isDispositivoNativo) return;
+    if (!isDispositivoNativo) {
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try { navigator.vibrate([80, 50, 80]); } catch (_) {}
+      }
+      return;
+    }
     try {
       await Haptics.notification({ type: NotificationType.Error });
     } catch (_) {}

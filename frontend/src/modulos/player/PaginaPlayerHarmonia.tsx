@@ -750,7 +750,9 @@ export const PaginaPlayerHarmonia: React.FC = () => {
   const reativarMomentoAtual = async (eventoId?: string) => {
     const idAlvo = eventoId || momentoAtual?.evento_id;
     if (!sessaoSelecionadaId || !idAlvo) return;
-    feedbackTatil.confirmacao();
+    try {
+      feedbackTatil.confirmacao();
+    } catch (_) {}
 
     setDadosSessao((antiga) => {
       if (!antiga) return antiga;

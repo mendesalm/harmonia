@@ -223,6 +223,14 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
       clearInterval(holdIntervalRef.current);
       holdIntervalRef.current = null;
     }
+    if (holdTriggeredRef.current) {
+      setTimeout(() => {
+        setHoldingMomentId(null);
+        setHoldProgress(0);
+        holdTriggeredRef.current = false;
+      }, 500);
+      return;
+    }
     setHoldingMomentId(null);
     setHoldProgress(0);
   };
@@ -233,7 +241,9 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
     setHoldingMomentId(momentoId);
     setHoldProgress(0);
     holdStartTimeRef.current = performance.now();
-    feedbackTatil.clique();
+    try {
+      feedbackTatil.clique();
+    } catch (_) {}
 
     const DURACAO_HOLD_MS = 3000;
     const INTERVALO_MS = 40;
@@ -248,7 +258,9 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
       const segundosPassados = Math.floor(decorrido / 1000);
       if (segundosPassados > ultimoTick && segundosPassados < 3) {
         ultimoTick = segundosPassados;
-        feedbackTatil.clique();
+        try {
+          feedbackTatil.clique();
+        } catch (_) {}
       }
 
       if (decorrido >= DURACAO_HOLD_MS) {
@@ -258,11 +270,17 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
         }
         holdTriggeredRef.current = true;
         setHoldProgress(100);
-        feedbackTatil.confirmacao();
-        onReativarMomento?.(momentoId);
+        try {
+          feedbackTatil.confirmacao();
+        } catch (_) {}
+        try {
+          onReativarMomento?.(momentoId);
+        } catch (err) {
+          console.error('Erro ao disparar onReativarMomento:', err);
+        }
         setTimeout(() => {
           cancelarHold();
-        }, 400);
+        }, 500);
       }
     }, INTERVALO_MS);
   };
@@ -1024,7 +1042,9 @@ export const PalcoCarrosseis: React.FC<PalcoCarrosseisProps> = ({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    feedbackTatil.confirmacao();
+                    try {
+                      feedbackTatil.confirmacao();
+                    } catch (_) {}
                     onReativarMomento?.(momentoDeck.evento_id);
                   }}
                   className="px-3 py-1 rounded-lg bg-zinc-700/90 hover:bg-zinc-600 border border-zinc-400 text-white font-cinzel text-[8.5px] sm:text-[9.5px] font-bold uppercase tracking-wider shadow-lg active:scale-95 transition-all cursor-pointer"

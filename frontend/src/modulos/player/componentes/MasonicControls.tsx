@@ -139,7 +139,9 @@ export const MasonicControls: React.FC<MasonicControlsProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  feedbackTatil.confirmacao();
+                  try {
+                    feedbackTatil.confirmacao();
+                  } catch (_) {}
                   onReativarMomento(momentoAtual.evento_id);
                 }}
                 className="px-2.5 py-0.5 rounded bg-zinc-700 hover:bg-zinc-600 border border-zinc-400 text-white text-[9px] font-bold font-cinzel uppercase shrink-0 active:scale-95 transition-all cursor-pointer"
